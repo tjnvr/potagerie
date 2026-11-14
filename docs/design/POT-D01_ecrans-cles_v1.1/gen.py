@@ -588,7 +588,7 @@ def main_board():
         f'<div style="display: flex; justify-content: space-between; font-size: 14px"><span>2025</span><span style="color: {C["muted"]}">Rien de noté</span></div></div>'
         f'<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: auto">'
         f'<a href="E07_serie_mobile.dc.html" style="flex: 1 1 140px; display: inline-flex; justify-content: center; align-items: center; gap: 8px; background: {C["green"]}; color: #FFFFFF; text-decoration: none; border-radius: 99px; padding: 12px 16px; font: 600 15px Figtree, sans-serif">{icon("plus", 18, "#FFFFFF")}Planter ici</a>'
-        f'<button style="flex: 1 1 120px; border: 1px solid {C["line"]}; background: #FFFFFF; color: {C["ink"]}; border-radius: 99px; padding: 12px 16px; font: 600 15px Figtree, sans-serif; cursor: pointer">Modifier</button></div>'
+        f'<a href="../../POT-D02_ecrans-complementaires_v0.1/project/E06_panneau-planche_desktop.dc.html" style="flex: 1 1 120px; display: inline-flex; justify-content: center; align-items: center; border: 1px solid {C["line"]}; background: #FFFFFF; color: {C["ink"]}; text-decoration: none; border-radius: 99px; padding: 12px 16px; font: 600 15px Figtree, sans-serif; cursor: pointer">Modifier</a></div>'
         f'</aside>')
     legend = "".join(
         f'<span style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: {C["muted"]}"><span style="width: 26px; height: 12px; border-radius: 4px; {bg}"></span>{t}</span>'
