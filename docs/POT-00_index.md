@@ -13,6 +13,7 @@ docs/
 │   ├── POT-D01_ecrans-cles_v1.0/            ← version courante (un dossier par canvas)
 │   └── archives/                            ← versions précédentes
 └── prototypes/
+    ├── POT-P01_rendu-iso_v0.1/              ← un dossier par prototype
     └── archives/
 ```
 
@@ -51,6 +52,7 @@ Propre aux prototypes :
 |---|---|---|---|---|
 | S01 | Spec fonctionnelle V1 | 1.0 | Validé | [specs/POT-S01_spec-fonctionnelle_v1.0.md](specs/POT-S01_spec-fonctionnelle_v1.0.md) |
 | S02 | Catalogue des cultures (6 légumes de prototype) | 0.1 | Brouillon | [specs/POT-S02_catalogue-cultures_v0.1.md](specs/POT-S02_catalogue-cultures_v0.1.md) |
+| P01 | Prototype rendu isométrique (SVG ou Canvas ?) | 0.1 | Brouillon | [prototypes/POT-P01_rendu-iso_v0.1/](prototypes/POT-P01_rendu-iso_v0.1/README.md) · [page](https://claude.ai/artifact/PBrzt3qta6sHKisnhfZWMv) |
 | D01 | Écrans clés V1 (E03 atelier, E05 ordinateur et téléphone, E07, direction visuelle) | 1.0 | Validé | [design/POT-D01_ecrans-cles_v1.0/](design/POT-D01_ecrans-cles_v1.0/README.md) · [canvas](https://claude.ai/artifact/DoHRUtcujzwPF6bfjdQtSN) |
 
 ## Codes réservés

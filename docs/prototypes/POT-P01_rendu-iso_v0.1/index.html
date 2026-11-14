@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototype rendu isométrique</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Banc d'essai : le diorama en grand, les réglages et la mesure à côté, le tableau des résultats en dessous */
+:root{
+  --bg:#EEF2E6; --card:#E3ECDD; --ink:#1F3A2E; --muted:#56705F; --line:#D3DECD;
+  --accent:#F2A65A; --accent-ink:#5A3410; --green:#2F7D5B; --good:#2F8A5F; --warn:#D9822B; --crit:#C8443C;
+  --f-display:"Fredoka","Figtree",system-ui,sans-serif; --f-body:"Figtree",system-ui,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--f-body)}
+.wrap{max-width:1360px;margin:0 auto;padding:20px 20px 40px;display:flex;flex-direction:column;gap:18px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px}
+h1{font:600 28px var(--f-display);margin:0;text-wrap:balance}
+header p{margin:0;color:var(--muted)}
+.main{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start}
+.stage{flex:999 1 640px;min-width:0;background:var(--card);border-radius:28px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.view{position:relative;width:100%;aspect-ratio:1100/640;border-radius:18px;overflow:hidden;background:var(--card)}
+.view canvas,.view svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.date{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.date strong{font:600 24px var(--f-display);font-variant-numeric:tabular-nums;min-width:9ch}
+.track{flex:1 1 200px;accent-color:var(--accent)}
+.side{flex:1 1 300px;max-width:380px;min-width:0;display:flex;flex-direction:column;gap:14px}
+.card{background:#fff;border-radius:22px;padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.card h2{font:600 17px var(--f-display);margin:0}
+.lbl{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.seg{display:flex;padding:4px;border-radius:99px;background:var(--bg);gap:2px}
+.seg button{flex:1;border:0;background:transparent;padding:9px 6px;border-radius:99px;font:600 14px var(--f-body);color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.btn{border:0;border-radius:99px;padding:12px 18px;font:600 15px var(--f-body);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.play{background:var(--accent);color:var(--accent-ink);min-width:150px}
+.btn.sec{background:#fff;border:1px solid var(--line);color:var(--ink)}
+.btn:focus-visible,.seg button:focus-visible,input:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.meter{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.meter div{background:var(--bg);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:2px}
+.meter b{font:600 22px var(--f-display);font-variant-numeric:tabular-nums}
+.meter span{font-size:12px;color:var(--muted)}
+.state{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:4px 10px;border-radius:99px;background:var(--bg)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--muted)}
+.ok .dot{background:var(--good)} .mid .dot{background:var(--warn)} .bad .dot{background:var(--crit)}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.tablebox{overflow-x:auto}
+.note{font-size:13px;color:var(--muted);margin:0}
+.empty{color:var(--muted);font-size:14px;padding:6px 0}
+@media (prefers-reduced-motion: reduce){ .btn{transition:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Prototype rendu isométrique</h1>
+    <p>10 planches, 6 légumes, saison jouée en 15 s. Compare SVG et Canvas sur cet appareil.</p>
+  </header>
+
+  <div class="main">
+    <section class="stage" aria-label="Diorama">
+      <div class="view" id="view"></div>
+      <div class="date">
+        <button class="btn play" id="play" type="button">▶ Jouer la saison</button>
+        <strong id="dateLbl">1 janv.</strong>
+        <input class="track" id="day" type="range" min="0" max="364" value="0" aria-label="Jour de l'année">
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="card">
+        <h2>Réglages</h2>
+        <div class="lbl">Rendu</div>
+        <div class="seg" role="group" aria-label="Moteur de rendu">
+          <button type="button" data-r="svg" aria-pressed="false">SVG</button>
+          <button type="button" data-r="canvas" aria-pressed="true">Canvas</button>
+        </div>
+        <div class="lbl">Densité de plantes</div>
+        <div class="seg" role="group" aria-label="Densité">
+          <button type="button" data-d="1" aria-pressed="true">Normale</button>
+          <button type="button" data-d="2">× 2</button>
+          <button type="button" data-d="4">× 4</button>
+        </div>
+        <div class="lbl">Vitesse</div>
+        <div class="seg" role="group" aria-label="Vitesse">
+          <button type="button" data-v="1" aria-pressed="true">× 1</button>
+          <button type="button" data-v="2">× 2</button>
+        </div>
+      </div>
+
+      <div class="card" aria-live="polite">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <h2>Mesure en direct</h2>
+          <span class="state" id="state"><span class="dot"></span><span id="stateTxt">À l'arrêt</span></span>
+        </div>
+        <div class="meter">
+          <div><b id="fps">—</b><span>images / s</span></div>
+          <div><b id="ms">—</b><span>ms / image</span></div>
+          <div><b id="nb">—</b><span>plantes</span></div>
+        </div>
+        <p class="note" id="env"></p>
+      </div>
+    </aside>
+  </div>
+
+  <section class="card">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
+      <h2>Résultats des lectures complètes</h2>
+      <button class="btn sec" id="copy" type="button">Copier les résultats</button>
+    </div>
+    <p class="note">Chaque lecture complète de la saison ajoute une ligne. Cible : 60 images/s en moyenne, 1 % des images les plus lentes au-dessus de 30 images/s.</p>
+    <div class="tablebox">
+      <table>
+        <thead><tr><th>Rendu</th><th>Densité</th><th>Plantes max</th><th>Moyenne</th><th>1 % les plus lentes</th><th>Image p95</th><th>Verdict</th></tr></thead>
+        <tbody id="rows"><tr><td colspan="7" class="empty">Lance « Jouer la saison » pour mesurer.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script>
+"use strict";
+// ---------- Données S02 (6 légumes de prototype) ----------
+const CROPS = {
+  tomate:   {abri:56, apres:75,  duree:70, mep:"05-01"},
+  laitue:   {abri:28, apres:50,  duree:20, mep:"03-01"},
+  carotte:  {abri:0,  apres:100, duree:40, mep:"03-01"},
+  haricot:  {abri:0,  apres:60,  duree:30, mep:"05-10"},
+  courgette:{abri:21, apres:50,  duree:80, mep:"05-01"},
+  poireau:  {abri:70, apres:120, duree:90, mep:"05-15"},
+};
+const MOIS = ["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
+function doy(md){const [m,d]=md.split("-").map(Number);return Math.round((Date.UTC(2027,m-1,d)-Date.UTC(2027,0,1))/864e5);}
+function fmt(day){const d=new Date(Date.UTC(2027,0,1)+day*864e5);return d.getUTCDate()+" "+MOIS[d.getUTCMonth()];}
+
+// ---------- Plan : 10 planches ----------
+const GW=24, GH=13, TW=48, TH=24;
+const PLANCHES=[];
+[1,4,7,10].forEach(y=>{PLANCHES.push({x:1,y,w:8,h:2});PLANCHES.push({x:11,y,w:8,h:2});});
+PLANCHES.push({x:21,y:1,w:2,h:2,bac:true});PLANCHES.push({x:21,y:7,w:2,h:2,bac:true});
+
+// séries : une ou deux cultures par planche (successions)
+const SERIES_PLAN=[
+  ["laitue","haricot"],["carotte","laitue"],["tomate"],["courgette"],
+  ["poireau"],["laitue","poireau"],["haricot","laitue"],["carotte"],["tomate"],["laitue","laitue"]
+];
+
+// ---------- Primitives de dessin (coordonnées locales, base en 0,0) ----------
+function leaf(out,x,y,ang,L,W,light,dark){
+  const a=ang*Math.PI/180, dx=Math.sin(a), dy=-Math.cos(a), nx=Math.cos(a), ny=Math.sin(a);
+  const tip=[x+dx*L,y+dy*L], mx=x+dx*L*.42, my=y+dy*L*.42;
+  out.push(["p",[[x,y],[mx-nx*W/2,my-ny*W/2],tip],light]);
+  out.push(["p",[[x,y],[mx+nx*W/2,my+ny*W/2],tip],dark]);
+}
+function shadow(out,r){out.push(["e",0,1,r,r*.42,"rgba(42,74,48,.18)"]);}
+function sprout(){const o=[];o.push(["e",0,0,6,2.4,"#8E5F3D"]);o.push(["l",0,0,0,-4,"#4C8F48",1]);
+  o.push(["e",-2.4,-4.6,2.6,1.3,"#86CC70"]);o.push(["e",2.4,-4.8,2.6,1.3,"#62AE56"]);return o;}
+function lobed(out,cx,cy,r,light,dark){
+  const pts=[];for(let i=0;i<10;i++){const a=i*36*Math.PI/180, rr=i%2?r*.68:r;pts.push([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr*.62]);}
+  out.push(["p",pts,dark]);
+  out.push(["p",[[cx,cy-r*.62]].concat(pts.filter(p=>p[0]<=cx).sort((a,b)=>Math.atan2(a[1]-cy,a[0]-cx)-Math.atan2(b[1]-cy,b[0]-cx))).concat([[cx,cy+r*.62]]),light]);
+  for(const a of [-90,-18,54,126,198]){const ra=a*Math.PI/180;out.push(["l",cx,cy,cx+Math.cos(ra)*r*.75,cy+Math.sin(ra)*r*.46,"#3F7F3C",.7]);}
+}
+function fruit(out,x,y,r,col){out.push(["c",x,y,r,col]);out.push(["c",x-r*.38,y-r*.38,r*.3,"rgba(255,255,255,.55)"]);}
+
+function shape(kind,harvest){
+  const o=[];
+  if(kind==="tomate"){shadow(o,12);o.push(["l",6,1,6,-48,"#9C6B3E",1.8]);o.push(["l",0,0,1,-44,"#4E8F45",2]);
+    [[6,-62,14],[9,58,15],[16,-52,15],[19,62,14],[26,-48,13],[29,55,13],[35,-35,11],[38,30,10]].forEach(([h,a,L])=>leaf(o,-1,-h,a,L,L*.5,"#6CBB62","#4C944D"));
+    const cols=harvest?["#E5533D","#E86A45","#F08A4B"]:["#9CCB6A","#B4D66F","#A9D06C"];
+    [[-8,-12],[9,-22],[-6,-31]].forEach(([x,y],i)=>{fruit(o,x-2,y+1,harvest?3.1:2.4,cols[i]);fruit(o,x+2.4,y+2,harvest?2.8:2.2,cols[(i+1)%3]);});}
+  else if(kind==="laitue"){shadow(o,10);
+    [[-150,7,"#86C05A"],[-30,7,"#74B04E"],[-110,7.5,"#93C962"],[-70,7.5,"#7FB955"],[-140,5.5,"#A4D46E"],[-40,5.5,"#92C863"],[-90,5,"#B2DC7C"]]
+      .forEach(([a,rx,c],i)=>{const r=a*Math.PI/180;o.push(["e",Math.cos(r)*rx*.55,Math.sin(r)*rx*.35-3-i*.6,rx*.8,rx*.55,c]);});
+    o.push(["e",0,-7,harvest?3.6:2.6,harvest?3:2.2,"#CFEA9C"]);}
+  else if(kind==="carotte"){shadow(o,8);
+    [[-38,15],[-20,19],[-3,21],[15,19],[34,15]].forEach(([a,L])=>{const r=a*Math.PI/180,ex=Math.sin(r)*L,ey=-Math.cos(r)*L;o.push(["l",0,0,ex,ey,"#5FA445",.9]);
+      [.45,.65,.85].forEach(t=>{const px=Math.sin(r)*L*t,py=-Math.cos(r)*L*t,sz=4.2*(1.1-t*.5);leaf(o,px,py,a-48,sz,sz*.65,"#9AD46E","#7CBF5A");leaf(o,px,py,a+48,sz,sz*.65,"#8ACB62","#6CB04D");});});
+    if(harvest){o.push(["p",[[-3.4,-1],[3.4,-1],[2.4,3],[-2.4,3]],"#EF8A2E"]);o.push(["p",[[0,-1],[3.4,-1],[2.4,3],[0,3]],"#D9731F"]);}
+    else o.push(["e",0,0,2.6,1.2,"#EF8A2E"]);}
+  else if(kind==="haricot"){shadow(o,8);o.push(["l",0,1,0,-46,"#A07448",1.6]);
+    [7,13,19,25,31,37].forEach((h,i)=>{const s=i%2?1:-1;[-42,0,42].forEach(da=>leaf(o,s*1.5,-h,s*55+da,5.6,3.5,"#86CC70","#5FA852"));});
+    if(harvest)[[-4,12],[4,18],[-4,24],[4,30]].forEach(([x,y])=>o.push(["l",x*.5,-y,x*.65,-y+8,"#9BCB45",1.7]));
+    else [[-5,16],[5,23],[-4,31]].forEach(([x,y])=>o.push(["c",x,-y,1.3,"#F4EEF8"]));}
+  else if(kind==="courgette"){shadow(o,18);lobed(o,-9,-4,9,"#6FB25C","#518F47");lobed(o,9,-6,10,"#7ABD66","#5A9A4E");lobed(o,0,-11,8.5,"#82C46C","#5F9F51");
+    if(harvest){o.push(["e",-4,4,7,2.6,"#2F6B2A"]);o.push(["e",5,3,6,2.3,"#3A7A32"]);}
+    else{for(let i=0;i<5;i++){const a=(i*72-90)*Math.PI/180;o.push(["c",3+Math.cos(a)*2.2,-16+Math.sin(a)*1.8,1.6,"#F6C443"]);}o.push(["c",3,-16,1.2,"#E08A1E"]);}}
+  else if(kind==="poireau"){shadow(o,6);o.push(["p",[[-2,0],[2,0],[1.8,-13],[-1.8,-13]],"#F1F5E0"]);o.push(["p",[[0,0],[2,0],[1.8,-13],[0,-13]],"#DCE7C6"]);
+    [[-38,16],[32,17],[-22,19],[18,20],[-6,18]].forEach(([a,L],i)=>leaf(o,0,-11-i*1.5,a,L,3.6,"#7DBE92","#5A9F73"));}
+  return o;
+}
+const SHAPES={};
+for(const k in CROPS){SHAPES[k+"_s"]=sprout();SHAPES[k+"_a"]=shape(k,false);SHAPES[k+"_h"]=shape(k,true);}
+
+// ---------- Scène ----------
+let renderer="canvas", density=1, speed=1, day=150;
+const view=document.getElementById("view");
+const VW=1100, VH=640, OX=GH*TW/2+70, OY=90;
+const P=(gx,gy,z=0)=>[OX+(gx-gy)*TW/2, OY+(gx+gy)*TH/2 - z];
+
+function buildPlants(){
+  const plants=[];
+  PLANCHES.forEach((pl,i)=>{
+    const series=[]; let cursor=null;
+    SERIES_PLAN[i].forEach((k,j)=>{const c=CROPS[k];let start=Math.max(doy(c.mep), cursor===null?0:cursor+1);
+      if(j>0&&k==="laitue")start=Math.max(start,doy("08-01"));const end=start+c.apres+c.duree;series.push({k,start,end,apres:c.apres});cursor=end;});
+    const top=pl.bac?12:7;
+    const per=Math.sqrt(density), stepX=1/Math.ceil(per), stepY=1/Math.ceil(density/Math.ceil(per));
+    for(let gx=pl.x;gx<pl.x+pl.w;gx+=1)for(let gy=pl.y;gy<pl.y+pl.h;gy+=1)
+      for(let ix=stepX/2;ix<1;ix+=stepX)for(let iy=stepY/2;iy<1;iy+=stepY){
+        const [x,y]=P(gx+ix,gy+iy,top);plants.push({x,y,series,depth:gx+ix+gy+iy});
+      }
+  });
+  plants.sort((a,b)=>a.depth-b.depth);
+  return plants;
+}
+function ease(t){const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2);} // léger rebond
+function plantState(pl,d){
+  for(const s of pl.series){ if(d<s.start||d>s.end)continue;
+    const p=(d-s.start)/s.apres;
+    if(p<.15)return {id:s.k+"_s",scale:.6+2.6*p};
+    if(p<1)return {id:s.k+"_a",scale:.35+.65*ease(Math.min(1,(p-.15)/.85))};
+    return {id:s.k+"_h",scale:1};
+  }
+  return null;
+}
+
+// fond statique (île + planches), commun aux deux moteurs
+function bgPrims(){
+  const o=[];
+  const box=(x,y,w,h,z0,z1,top,l,r)=>{
+    o.push(["p",[P(x,y+h,z1),P(x+w,y+h,z1),P(x+w,y+h,z0),P(x,y+h,z0)],l]);
+    o.push(["p",[P(x+w,y,z1),P(x+w,y+h,z1),P(x+w,y+h,z0),P(x+w,y,z0)],r]);
+    o.push(["p",[P(x,y,z1),P(x+w,y,z1),P(x+w,y+h,z1),P(x,y+h,z1)],top]);
+  };
+  box(0,0,GW,GH,-30,-8,"#9CCB86","#8A5E3C","#74492D");
+  box(0,0,GW,GH,-8,0,"#9CCB86","#7FB36E","#6A9F5E");
+  PLANCHES.forEach(pl=>{
+    if(pl.bac){box(pl.x,pl.y,pl.w,pl.h,0,14,"#D9A86E","#C08A53","#A87442");box(pl.x+.18,pl.y+.18,pl.w-.36,pl.h-.36,13,13.5,"#A0704A","#A0704A","#A0704A");}
+    else{box(pl.x,pl.y,pl.w,pl.h,0,7,"#A0704A","#7E5236","#6B432B");
+      for(let j=1;j<pl.h*2;j++){const a=P(pl.x+.15,pl.y+j/2,7),b=P(pl.x+pl.w-.15,pl.y+j/2,7);o.push(["l",a[0],a[1],b[0],b[1],"#8E5F3D",1.4]);}}
+  });
+  return o;
+}
+const BG=bgPrims();
+
+// ---------- Moteur Canvas ----------
+const CanvasR={
+  init(){view.innerHTML="";this.cv=document.createElement("canvas");this.cv.setAttribute("role","img");this.cv.setAttribute("aria-label","Diorama du potager (Canvas)");
+    view.appendChild(this.cv);this.ctx=this.cv.getContext("2d");this.resize();
+    this.bg=document.createElement("canvas");this.drawBg();},
+  resize(){const r=view.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2);
+    this.cv.width=Math.round(r.width*dpr);this.cv.height=Math.round(r.height*dpr);this.k=this.cv.width/VW;
+    if(this.bg)this.drawBg();},
+  drawBg(){this.bg.width=this.cv.width;this.bg.height=this.cv.height;const c=this.bg.getContext("2d");c.setTransform(this.k,0,0,this.k,0,0);drawPrims(c,BG);},
+  frame(plants,d){const c=this.ctx;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,this.cv.width,this.cv.height);c.drawImage(this.bg,0,0);
+    let n=0;for(const pl of plants){const st=plantState(pl,d);if(!st)continue;n++;
+      c.setTransform(this.k*st.scale,0,0,this.k*st.scale,pl.x*this.k,pl.y*this.k);drawPrims(c,SHAPES[st.id]);}
+    return n;},
+  destroy(){view.innerHTML="";}
+};
+function drawPrims(c,prims){
+  for(const pr of prims){const t=pr[0];
+    if(t==="p"){c.fillStyle=pr[2];c.beginPath();const pts=pr[1];c.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)c.lineTo(pts[i][0],pts[i][1]);c.closePath();c.fill();}
+    else if(t==="c"){c.fillStyle=pr[4];c.beginPath();c.arc(pr[1],pr[2],pr[3],0,6.2832);c.fill();}
+    else if(t==="e"){c.fillStyle=pr[5];c.beginPath();c.ellipse(pr[1],pr[2],pr[3],pr[4],0,0,6.2832);c.fill();}
+    else if(t==="l"){c.strokeStyle=pr[5];c.lineWidth=pr[6];c.lineCap="round";c.beginPath();c.moveTo(pr[1],pr[2]);c.lineTo(pr[3],pr[4]);c.stroke();}
+  }
+}
+
+// ---------- Moteur SVG (symboles réutilisés + <use>) ----------
+const NS="http://www.w3.org/2000/svg";
+function primsToSvg(prims){
+  let s="";for(const pr of prims){const t=pr[0];
+    if(t==="p")s+=`<polygon points="${pr[1].map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ")}" fill="${pr[2]}"/>`;
+    else if(t==="c")s+=`<circle cx="${pr[1].toFixed(1)}" cy="${pr[2].toFixed(1)}" r="${pr[3].toFixed(1)}" fill="${pr[4]}"/>`;
+    else if(t==="e")s+=`<ellipse cx="${pr[1].toFixed(1)}" cy="${pr[2].toFixed(1)}" rx="${pr[3].toFixed(1)}" ry="${pr[4].toFixed(1)}" fill="${pr[5]}"/>`;
+    else if(t==="l")s+=`<line x1="${pr[1].toFixed(1)}" y1="${pr[2].toFixed(1)}" x2="${pr[3].toFixed(1)}" y2="${pr[4].toFixed(1)}" stroke="${pr[5]}" stroke-width="${pr[6]}" stroke-linecap="round"/>`;}
+  return s;
+}
+const SvgR={
+  init(plants){view.innerHTML="";
+    let defs="";for(const id in SHAPES)defs+=`<g id="${id}">${primsToSvg(SHAPES[id])}</g>`;
+    view.innerHTML=`<svg viewBox="0 0 ${VW} ${VH}" role="img" aria-label="Diorama du potager (SVG)"><defs>${defs}</defs><g>${primsToSvg(BG)}</g><g id="plants"></g></svg>`;
+    const g=view.querySelector("#plants");this.uses=plants.map(()=>{const u=document.createElementNS(NS,"use");u.style.display="none";g.appendChild(u);return {u,id:null,s:-1};});},
+  resize(){},
+  frame(plants,d){let n=0;
+    for(let i=0;i<plants.length;i++){const pl=plants[i],st=plantState(pl,d),h=this.uses[i];
+      if(!st){if(h.id!==null){h.u.style.display="none";h.id=null;}continue;}n++;
+      if(h.id!==st.id){h.u.setAttribute("href","#"+st.id);if(h.id===null)h.u.style.display="";h.id=st.id;}
+      const s=Math.round(st.scale*100)/100;if(s!==h.s){h.u.setAttribute("transform",`translate(${pl.x.toFixed(1)} ${pl.y.toFixed(1)}) scale(${s})`);h.s=s;}}
+    return n;},
+  destroy(){view.innerHTML="";}
+};
+
+// ---------- Boucle, mesure ----------
+let R=null, plants=[], playing=false, last=0, frames=[], runFrames=[], maxPlants=0, acc=0;
+const $=id=>document.getElementById(id);
+function setup(){if(R)R.destroy();plants=buildPlants();R=renderer==="svg"?SvgR:CanvasR;R.init(plants);draw();}
+function draw(){const n=R.frame(plants,day);$("nb").textContent=n;maxPlants=Math.max(maxPlants,n);$("dateLbl").textContent=fmt(Math.floor(day));$("day").value=Math.floor(day);return n;}
+function loop(t){
+  if(!playing)return;
+  const dt=last?t-last:16.7;last=t;
+  frames.push(dt);runFrames.push(dt);if(frames.length>60)frames.shift();
+  day+=dt/1000*(365/15)*speed;
+  if(day>=364){day=364;draw();finish();return;}
+  draw();
+  const avg=frames.reduce((a,b)=>a+b,0)/frames.length;
+  $("fps").textContent=Math.round(1000/avg);$("ms").textContent=avg.toFixed(1);
+  setState(1000/avg);
+  requestAnimationFrame(loop);
+}
+function setState(fps){const el=$("state");el.className="state "+(fps>=55?"ok":fps>=30?"mid":"bad");$("stateTxt").textContent=fps>=55?"Fluide":fps>=30?"Correct":"Saccadé";}
+function start(){day=0;last=0;frames=[];runFrames=[];maxPlants=0;playing=true;$("play").textContent="⏸ Pause";requestAnimationFrame(loop);}
+function stop(){playing=false;$("play").textContent="▶ Jouer la saison";$("state").className="state";$("stateTxt").textContent="À l'arrêt";}
+function finish(){
+  stop();
+  const ft=runFrames.slice(5).sort((a,b)=>a-b); if(ft.length<20)return;
+  const avg=ft.reduce((a,b)=>a+b,0)/ft.length, p99=ft[Math.floor(ft.length*.99)], p95=ft[Math.floor(ft.length*.95)];
+  const r={rendu:renderer==="svg"?"SVG":"Canvas",densite:density===1?"Normale":"× "+density,plantes:maxPlants,moy:Math.round(1000/avg),low:Math.round(1000/p99),p95:p95.toFixed(1)};
+  r.verdict=r.moy>=55&&r.low>=30?"Fluide":r.moy>=30?"Correct":"Trop lent";
+  results.push(r);renderResults();
+}
+const results=[];
+function renderResults(){
+  $("rows").innerHTML=results.map(r=>`<tr><td>${r.rendu}</td><td>${r.densite}</td><td>${r.plantes}</td><td>${r.moy} img/s</td><td>${r.low} img/s</td><td>${r.p95} ms</td><td><span class="state ${r.verdict==="Fluide"?"ok":r.verdict==="Correct"?"mid":"bad"}"><span class="dot"></span>${r.verdict}</span></td></tr>`).join("");
+}
+
+// ---------- Interactions ----------
+$("play").addEventListener("click",()=>playing?stop():start());
+$("day").addEventListener("input",e=>{if(playing)stop();day=+e.target.value;draw();});
+function seg(attr,cb){document.querySelectorAll(`[data-${attr}]`).forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(`[data-${attr}]`).forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));cb(b.dataset[attr]);}));}
+seg("r",v=>{renderer=v;if(playing)stop();setup();});
+seg("d",v=>{density=+v;if(playing)stop();setup();});
+seg("v",v=>{speed=+v;});
+$("copy").addEventListener("click",async()=>{
+  const env=$("env").textContent;
+  const txt=["Rendu\tDensité\tPlantes\tMoyenne\t1% lentes\tp95\tVerdict"].concat(results.map(r=>[r.rendu,r.densite,r.plantes,r.moy,r.low,r.p95,r.verdict].join("\t"))).join("\n")+"\n"+env;
+  try{await navigator.clipboard.writeText(txt);$("copy").textContent="Copié";setTimeout(()=>$("copy").textContent="Copier les résultats",1500);}
+  catch(e){$("copy").textContent="Copie impossible";}
+});
+new ResizeObserver(()=>{if(R&&R.resize){R.resize();draw();}}).observe(view);
+$("env").textContent=`Écran ${screen.width}×${screen.height}, densité de pixels ${window.devicePixelRatio||1}, ${navigator.hardwareConcurrency||"?"} cœurs.`;
+setup();
+</script>
+</body>
+</html>
