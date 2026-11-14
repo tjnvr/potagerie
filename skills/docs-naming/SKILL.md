@@ -9,7 +9,8 @@ description: Name, version and file Potagerie specs and designs (POT-TNN convent
 - `T`: `S` spec (`.md` file), `D` design (folder), `P` prototype (folder).
 - `NN`: 2-digit number per type, never reused.
 - `topic`: lowercase, no accents, words separated by hyphens.
-- `v0.Y` is a draft, `v1.0` is validated; X changes when the scope changes.
+- `v0.Y` is a draft, `v1.0` is validated. Later changes, scope included, bump Y (`v1.1`, `v1.2`).
+- X moves to `v2.0` only once a first version of the app has shipped (lot 1 released).
 
 **Layout**
 - Everything lives under `docs/`: `specs/`, `design/`, `prototypes/`, and the index `POT-00_index.md`.

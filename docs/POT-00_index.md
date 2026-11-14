@@ -31,7 +31,7 @@ POT-<T><NN>_<sujet>_v<X.Y>      (.md pour une spec, dossier pour un design ou un
 | `<T>` | Type : `S` spec, `D` design, `P` prototype | `S`, `D`, `P` |
 | `<NN>` | Numéro sur 2 chiffres, propre à chaque type, attribué une fois pour toutes, jamais réutilisé | `01` |
 | `<sujet>` | Minuscules, sans accents, mots séparés par des tirets | `spec-fonctionnelle`, `ecrans-cles` |
-| `v<X.Y>` | Version : `v0.Y` brouillon, `v1.0` validé, X change quand le périmètre change | `v0.5` |
+| `v<X.Y>` | Version : `v0.Y` brouillon, `v1.0` validé. Les évolutions suivantes, même de périmètre, font avancer Y (`v1.1`). X ne passe à 2 qu'une fois une première version de l'appli sortie (lot 1 livré) | `v0.5`, `v1.1` |
 
 Règles communes :
 - **Une seule version courante** par document dans `specs/`, `design/` ou `prototypes/`. À chaque nouvelle version, la précédente est déplacée telle quelle dans le dossier `archives/` voisin.
