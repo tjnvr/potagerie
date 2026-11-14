@@ -1,0 +1,148 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-11-14T18:08:15Z"
+ },
+ "title": "POT-D02 · Écrans complémentaires V1",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 1320,
+   "h": 900,
+   "title": "① E02 · Création du terrain — ordinateur",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "E06_panneau-planche_desktop.dc.html": {
+   "x": 1480,
+   "y": 0,
+   "w": 1440,
+   "h": 760,
+   "title": "④ E06 · Panneau planche — ordinateur",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "E07_serie_desktop.dc.html": {
+   "x": 3080,
+   "y": 0,
+   "w": 1320,
+   "h": 720,
+   "title": "⑤ E07 · Nouvelle série — ordinateur",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "E09_catalogue_desktop.dc.html": {
+   "x": 0,
+   "y": 1000,
+   "w": 1400,
+   "h": 620,
+   "title": "E09 · Catalogue — ordinateur",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "E10_reglages_desktop.dc.html": {
+   "x": 1560,
+   "y": 1000,
+   "w": 1440,
+   "h": 820,
+   "title": "E10 · Réglages — ordinateur",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "E10_reglages_mobile.dc.html": {
+   "x": 3160,
+   "y": 1000,
+   "w": 390,
+   "h": 844,
+   "title": "E10 · Réglages — téléphone",
+   "is_interactive": true
+  },
+  "E11_export-frise_desktop.dc.html": {
+   "x": 0,
+   "y": 1780,
+   "w": 1440,
+   "h": 600,
+   "title": "E11 · Export de la frise — ordinateur",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "ET01_etats_desktop.dc.html": {
+   "x": 1600,
+   "y": 1780,
+   "w": 1360,
+   "h": 920,
+   "title": "ET01 · États transverses — ordinateur"
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "E06_panneau-planche_desktop.dc.html",
+  "E07_serie_desktop.dc.html",
+  "E09_catalogue_desktop.dc.html",
+  "E10_reglages_desktop.dc.html",
+  "E10_reglages_mobile.dc.html",
+  "E11_export-frise_desktop.dc.html",
+  "ET01_etats_desktop.dc.html"
+ ],
+ "notes": {
+  "titre": {
+   "x": 0,
+   "y": -300,
+   "text": "Parcours 6.1 : de la création du terrain à la planification (suite dans D01)",
+   "kind": "title1",
+   "maxW": 4400
+  },
+  "lien1": {
+   "x": 1340,
+   "y": 40,
+   "w": 160,
+   "fill": "green",
+   "size": "s",
+   "text": "① → D01 E03\n« Créer le terrain » ouvre l’atelier du plan (D01)."
+  },
+  "lien2": {
+   "x": 2940,
+   "y": 40,
+   "w": 160,
+   "fill": "green",
+   "size": "s",
+   "text": "D01 E05 → ④\n« Modifier » dans le panneau simplifié de D01 ouvre le panneau complet.\n\n④ → ⑤\n« Planter ici »."
+  },
+  "lien3": {
+   "x": 4540,
+   "y": 40,
+   "w": 160,
+   "fill": "green",
+   "size": "s",
+   "text": "⑤ → D01 E05\n« Planter … » revient au potager.\n\n④ → D01 E03\n« Déplacer »."
+  },
+  "titre2": {
+   "x": 0,
+   "y": 900,
+   "text": "Écrans annexes (catalogue, réglages, export) — réglages aussi en téléphone",
+   "kind": "title1",
+   "maxW": 4000
+  },
+  "titre3": {
+   "x": 0,
+   "y": 1680,
+   "text": "États transverses",
+   "kind": "title1",
+   "maxW": 1360
+  },
+  "hyp": {
+   "x": 1600,
+   "y": 2760,
+   "w": 360,
+   "fill": "orange",
+   "text": "Potager d’exemple : 8 planches sur 10, les 6 légumes de la V1 (S02), saison 2027.\nDates et quantités vérifiées par un script S03 (voir le README), pas calculées à la main.\nLe bouton Play de chaque feuille permet de suivre les liens, y compris vers D01."
+  }
+ },
+ "designSystems": []
+}

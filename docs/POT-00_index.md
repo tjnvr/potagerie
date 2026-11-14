@@ -13,6 +13,7 @@ docs/
 │   └── archives/                            ← versions précédentes
 ├── design/
 │   ├── POT-D01_ecrans-cles_v1.1/            ← version courante (un dossier par canvas)
+│   ├── POT-D02_ecrans-complementaires_v0.1/
 │   └── archives/                            ← versions précédentes
 └── prototypes/
     ├── POT-P01_rendu-iso_v0.1/              ← un dossier par prototype
@@ -59,10 +60,12 @@ Propre aux prototypes :
 | S05 | Spec technique (Rust + Svelte, appli Tauri bureau puis mobile, synchro CRDT sans serveur) | 0.6 | Brouillon | [specs/POT-S05_spec-technique_v0.6.md](specs/POT-S05_spec-technique_v0.6.md) |
 | P01 | Prototype rendu isométrique (SVG ou Canvas ?) | 0.1 | Brouillon | [prototypes/POT-P01_rendu-iso_v0.1/](prototypes/POT-P01_rendu-iso_v0.1/README.md) · [page](https://claude.ai/artifact/PBrzt3qta6sHKisnhfZWMv) |
 | D01 | Écrans clés V1 (E03 atelier, E05 ordinateur et téléphone, E07, direction visuelle) | 1.1 | Brouillon | [design/POT-D01_ecrans-cles_v1.1/](design/POT-D01_ecrans-cles_v1.1/README.md) · [canvas](https://claude.ai/artifact/DoHRUtcujzwPF6bfjdQtSN) |
+| D02 | Écrans complémentaires V1 (E02, E06, E07 ordinateur, E09, E10 ordinateur et téléphone, E11, états transverses) | 0.1 | Brouillon | [design/POT-D02_ecrans-complementaires_v0.1/](design/POT-D02_ecrans-complementaires_v0.1/README.md) |
 
 ## Codes réservés
 
 | Code | Document prévu |
 |---|---|
 | S04 | Direction visuelle |
-| D02 | Atelier du plan et export |
+
+D02 était réservé à « Atelier du plan et export » ; l'atelier a finalement été couvert par D01 (E03), et D02 est devenu les écrans complémentaires restants — voir sa section Décisions.
