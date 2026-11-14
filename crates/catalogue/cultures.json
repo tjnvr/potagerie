@@ -1,0 +1,74 @@
+[
+  {
+    "id": "tomate",
+    "nom": "Tomate",
+    "famille": "Solanacées",
+    "abri_jours": 56,
+    "recolte_apres_jours": 75,
+    "recolte_duree_jours": 70,
+    "mise_en_place": { "debut": "05-01", "fin": "06-15" },
+    "rang_cm": 80,
+    "pied_cm": 60,
+    "sensible_gel": true
+  },
+  {
+    "id": "laitue",
+    "nom": "Laitue",
+    "famille": "Astéracées",
+    "abri_jours": 28,
+    "recolte_apres_jours": 50,
+    "recolte_duree_jours": 20,
+    "mise_en_place": { "debut": "03-01", "fin": "09-30" },
+    "rang_cm": 30,
+    "pied_cm": 30,
+    "sensible_gel": false
+  },
+  {
+    "id": "carotte",
+    "nom": "Carotte",
+    "famille": "Apiacées",
+    "abri_jours": 0,
+    "recolte_apres_jours": 100,
+    "recolte_duree_jours": 40,
+    "mise_en_place": { "debut": "03-01", "fin": "07-15" },
+    "rang_cm": 25,
+    "pied_cm": 4,
+    "sensible_gel": false
+  },
+  {
+    "id": "haricot-vert",
+    "nom": "Haricot vert",
+    "famille": "Fabacées",
+    "abri_jours": 0,
+    "recolte_apres_jours": 60,
+    "recolte_duree_jours": 30,
+    "mise_en_place": { "debut": "05-10", "fin": "07-31" },
+    "rang_cm": 50,
+    "pied_cm": 10,
+    "sensible_gel": true
+  },
+  {
+    "id": "courgette",
+    "nom": "Courgette",
+    "famille": "Cucurbitacées",
+    "abri_jours": 21,
+    "recolte_apres_jours": 50,
+    "recolte_duree_jours": 80,
+    "mise_en_place": { "debut": "05-01", "fin": "06-30" },
+    "rang_cm": 100,
+    "pied_cm": 100,
+    "sensible_gel": true
+  },
+  {
+    "id": "poireau",
+    "nom": "Poireau",
+    "famille": "Amaryllidacées",
+    "abri_jours": 70,
+    "recolte_apres_jours": 120,
+    "recolte_duree_jours": 90,
+    "mise_en_place": { "debut": "05-15", "fin": "07-31" },
+    "rang_cm": 30,
+    "pied_cm": 12,
+    "sensible_gel": false
+  }
+]
