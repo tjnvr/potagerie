@@ -1,0 +1,117 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-11-14T13:04:50Z"
+ },
+ "title": "POT-D01 · Écrans clés V1",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "E03_atelier-plan_desktop.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 1440,
+   "h": 980,
+   "title": "① E03 · Atelier du plan — ordinateur",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "Main.dc.html": {
+   "x": 1640,
+   "y": 0,
+   "w": 1440,
+   "h": 1560,
+   "title": "② E05 · Potager — ordinateur",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "E05_potager_mobile.dc.html": {
+   "x": 0,
+   "y": 1900,
+   "w": 390,
+   "h": 844,
+   "title": "② E05 · Potager — téléphone",
+   "is_interactive": true
+  },
+  "E07_serie_mobile.dc.html": {
+   "x": 590,
+   "y": 1900,
+   "w": 390,
+   "h": 1180,
+   "title": "③ E07 · Nouvelle série — téléphone",
+   "is_interactive": true
+  },
+  "DV01_direction-visuelle.dc.html": {
+   "x": 1640,
+   "y": 1900,
+   "w": 1440,
+   "h": 1080,
+   "title": "DV01 · Direction visuelle"
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "E03_atelier-plan_desktop.dc.html",
+  "E05_potager_mobile.dc.html",
+  "E07_serie_mobile.dc.html",
+  "DV01_direction-visuelle.dc.html"
+ ],
+ "notes": {
+  "titre": {
+   "x": 0,
+   "y": -300,
+   "text": "Parcours sur ordinateur : concevoir le plan, puis planifier",
+   "kind": "title1",
+   "maxW": 3080
+  },
+  "lien1": {
+   "x": 1460,
+   "y": 40,
+   "w": 160,
+   "fill": "green",
+   "size": "s",
+   "text": "Onglets en haut de l’écran :\n« Potager » ↔ « Plan ».\n\n① → ② aussi avec « Voir le potager »."
+  },
+  "lien2": {
+   "x": 1460,
+   "y": 360,
+   "w": 160,
+   "fill": "green",
+   "size": "s",
+   "text": "② → ③\n« Planter ici » ou un créneau libre de la frise ouvre la nouvelle série."
+  },
+  "titre2": {
+   "x": 0,
+   "y": 1600,
+   "text": "Parcours sur téléphone",
+   "kind": "title1",
+   "maxW": 980
+  },
+  "lien3": {
+   "x": 405,
+   "y": 1940,
+   "w": 170,
+   "fill": "green",
+   "size": "s",
+   "text": "② → ③\nLe bouton « + » de la planche.\n\n③ → ②\n« Planter » ou la croix."
+  },
+  "titre3": {
+   "x": 1640,
+   "y": 1600,
+   "text": "Direction visuelle",
+   "kind": "title1",
+   "maxW": 1440
+  },
+  "hyp": {
+   "x": 3160,
+   "y": 0,
+   "w": 320,
+   "fill": "orange",
+   "text": "Exemple : saison 2027, curseur au 20 juin.\nPotager d’exemple de 7 planches (11 × 6,5 m), 10 au maximum, avec les 6 légumes de la V1 (S02).\nLe bouton Play de chaque feuille permet de suivre les liens.\nÀ venir : fiche légume (E09) et aperçu de l’export (E11)."
+  }
+ },
+ "designSystems": []
+}

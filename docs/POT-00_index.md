@@ -12,7 +12,7 @@ docs/
 │   ├── POT-S05_spec-technique_v0.5.md
 │   └── archives/                            ← versions précédentes
 ├── design/
-│   ├── POT-D01_ecrans-cles_v1.0/            ← version courante (un dossier par canvas)
+│   ├── POT-D01_ecrans-cles_v1.1/            ← version courante (un dossier par canvas)
 │   └── archives/                            ← versions précédentes
 └── prototypes/
     ├── POT-P01_rendu-iso_v0.1/              ← un dossier par prototype
@@ -57,7 +57,7 @@ Propre aux prototypes :
 | S03 | Règles et calculs (dates, stades, conflits, quantités, dispositions, créneaux, suggestions, tâches, validation après fusion ; ensoleillement en annexe) | 0.5 | Brouillon | [specs/POT-S03_regles-calculs_v0.5.md](specs/POT-S03_regles-calculs_v0.5.md) |
 | S05 | Spec technique (Rust + htmx, appli Tauri bureau puis mobile, synchro CRDT sans serveur) | 0.5 | Brouillon | [specs/POT-S05_spec-technique_v0.5.md](specs/POT-S05_spec-technique_v0.5.md) |
 | P01 | Prototype rendu isométrique (SVG ou Canvas ?) | 0.1 | Brouillon | [prototypes/POT-P01_rendu-iso_v0.1/](prototypes/POT-P01_rendu-iso_v0.1/README.md) · [page](https://claude.ai/artifact/PBrzt3qta6sHKisnhfZWMv) |
-| D01 | Écrans clés V1 (E03 atelier, E05 ordinateur et téléphone, E07, direction visuelle) | 1.0 | Validé | [design/POT-D01_ecrans-cles_v1.0/](design/POT-D01_ecrans-cles_v1.0/README.md) · [canvas](https://claude.ai/artifact/DoHRUtcujzwPF6bfjdQtSN) |
+| D01 | Écrans clés V1 (E03 atelier, E05 ordinateur et téléphone, E07, direction visuelle) | 1.1 | Brouillon | [design/POT-D01_ecrans-cles_v1.1/](design/POT-D01_ecrans-cles_v1.1/README.md) · [canvas](https://claude.ai/artifact/DoHRUtcujzwPF6bfjdQtSN) |
 
 ## Codes réservés
 
