@@ -1,7 +1,7 @@
 # POT-S05 · Spec technique — v0.5
 
 > Version : 0.5 (brouillon) · Date : 2026-11-14 · Auteur : Tim
-> Références : [S01](POT-S01_spec-fonctionnelle_v1.1.md) · [S02](POT-S02_catalogue-cultures_v0.1.md) · [S03](POT-S03_regles-calculs_v0.3.md) · [P01](../prototypes/POT-P01_rendu-iso_v0.1/README.md) · [D01](../design/POT-D01_ecrans-cles_v1.0/README.md)
+> Références : [S01](POT-S01_spec-fonctionnelle_v1.2.md) · [S02](POT-S02_catalogue-cultures_v0.2.md) · [S03](POT-S03_regles-calculs_v0.4.md) · [P01](../prototypes/POT-P01_rendu-iso_v0.1/README.md) · [D01](../design/POT-D01_ecrans-cles_v1.0/README.md)
 > La v0.4 a introduit Rust + Tauri. La v0.5 aligne le modèle sur S01 v1.1 et S03 v0.3, et retire l'export CSV.
 
 ## 1. Principes
