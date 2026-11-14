@@ -1,7 +1,7 @@
 # Potagerie — Spécification fonctionnelle V1
 
 > Version : 1.2 (brouillon) · Date : 14 novembre 2026 · Auteur : Tim · Domaine : potagerie.garden
-> Remplace la v1.0 (appli web avec compte), archivée dans `archives/`. Stack et lots : [S05](POT-S05_spec-technique_v0.5.md). Règles et calculs : [S03](POT-S03_regles-calculs_v0.5.md). Catalogue : [S02](POT-S02_catalogue-cultures_v0.2.md).
+> Remplace la v1.0 (appli web avec compte), archivée dans `archives/`. Stack et lots : [S05](POT-S05_spec-technique_v0.6.md). Règles et calculs : [S03](POT-S03_regles-calculs_v0.5.md). Catalogue : [S02](POT-S02_catalogue-cultures_v0.2.md).
 
 ---
 
