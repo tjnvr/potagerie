@@ -6,7 +6,8 @@
 docs/
 ├── POT-00_index.md                         ← ce fichier
 ├── specs/
-│   ├── POT-S01_spec-fonctionnelle_v1.0.md   ← version courante
+│   ├── POT-S01_spec-fonctionnelle_v1.0.md   ← versions courantes
+│   ├── POT-S02_catalogue-cultures_v0.1.md
 │   └── archives/                            ← versions précédentes
 ├── design/
 │   ├── POT-D01_ecrans-cles_v1.0/            ← version courante (un dossier par canvas)
@@ -49,13 +50,13 @@ Propre aux prototypes :
 | Code | Document | Version | Statut | Lien |
 |---|---|---|---|---|
 | S01 | Spec fonctionnelle V1 | 1.0 | Validé | [specs/POT-S01_spec-fonctionnelle_v1.0.md](specs/POT-S01_spec-fonctionnelle_v1.0.md) |
+| S02 | Catalogue des cultures (6 légumes de prototype) | 0.1 | Brouillon | [specs/POT-S02_catalogue-cultures_v0.1.md](specs/POT-S02_catalogue-cultures_v0.1.md) |
 | D01 | Écrans clés V1 (E03 atelier, E05 ordinateur et téléphone, E07, direction visuelle) | 1.0 | Validé | [design/POT-D01_ecrans-cles_v1.0/](design/POT-D01_ecrans-cles_v1.0/README.md) · [canvas](https://claude.ai/artifact/DoHRUtcujzwPF6bfjdQtSN) |
 
 ## Codes réservés
 
 | Code | Document prévu |
 |---|---|
-| S02 | Catalogue des cultures (fiche type et données) |
 | S03 | Règles et algorithmes (créneaux, suggestions, ensoleillement) |
 | S04 | Direction visuelle |
 | S05 | Spec technique (architecture, stack, données) |
