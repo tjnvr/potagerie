@@ -6,7 +6,7 @@
 docs/
 ├── POT-00_index.md                         ← ce fichier
 ├── specs/
-│   ├── POT-S01_spec-fonctionnelle_v1.2.md   ← versions courantes
+│   ├── POT-S01_spec-fonctionnelle_v1.3.md   ← versions courantes
 │   ├── POT-S02_catalogue-cultures_v0.2.md
 │   ├── POT-S03_regles-calculs_v0.5.md
 │   ├── POT-S05_spec-technique_v0.6.md
@@ -53,7 +53,7 @@ Propre aux prototypes :
 
 | Code | Document | Version | Statut | Lien |
 |---|---|---|---|---|
-| S01 | Spec fonctionnelle V1 (appli installée, sans compte, lots bureau, mobile et synchro) | 1.2 | Brouillon | [specs/POT-S01_spec-fonctionnelle_v1.2.md](specs/POT-S01_spec-fonctionnelle_v1.2.md) |
+| S01 | Spec fonctionnelle V1 (appli installée, sans compte, lots bureau, mobile et synchro) | 1.3 | Brouillon | [specs/POT-S01_spec-fonctionnelle_v1.3.md](specs/POT-S01_spec-fonctionnelle_v1.3.md) |
 | S02 | Catalogue des cultures (les 6 légumes de la V1, schéma figé) | 0.2 | Brouillon | [specs/POT-S02_catalogue-cultures_v0.2.md](specs/POT-S02_catalogue-cultures_v0.2.md) |
 | S03 | Règles et calculs (dates, stades, conflits, quantités, dispositions, créneaux, suggestions, tâches, validation après fusion ; ensoleillement en annexe) | 0.5 | Brouillon | [specs/POT-S03_regles-calculs_v0.5.md](specs/POT-S03_regles-calculs_v0.5.md) |
 | S05 | Spec technique (Rust + Svelte, appli Tauri bureau puis mobile, synchro CRDT sans serveur) | 0.6 | Brouillon | [specs/POT-S05_spec-technique_v0.6.md](specs/POT-S05_spec-technique_v0.6.md) |
