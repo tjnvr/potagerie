@@ -102,3 +102,20 @@ pub fn serie(
     )
     .unwrap()
 }
+
+/// A serie of `culture_id` that occupies exactly `[debut, fin[`, whatever the
+/// catalogue says: bought plants, harvest after 1 day, then the rest of the time.
+pub fn occupant(
+    culture_id: &str,
+    planche: PlancheId,
+    t1: u32,
+    t2: u32,
+    debut: NaiveDate,
+    fin: NaiveDate,
+) -> Serie {
+    let mut s = serie(culture_id, planche, t1, t2, Mode::Plants, debut);
+    s.apres_jours = 1;
+    s.duree_jours = u32::try_from((fin - debut).num_days() - 1).unwrap();
+    assert_eq!(s.occupation().fin, fin);
+    s
+}
