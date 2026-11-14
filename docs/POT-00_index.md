@@ -46,6 +46,7 @@ Propre aux designs :
 
 Propre aux prototypes :
 - Code jetable, autonome (s'ouvre sans installation), qui répond à **une question** précise.
+- Exception : quand la question porte sur la stack elle-même (par exemple Tauri + Svelte), le prototype peut demander une compilation. Son `README.md` donne alors les commandes d'installation et de lancement, et un `.gitignore` exclut les dépendances et les produits de compilation.
 - Le `README.md` contient : la question, le protocole, les résultats et la décision prise.
 
 ## Documents

@@ -25,4 +25,5 @@ description: Name, version and file Potagerie specs and designs (POT-TNN convent
 
 **Prototypes**
 - Throwaway, self-contained code answering **one** question.
+- Exception: when the question is about the stack itself (e.g. Tauri + Svelte), the prototype may need a build. Its `README.md` then gives the install and run commands, and a `.gitignore` keeps dependencies and build output out.
 - `README.md` holds the question, protocol, results and decision.
