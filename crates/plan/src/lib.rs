@@ -5,36 +5,36 @@
 //! are UTC. Nothing derived is stored in a [`Plan`]: dates, conflicts, slots,
 //! suggestions and tasks are recomputed from it.
 
-mod conflits;
+mod conflicts;
 mod creneaux;
+mod days;
 mod dispositions;
 mod error;
-mod fenetre;
 mod ids;
-mod jours;
 mod model;
 mod operations;
-mod quantites;
+mod quantities;
 mod serie;
-mod stades;
+mod stages;
 mod suggestions;
-mod taches;
+mod tasks;
 mod validation;
+mod window;
 mod zone;
 
-pub use conflits::{DetailConflit, conflit};
-pub use creneaux::{Creneau, DUREE_MIN_CRENEAU};
+pub use conflicts::{ConflictDetail, conflict};
+pub use creneaux::{Creneau, MIN_CRENEAU_DAYS};
 pub use error::PlanError;
-pub use fenetre::{dans_fenetre, fenetre_commencant_en};
 pub use ids::{AnnotationId, PlanId, PlancheId, SerieId};
 pub use model::{
-    Annotation, CaseCm, Disposition, Geometrie, MAX_PLANCHES, Plan, Planche, Terrain,
+    Annotation, CaseCm, Disposition, Geometry, MAX_PLANCHES, Plan, Planche, Terrain,
     TypeAnnotation, TypePlanche,
 };
-pub use quantites::{Quantite, quantite};
-pub use serie::{DatesSerie, Mode, Phases, Serie};
-pub use stades::{Affichage, Stade};
-pub use suggestions::{MAX_SUGGESTIONS, Suggestion, evaluer};
-pub use taches::{Tache, TypeTache};
+pub use quantities::{Quantity, quantity};
+pub use serie::{Mode, Phases, Serie, SerieDates};
+pub use stages::{Appearance, Stage};
+pub use suggestions::{MAX_SUGGESTIONS, Suggestion, evaluate};
+pub use tasks::{Task, TaskType};
 pub use validation::Fraction;
+pub use window::{in_window, window_starting_in};
 pub use zone::{Occupation, Zone};

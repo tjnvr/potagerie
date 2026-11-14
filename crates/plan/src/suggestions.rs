@@ -7,11 +7,11 @@ use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
 use crate::creneaux::Creneau;
+use crate::days::plus_days;
 use crate::error::PlanError;
-use crate::fenetre::dans_fenetre;
-use crate::jours::plus;
 use crate::model::Plan;
 use crate::serie::{Mode, Serie};
+use crate::window::in_window;
 use crate::zone::Zone;
 
 /// At most this many crops are suggested for a slot.
@@ -26,34 +26,34 @@ pub struct Suggestion {
     pub date: NaiveDate,
     pub zone: Zone,
     /// `m`.
-    pub mise_en_place: NaiveDate,
+    pub planting_out: NaiveDate,
     /// `r`.
-    pub recolte: NaiveDate,
-    /// Proposed end `f = min(F + 1, r + duree)`.
-    pub fin: NaiveDate,
+    pub harvest_start: NaiveDate,
+    /// Proposed end `f = min(F + 1, r + duration)`.
+    pub end: NaiveDate,
     /// Set when the end was shortened to fit the slot: it then counts as an end
     /// modified by hand and is not recomputed.
     pub fin_manuelle: Option<NaiveDate>,
     /// `f − D`: days of the slot the serie fills.
-    pub jours_remplis: i64,
+    pub filled_days: i64,
     /// `N = F − D + 1`: length of the slot.
-    pub jours_creneau: i64,
+    pub slot_days: i64,
 }
 
 impl Suggestion {
     /// Filling score `(f − D) ÷ N`, between 0 and 1.
     pub fn score(&self) -> f64 {
-        self.jours_remplis as f64 / self.jours_creneau as f64
+        self.filled_days as f64 / self.slot_days as f64
     }
 
     /// The score rounded to a tenth, in tenths (0 to 10), with integer maths.
     pub fn score_dixiemes(&self) -> i64 {
-        (20 * self.jours_remplis + self.jours_creneau) / (2 * self.jours_creneau)
+        (20 * self.filled_days + self.slot_days) / (2 * self.slot_days)
     }
 
     /// The serie to create when the suggestion is touched.
-    pub fn en_serie(&self, culture: &Culture, creneau: &Creneau) -> Result<Serie, PlanError> {
-        Serie::nouvelle(
+    pub fn into_serie(&self, culture: &Culture, creneau: &Creneau) -> Result<Serie, PlanError> {
+        Serie::new(
             culture,
             creneau.planche_id,
             self.zone,
@@ -70,21 +70,21 @@ impl Suggestion {
 /// Returns `None` when the crop is discarded: no planting date in the window
 /// during the first 28 days of the slot, or not enough room for half of the
 /// harvest.
-pub fn evaluer(creneau: &Creneau, culture: &Culture, aujourd_hui: NaiveDate) -> Option<Suggestion> {
-    let debut = creneau.debut;
-    let fin_creneau = creneau.fin;
+pub fn evaluate(creneau: &Creneau, culture: &Culture, today: NaiveDate) -> Option<Suggestion> {
+    let start = creneau.start;
+    let creneau_end = creneau.end;
 
     // 1. The first day of [D, D + 27] in the planting window.
     let m = (0..28)
-        .map(|i| plus(debut, i))
-        .find(|jour| dans_fenetre(culture, *jour))?;
+        .map(|i| plus_days(start, i))
+        .find(|day| in_window(culture, *day))?;
 
     // 2. Mode.
-    let abri = i64::from(culture.abri_jours);
-    let (mode, date) = if abri > 0 {
-        let semis = plus(m, -abri);
-        if semis >= aujourd_hui {
-            (Mode::Abri, semis)
+    let pot_days = i64::from(culture.abri_jours);
+    let (mode, date) = if pot_days > 0 {
+        let sowing = plus_days(m, -pot_days);
+        if sowing >= today {
+            (Mode::Abri, sowing)
         } else {
             (Mode::Plants, m)
         }
@@ -103,31 +103,31 @@ pub fn evaluer(creneau: &Creneau, culture: &Culture, aujourd_hui: NaiveDate) -> 
         duree_jours: culture.recolte_duree_jours,
         fin_manuelle: None,
     };
-    let recolte = serie.dates().recolte;
+    let harvest_start = serie.dates().harvest_start;
 
     // 3. Minimal harvest: half the harvest duration, rounded up.
-    let duree = i64::from(culture.recolte_duree_jours);
-    let apres_creneau = plus(fin_creneau, 1);
-    if plus(recolte, (duree + 1) / 2) > apres_creneau {
+    let duration = i64::from(culture.recolte_duree_jours);
+    let after_creneau = plus_days(creneau_end, 1);
+    if plus_days(harvest_start, (duration + 1) / 2) > after_creneau {
         return None;
     }
 
     // 4. Proposed end.
-    let fin_naturelle = plus(recolte, duree);
-    let fin = apres_creneau.min(fin_naturelle);
+    let natural_end = plus_days(harvest_start, duration);
+    let end = after_creneau.min(natural_end);
 
     Some(Suggestion {
         culture_id: culture.id.clone(),
         mode,
         date,
         zone: creneau.zone,
-        mise_en_place: m,
-        recolte,
-        fin,
-        fin_manuelle: (fin < fin_naturelle).then_some(fin),
+        planting_out: m,
+        harvest_start,
+        end,
+        fin_manuelle: (end < natural_end).then_some(end),
         // 5. Filling score.
-        jours_remplis: (fin - debut).num_days(),
-        jours_creneau: creneau.longueur_jours(),
+        filled_days: (end - start).num_days(),
+        slot_days: creneau.length_days(),
     })
 }
 
@@ -142,21 +142,21 @@ impl Plan {
         &self,
         creneau: &Creneau,
         catalogue: &Catalogue,
-        aujourd_hui: NaiveDate,
+        today: NaiveDate,
     ) -> Vec<Suggestion> {
-        let familles_precedentes = self.familles_derniere_serie_terminee(creneau, catalogue);
-        let mut candidats: Vec<(Suggestion, &Culture)> = catalogue
+        let previous_families = self.families_of_last_finished_serie(creneau, catalogue);
+        let mut candidates: Vec<(Suggestion, &Culture)> = catalogue
             .iter()
-            .filter_map(|c| Some((evaluer(creneau, c, aujourd_hui)?, c)))
+            .filter_map(|c| Some((evaluate(creneau, c, today)?, c)))
             .collect();
-        candidats.sort_by_key(|(suggestion, culture)| {
+        candidates.sort_by_key(|(suggestion, culture)| {
             (
                 Reverse(suggestion.score_dixiemes()),
-                familles_precedentes.contains(&culture.famille),
+                previous_families.contains(&culture.famille),
                 culture.nom.to_lowercase(),
             )
         });
-        candidats
+        candidates
             .into_iter()
             .take(MAX_SUGGESTIONS)
             .map(|(suggestion, _)| suggestion)
@@ -165,24 +165,24 @@ impl Plan {
 
     /// Families of the series that ended last (`f ≤ D`) on a troncon of the
     /// zone of the slot. Several series ending the same day all count.
-    fn familles_derniere_serie_terminee(
+    fn families_of_last_finished_serie(
         &self,
         creneau: &Creneau,
         catalogue: &Catalogue,
     ) -> Vec<String> {
-        let terminees: Vec<(&Serie, NaiveDate)> = self
+        let finished: Vec<(&Serie, NaiveDate)> = self
             .series
             .values()
-            .filter(|s| s.planche_id == creneau.planche_id && s.zone().chevauche(&creneau.zone))
-            .map(|s| (s, s.dates().fin))
-            .filter(|(_, fin)| *fin <= creneau.debut)
+            .filter(|s| s.planche_id == creneau.planche_id && s.zone().overlaps(&creneau.zone))
+            .map(|s| (s, s.dates().end))
+            .filter(|(_, end)| *end <= creneau.start)
             .collect();
-        let Some(derniere) = terminees.iter().map(|(_, fin)| *fin).max() else {
+        let Some(last) = finished.iter().map(|(_, end)| *end).max() else {
             return Vec::new();
         };
-        terminees
+        finished
             .into_iter()
-            .filter(|(_, fin)| *fin == derniere)
+            .filter(|(_, end)| *end == last)
             .filter_map(|(s, _)| catalogue.culture(&s.culture_id))
             .map(|c| c.famille.clone())
             .collect()

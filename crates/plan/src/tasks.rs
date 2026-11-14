@@ -12,33 +12,33 @@ use crate::model::Plan;
 use crate::serie::{Mode, Serie};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-pub enum TypeTache {
+pub enum TaskType {
     #[serde(rename = "semer-abri")]
-    SemerAbri,
+    SowUnderCover,
     #[serde(rename = "repiquer")]
-    Repiquer,
+    Transplant,
     #[serde(rename = "planter")]
-    Planter,
+    Plant,
     #[serde(rename = "semer-terre")]
-    SemerTerre,
+    SowInGround,
     #[serde(rename = "recolter")]
-    Recolter,
+    Harvest,
 }
 
-impl TypeTache {
+impl TaskType {
     /// The identifier part of the task id, which never changes.
     pub fn as_str(self) -> &'static str {
         match self {
-            Self::SemerAbri => "semer-abri",
-            Self::Repiquer => "repiquer",
-            Self::Planter => "planter",
-            Self::SemerTerre => "semer-terre",
-            Self::Recolter => "recolter",
+            Self::SowUnderCover => "semer-abri",
+            Self::Transplant => "repiquer",
+            Self::Plant => "planter",
+            Self::SowInGround => "semer-terre",
+            Self::Harvest => "recolter",
         }
     }
 }
 
-impl fmt::Display for TypeTache {
+impl fmt::Display for TaskType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.as_str())
     }
@@ -46,67 +46,68 @@ impl fmt::Display for TypeTache {
 
 /// A task of a serie.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Tache {
+pub struct Task {
     /// `<serie id>/<type>`: stable when the date moves (usable as an iCal `UID`).
     pub id: String,
     pub serie_id: SerieId,
-    pub type_tache: TypeTache,
+    pub task_type: TaskType,
     pub date: NaiveDate,
 }
 
 impl Serie {
     /// One to three tasks (S03 §11).
-    pub fn taches(&self, id: SerieId) -> Vec<Tache> {
+    pub fn tasks(&self, id: SerieId) -> Vec<Task> {
         let dates = self.dates();
-        let tache = |type_tache: TypeTache, date: NaiveDate| Tache {
-            id: format!("{id}/{type_tache}"),
+        let task = |task_type: TaskType, date: NaiveDate| Task {
+            id: format!("{id}/{task_type}"),
             serie_id: id,
-            type_tache,
+            task_type,
             date,
         };
-        let mut taches = match self.mode {
+        let mut tasks = match self.mode {
             Mode::Abri => vec![
-                tache(TypeTache::SemerAbri, self.date),
-                tache(TypeTache::Repiquer, dates.mise_en_place),
+                task(TaskType::SowUnderCover, self.date),
+                task(TaskType::Transplant, dates.planting_out),
             ],
-            Mode::Plants => vec![tache(TypeTache::Planter, dates.mise_en_place)],
-            Mode::PleineTerre => vec![tache(TypeTache::SemerTerre, dates.mise_en_place)],
+            Mode::Plants => vec![task(TaskType::Plant, dates.planting_out)],
+            Mode::PleineTerre => vec![task(TaskType::SowInGround, dates.planting_out)],
         };
-        taches.push(tache(TypeTache::Recolter, dates.recolte));
-        taches
+        tasks.push(task(TaskType::Harvest, dates.harvest_start));
+        tasks
     }
 }
 
 impl Plan {
     /// All the tasks of the plan, by date then id.
-    pub fn taches(&self) -> Vec<Tache> {
-        let mut taches: Vec<Tache> = self
+    pub fn tasks(&self) -> Vec<Task> {
+        let mut tasks: Vec<Task> = self
             .series
             .iter()
-            .flat_map(|(id, serie)| serie.taches(*id))
+            .flat_map(|(id, serie)| serie.tasks(*id))
             .collect();
-        taches.sort_by(|a, b| (a.date, &a.id).cmp(&(b.date, &b.id)));
-        taches
+        tasks.sort_by(|a, b| (a.date, &a.id).cmp(&(b.date, &b.id)));
+        tasks
     }
 
     /// The tasks grouped by `(year, month)`, for the calendar export.
-    pub fn calendrier_par_mois(&self) -> BTreeMap<(i32, u32), Vec<Tache>> {
-        let mut mois: BTreeMap<(i32, u32), Vec<Tache>> = BTreeMap::new();
-        for tache in self.taches() {
-            mois.entry((tache.date.year(), tache.date.month()))
+    pub fn calendar_by_month(&self) -> BTreeMap<(i32, u32), Vec<Task>> {
+        let mut month: BTreeMap<(i32, u32), Vec<Task>> = BTreeMap::new();
+        for task in self.tasks() {
+            month
+                .entry((task.date.year(), task.date.month()))
                 .or_default()
-                .push(tache);
+                .push(task);
         }
-        mois
+        month
     }
 
-    /// Families of the series of the planche whose occupation touches `annee − 1`
-    /// or `annee − 2` (planche panel). Sorted, without duplicates; series of an
+    /// Families of the series of the planche whose occupation touches `year − 1`
+    /// or `year − 2` (planche panel). Sorted, without duplicates; series of an
     /// unknown crop are ignored.
-    pub fn familles_precedentes(
+    pub fn previous_families(
         &self,
         planche_id: PlancheId,
-        annee: i32,
+        year: i32,
         catalogue: &Catalogue,
     ) -> Vec<String> {
         self.series
@@ -114,7 +115,7 @@ impl Plan {
             .filter(|s| s.planche_id == planche_id)
             .filter(|s| {
                 let occupation = s.occupation();
-                occupation.touche_annee(annee - 1) || occupation.touche_annee(annee - 2)
+                occupation.touches_year(year - 1) || occupation.touches_year(year - 2)
             })
             .filter_map(|s| catalogue.culture(&s.culture_id))
             .map(|c| c.famille.clone())

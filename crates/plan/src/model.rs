@@ -55,7 +55,7 @@ impl TryFrom<u32> for CaseCm {
             25 => Ok(Self::C25),
             50 => Ok(Self::C50),
             100 => Ok(Self::C100),
-            autre => Err(format!("case size must be 25, 50 or 100 cm, got {autre}")),
+            other => Err(format!("case size must be 25, 50 or 100 cm, got {other}")),
         }
     }
 }
@@ -85,14 +85,16 @@ pub struct Planche {
 
 /// The layout of a planche for one year.
 ///
-/// Serialised with an `etat` tag: `{"etat":"absente"}` for a deletion, or
+/// Serialised with an `etat` tag, as in S05 §5: `{"etat":"absente"}` for a deletion, or
 /// `{"etat":"presente","type":"planche","x":0,...}`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "etat", rename_all = "snake_case")]
 pub enum Disposition {
     /// The planche no longer exists from this year on.
-    Absente,
-    Presente(Geometrie),
+    #[serde(rename = "absente")]
+    Absent,
+    #[serde(rename = "presente")]
+    Present(Geometry),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -105,9 +107,9 @@ pub enum TypePlanche {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Geometrie {
+pub struct Geometry {
     #[serde(rename = "type")]
-    pub type_planche: TypePlanche,
+    pub planche_type: TypePlanche,
     pub x: u32,
     pub y: u32,
     /// A whole number of cases.
@@ -116,7 +118,7 @@ pub struct Geometrie {
     pub largeur_cm: u32,
 }
 
-impl Geometrie {
+impl Geometry {
     /// Number of troncons `n = longueur ÷ case` (S03 §4).
     pub fn troncons(&self, case: CaseCm) -> u32 {
         self.longueur_cm / case.cm()
@@ -127,7 +129,7 @@ impl Geometrie {
 #[serde(rename_all = "snake_case")]
 pub enum TypeAnnotation {
     Note,
-    Periode,
+    Period,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -147,11 +149,11 @@ pub struct Annotation {
 
 impl Plan {
     /// An empty plan. The timestamp is a parameter: the crate never reads the clock.
-    pub fn nouveau(id: PlanId, terrain: Terrain, maintenant: DateTime<Utc>) -> Self {
+    pub fn new(id: PlanId, terrain: Terrain, now: DateTime<Utc>) -> Self {
         Self {
             id,
             version: 1,
-            mis_a_jour_le: maintenant,
+            mis_a_jour_le: now,
             terrain,
             planches: BTreeMap::new(),
             series: BTreeMap::new(),
@@ -161,8 +163,8 @@ impl Plan {
 
     /// Records a change: `version + 1` and a new UTC timestamp. Commands call
     /// it after each successful modification (S05 §7).
-    pub fn toucher(&mut self, maintenant: DateTime<Utc>) {
+    pub fn touch(&mut self, now: DateTime<Utc>) {
         self.version += 1;
-        self.mis_a_jour_le = maintenant;
+        self.mis_a_jour_le = now;
     }
 }

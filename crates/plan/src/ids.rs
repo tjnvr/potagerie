@@ -17,12 +17,12 @@ macro_rules! id_type {
 
         impl $name {
             /// A fresh UUID v7. IDs are never attributed by a counter.
-            pub fn nouveau() -> Self {
+            pub fn generate() -> Self {
                 Self(Uuid::now_v7())
             }
 
             /// Wraps an existing UUID (tests, imports).
-            pub const fn depuis_uuid(uuid: Uuid) -> Self {
+            pub const fn from_uuid(uuid: Uuid) -> Self {
                 Self(uuid)
             }
 
