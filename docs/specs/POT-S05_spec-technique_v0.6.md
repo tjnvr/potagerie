@@ -1,7 +1,7 @@
 # POT-S05 · Spec technique — v0.6
 
 > Version : 0.6 (brouillon) · Date : 2026-11-14 · Auteur : Tim
-> Références : [S01](POT-S01_spec-fonctionnelle_v1.3.md) · [S02](POT-S02_catalogue-cultures_v0.2.md) · [S03](POT-S03_regles-calculs_v0.5.md) · [P01](../prototypes/POT-P01_rendu-iso_v0.1/README.md) · [D01](../design/POT-D01_ecrans-cles_v1.1/README.md)
+> Références : [S01](POT-S01_spec-fonctionnelle_v1.3.md) · [S02](POT-S02_catalogue-cultures_v0.2.md) · [S03](POT-S03_regles-calculs_v0.6.md) · [P01](../prototypes/POT-P01_rendu-iso_v0.1/README.md) · [D01](../design/POT-D01_ecrans-cles_v1.1/README.md)
 > La v0.4 a introduit Rust + Tauri, la v0.5 a aligné le modèle sur S01 et S03. La v0.6 remplace htmx et le routeur axum par une interface Svelte + TypeScript qui appelle des commandes Tauri (voir 11).
 
 ## 1. Principes

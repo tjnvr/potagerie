@@ -8,7 +8,7 @@ docs/
 ├── specs/
 │   ├── POT-S01_spec-fonctionnelle_v1.3.md   ← versions courantes
 │   ├── POT-S02_catalogue-cultures_v0.2.md
-│   ├── POT-S03_regles-calculs_v0.5.md
+│   ├── POT-S03_regles-calculs_v0.6.md
 │   ├── POT-S05_spec-technique_v0.6.md
 │   └── archives/                            ← versions précédentes
 ├── design/
@@ -56,7 +56,7 @@ Propre aux prototypes :
 |---|---|---|---|---|
 | S01 | Spec fonctionnelle V1 (appli installée, sans compte, lots bureau, mobile et synchro) | 1.3 | Brouillon | [specs/POT-S01_spec-fonctionnelle_v1.3.md](specs/POT-S01_spec-fonctionnelle_v1.3.md) |
 | S02 | Catalogue des cultures (les 6 légumes de la V1, schéma figé) | 0.2 | Brouillon | [specs/POT-S02_catalogue-cultures_v0.2.md](specs/POT-S02_catalogue-cultures_v0.2.md) |
-| S03 | Règles et calculs (dates, stades, conflits, quantités, dispositions, créneaux, suggestions, tâches, validation après fusion ; ensoleillement en annexe) | 0.5 | Brouillon | [specs/POT-S03_regles-calculs_v0.5.md](specs/POT-S03_regles-calculs_v0.5.md) |
+| S03 | Règles et calculs (dates, stades, conflits, quantités, dispositions, créneaux, suggestions, tâches, validation après fusion ; ensoleillement en annexe) | 0.6 | Brouillon | [specs/POT-S03_regles-calculs_v0.6.md](specs/POT-S03_regles-calculs_v0.6.md) |
 | S05 | Spec technique (Rust + Svelte, appli Tauri bureau puis mobile, synchro CRDT sans serveur) | 0.6 | Brouillon | [specs/POT-S05_spec-technique_v0.6.md](specs/POT-S05_spec-technique_v0.6.md) |
 | P01 | Prototype rendu isométrique (SVG ou Canvas ?) | 0.1 | Brouillon | [prototypes/POT-P01_rendu-iso_v0.1/](prototypes/POT-P01_rendu-iso_v0.1/README.md) · [page](https://claude.ai/artifact/PBrzt3qta6sHKisnhfZWMv) |
 | D01 | Écrans clés V1 (E03 atelier, E05 ordinateur et téléphone, E07, direction visuelle) | 1.1 | Brouillon | [design/POT-D01_ecrans-cles_v1.1/](design/POT-D01_ecrans-cles_v1.1/README.md) · [canvas](https://claude.ai/artifact/DoHRUtcujzwPF6bfjdQtSN) |
