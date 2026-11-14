@@ -1,6 +1,6 @@
 ---
 name: docs-git-flow
-description: Prepare git commits for Potagerie specs and designs (branches, messages, pre-commit checks). Use before committing anything in docs/.
+description: Prepare git commits for Potagerie specs, designs and prototypes (branches, messages, pre-commit checks). Use before committing anything in docs/.
 ---
 
 # Docs git flow
@@ -10,7 +10,7 @@ Claude never credits itself as co-author: no `Co-Authored-By` trailer, no "gener
 **Branch**: `docs/<code>-<topic>` (e.g. `docs/S02-catalogue`). Small fixes go straight to `main`.
 
 **Message**: `<type>(<code>): <summary>`
-- Types: `spec`, `design`, `docs` (index, layout), `fix`.
+- Types: `spec`, `design`, `proto`, `docs` (index, layout), `fix`.
 - Summary in English, imperative mood, under 72 chars, starting with the version when it changes.
 - e.g. `spec(S01): v0.9 — add continuous timeline` · `design(D01): v1.0 — validate key screens`
 

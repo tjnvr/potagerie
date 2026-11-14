@@ -8,28 +8,30 @@ docs/
 ├── specs/
 │   ├── POT-S01_spec-fonctionnelle_v1.0.md   ← version courante
 │   └── archives/                            ← versions précédentes
-└── design/
-    ├── POT-D01_ecrans-cles_v1.0/            ← version courante (un dossier par canvas)
-    └── archives/                            ← versions précédentes
+├── design/
+│   ├── POT-D01_ecrans-cles_v1.0/            ← version courante (un dossier par canvas)
+│   └── archives/                            ← versions précédentes
+└── prototypes/
+    └── archives/
 ```
 
-## Convention de nommage (identique pour specs et designs)
+## Convention de nommage (identique pour specs, designs et prototypes)
 
 ```
-POT-<T><NN>_<sujet>_v<X.Y>      (.md pour une spec, dossier pour un design)
+POT-<T><NN>_<sujet>_v<X.Y>      (.md pour une spec, dossier pour un design ou un prototype)
 ```
 
 | Élément | Règle | Exemple |
 |---|---|---|
 | `POT` | Préfixe du projet Potagerie | `POT` |
-| `<T>` | Type : `S` spec, `D` design | `S`, `D` |
+| `<T>` | Type : `S` spec, `D` design, `P` prototype | `S`, `D`, `P` |
 | `<NN>` | Numéro sur 2 chiffres, propre à chaque type, attribué une fois pour toutes, jamais réutilisé | `01` |
 | `<sujet>` | Minuscules, sans accents, mots séparés par des tirets | `spec-fonctionnelle`, `ecrans-cles` |
 | `v<X.Y>` | Version : `v0.Y` brouillon, `v1.0` validé, X change quand le périmètre change | `v0.5` |
 
 Règles communes :
-- **Une seule version courante** par document dans `specs/` ou `design/`. À chaque nouvelle version, la précédente est déplacée telle quelle dans le dossier `archives/` voisin.
-- **En-tête** : chaque spec, et le `README.md` de chaque dossier de design, commence par `Version · Date · Auteur`, cohérents avec le nom.
+- **Une seule version courante** par document dans `specs/`, `design/` ou `prototypes/`. À chaque nouvelle version, la précédente est déplacée telle quelle dans le dossier `archives/` voisin.
+- **En-tête** : chaque spec, et le `README.md` de chaque dossier de design ou de prototype, commence par `Version · Date · Auteur`, cohérents avec le nom.
 - **Index** : ce fichier est mis à jour à chaque création, renommage ou nouvelle version.
 - Le titre du canvas sur claude.ai reprend le code : « POT-D01 · Écrans clés V1 ».
 
@@ -37,6 +39,10 @@ Propre aux designs :
 - Contenu d'un dossier : `README.md`, `project/` (copie exacte des fichiers du canvas), `exports/` (PNG, PDF), et un éventuel générateur.
 - Planches : `<code-écran>_<ecran>_<support>.dc.html`, avec le code écran de la spec (`E05`, `E07`) ou `DV<NN>` pour la direction visuelle, et `desktop` ou `mobile` comme support. Exception : la planche d'entrée du canvas s'appelle toujours `Main.dc.html`, car l'outil l'impose.
 - Les exports portent le nom de leur planche : `exports/E05_potager_mobile.png`.
+
+Propre aux prototypes :
+- Code jetable, autonome (s'ouvre sans installation), qui répond à **une question** précise.
+- Le `README.md` contient : la question, le protocole, les résultats et la décision prise.
 
 ## Documents
 
