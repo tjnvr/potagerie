@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/catalogue"]
+members = ["crates/catalogue", "crates/plan"]
 
 [workspace.package]
 edition = "2024"
@@ -9,9 +9,12 @@ license = "UNLICENSED"
 publish = false
 
 [workspace.dependencies]
+catalogue = { path = "crates/catalogue" }
 chrono = { version = "0.4", default-features = false, features = ["std", "serde"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+thiserror = "2"
+uuid = { version = "1", features = ["v7", "serde"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
