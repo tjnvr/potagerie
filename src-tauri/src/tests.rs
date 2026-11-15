@@ -610,6 +610,9 @@ fn preview_enters_a_transplanting_date_and_offers_shortcuts() {
     assert_eq!(apercu["problemes"][0]["zone"]["troncon_debut"], 1);
     assert_eq!(apercu["raccourcis"]["toute"], Value::Null);
     assert_eq!(apercu["raccourcis"]["quart"], Value::Null);
+    // The strip of the form shows the whole planche as taken during that time.
+    assert_eq!(apercu["occupes"][0]["troncon_debut"], 1);
+    assert_eq!(apercu["occupes"][0]["troncon_fin"], 6);
 }
 
 #[test]

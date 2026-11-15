@@ -198,6 +198,9 @@ pub struct SerieApercu {
     /// Empty when the serie is valid.
     pub problemes: Vec<ProblemeView>,
     pub raccourcis: RaccourcisView,
+    /// The zones of other series of the planche that overlap the occupation in
+    /// time: the troncons the strip of the form shows as taken.
+    pub occupes: Vec<ZoneView>,
 }
 
 fn zone_view(zone: Zone) -> ZoneView {
@@ -668,6 +671,22 @@ fn preview_serie(plan: &Plan, id: Option<SerieId>, input: &SerieInput) -> SerieA
         quart: shortcut(plan::Fraction::Quarter),
     };
 
+    let occupes = probe
+        .as_ref()
+        .map(|serie| {
+            let occupation = serie.occupation();
+            plan.series
+                .iter()
+                .filter(|(other, s)| {
+                    Some(**other) != id
+                        && s.planche_id == serie.planche_id
+                        && s.occupation().overlaps(&occupation)
+                })
+                .map(|(_, s)| zone_view(s.zone()))
+                .collect()
+        })
+        .unwrap_or_default();
+
     let dates = built.map(|serie| {
         let d = serie.dates();
         let start = d.sowing.unwrap_or(d.planting_out).min(d.planting_out);
@@ -711,6 +730,7 @@ fn preview_serie(plan: &Plan, id: Option<SerieId>, input: &SerieInput) -> SerieA
         dates,
         problemes,
         raccourcis,
+        occupes,
     }
 }
 

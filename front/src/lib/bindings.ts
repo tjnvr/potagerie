@@ -285,6 +285,11 @@ export type SerieApercu = {
 	/**  Empty when the serie is valid. */
 	problemes: ProblemeView[],
 	raccourcis: RaccourcisView,
+	/**
+	 *  The zones of other series of the planche that overlap the occupation in
+	 *  time: the troncons the strip of the form shows as taken.
+	 */
+	occupes: ZoneView[],
 };
 
 /**  Identifier of a serie. */
