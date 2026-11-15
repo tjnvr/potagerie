@@ -9,6 +9,7 @@ pub const COMMANDS: &[&str] = &[
     "creer_planche",
     "modifier_planche",
     "deplacer_planche",
+    "series_depassant",
     "supprimer_planche",
     "creer_serie",
     "modifier_serie",

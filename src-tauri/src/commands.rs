@@ -232,17 +232,14 @@ pub fn creer_terrain(
     }
     let case_cm =
         CaseCm::try_from(terrain.case_cm).map_err(|e| AppError::new(ErrorCode::CaseInvalide, e))?;
-    // TODO(plan): check the dimensions and the allée width (30, 50 or 80 cm, F-PLN-2).
-    let mut plan = Plan::new(
-        PlanId::generate(),
-        Terrain {
-            longueur_cm: terrain.longueur_cm,
-            largeur_cm: terrain.largeur_cm,
-            case_cm,
-            allee_cm: terrain.allee_cm,
-        },
-        Utc::now(),
-    );
+    let terrain = Terrain {
+        longueur_cm: terrain.longueur_cm,
+        largeur_cm: terrain.largeur_cm,
+        case_cm,
+        allee_cm: terrain.allee_cm,
+    };
+    terrain.validate()?;
+    let mut plan = Plan::new(PlanId::generate(), terrain, Utc::now());
     store.save(&mut plan, Utc::now())?;
     Ok(view(Some(&plan), annee))
 }
@@ -256,11 +253,13 @@ pub fn modifier_terrain(
     annee: i32,
     terrain: TerrainEdit,
 ) -> Result<YearView, AppError> {
-    change(&state, annee, |plan, _| {
-        // TODO(plan): refuse a terrain that no longer holds its planches.
-        plan.terrain.longueur_cm = terrain.longueur_cm;
-        plan.terrain.largeur_cm = terrain.largeur_cm;
-        plan.terrain.allee_cm = terrain.allee_cm;
+    change(&state, annee, |plan, today| {
+        plan.set_terrain(
+            terrain.longueur_cm,
+            terrain.largeur_cm,
+            terrain.allee_cm,
+            today,
+        )?;
         Ok(())
     })
 }
@@ -279,8 +278,7 @@ pub fn creer_planche(
 ) -> Result<YearView, AppError> {
     change(&state, annee, |plan, today| {
         let (longueur_cm, largeur_cm) = default_size(planche_type);
-        // TODO(plan): refuse overlapping planches and planches outside the
-        // terrain (S01 F-PLN-1), and keep the allée width (F-PLN-2).
+        plan::check_name(&nom)?;
         plan.add_planche(
             PlancheId::generate(),
             nom,
@@ -294,6 +292,7 @@ pub fn creer_planche(
             },
             today,
         )?;
+        plan.check_placements(annee)?;
         Ok(())
     })
 }
@@ -310,10 +309,11 @@ pub fn modifier_planche(
 ) -> Result<YearView, AppError> {
     change(&state, annee, |plan, today| {
         if let Some(geometry) = geometrie {
-            // TODO(plan): same placement checks as creer_planche.
             plan.set_disposition(id, annee, Disposition::Present(geometry.into()), today)?;
+            plan.check_placements(annee)?;
         }
         if let Some(nom) = nom {
+            plan::check_name(&nom)?;
             plan.planches
                 .get_mut(&id)
                 .ok_or(plan::PlanError::UnknownPlanche(id))?
@@ -346,10 +346,29 @@ pub fn deplacer_planche(
             .clone();
         geometry.x = x;
         geometry.y = y;
-        // TODO(plan): same placement checks as creer_planche.
         plan.set_disposition(id, annee, Disposition::Present(geometry), today)?;
+        plan.check_placements(annee)?;
         Ok(())
     })
+}
+
+/// The series that would no longer fit if the planche were shortened to
+/// `longueur_cm` from `annee` on (S03 §4). Read-only: the interface warns
+/// before it calls `modifier_planche`.
+#[tauri::command]
+#[specta::specta]
+pub fn series_depassant(
+    state: State<'_, AppState>,
+    annee: i32,
+    id: PlancheId,
+    longueur_cm: u32,
+) -> Result<Vec<SerieId>, AppError> {
+    let plan = state
+        .store()
+        .load()?
+        .ok_or_else(|| AppError::new(ErrorCode::TerrainAbsent, "create the terrain first"))?;
+    let case_cm = plan.terrain.case_cm.cm();
+    Ok(plan.series_overflowing_if_shortened(id, annee, longueur_cm / case_cm))
 }
 
 /// Deletes a planche from `annee` on, with its series that touch `annee` or

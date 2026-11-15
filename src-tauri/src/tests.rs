@@ -159,6 +159,163 @@ fn export_import_and_clear() {
     assert_eq!(view["planches"][0]["nom"], "Bac A");
 }
 
+fn terrain_args() -> Value {
+    json!({
+        "annee": year(),
+        "terrain": { "longueur_cm": 1100, "largeur_cm": 650, "case_cm": 50, "allee_cm": 50 }
+    })
+}
+
+fn place(
+    window: &WebviewWindow<MockRuntime>,
+    kind: &str,
+    nom: &str,
+    x: u32,
+    y: u32,
+) -> Result<Value, Value> {
+    invoke(
+        window,
+        "creer_planche",
+        json!({ "annee": year(), "plancheType": kind, "nom": nom, "x": x, "y": y }),
+    )
+}
+
+/// The first-use journey: terrain, planches, move, refusals, deletion.
+#[test]
+fn journey_terrain_place_move_refuse_delete() {
+    let dir = tempfile::tempdir().unwrap();
+    let (_app, window) = app(&dir.path().join(DB_FILE));
+
+    // Terrain: dimensions and allée are validated.
+    for bad in [
+        json!({ "longueur_cm": 50, "largeur_cm": 650, "case_cm": 50, "allee_cm": 50 }),
+        json!({ "longueur_cm": 1100, "largeur_cm": 650, "case_cm": 50, "allee_cm": 40 }),
+    ] {
+        let err = invoke(
+            &window,
+            "creer_terrain",
+            json!({ "annee": year(), "terrain": bad }),
+        )
+        .unwrap_err();
+        assert!(["terrain_invalide", "allee_invalide"].contains(&err["code"].as_str().unwrap()));
+    }
+    let view = invoke(&window, "vue_annee", json!({ "annee": year() })).unwrap();
+    assert_eq!(view["terrain"], Value::Null);
+    invoke(&window, "creer_terrain", terrain_args()).unwrap();
+
+    // Two planches, 50 cm apart (the allée width).
+    let view = place(&window, "planche", "Planche A", 50, 50).unwrap();
+    let a = view["planches"][0]["id"].as_str().unwrap().to_string();
+    let view = place(&window, "carre", "Carré B", 400, 50).unwrap();
+    assert_eq!(view["planches"].as_array().unwrap().len(), 2);
+    let version = view["version"].clone();
+
+    // Refusals: overlap, allée too narrow, outside the terrain. Nothing changes.
+    let err = place(&window, "bac", "Bac C", 300, 100).unwrap_err();
+    assert_eq!(err["code"], "planche_chevauche");
+    let err = place(&window, "bac", "Bac C", 420, 100).unwrap_err();
+    assert_eq!(err["code"], "planche_chevauche");
+    let err = place(&window, "bac", "Bac C", 360, 190).unwrap_err();
+    assert_eq!(err["code"], "allee_trop_etroite");
+    let err = place(&window, "planche", "Planche D", 900, 50).unwrap_err();
+    assert_eq!(err["code"], "planche_hors_terrain");
+    let err = place(&window, "planche", "", 50, 400).unwrap_err();
+    assert_eq!(err["code"], "nom_invalide");
+    let view = invoke(&window, "vue_annee", json!({ "annee": year() })).unwrap();
+    assert_eq!(view["version"], version);
+    assert_eq!(view["planches"].as_array().unwrap().len(), 2);
+
+    // Move A: onto B is refused and it stays, then somewhere free works.
+    let err = invoke(
+        &window,
+        "deplacer_planche",
+        json!({ "annee": year(), "id": a, "x": 350, "y": 50 }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "planche_chevauche");
+    let view = invoke(
+        &window,
+        "deplacer_planche",
+        json!({ "annee": year(), "id": a, "x": 50, "y": 300 }),
+    )
+    .unwrap();
+    let moved = view["planches"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|p| p["id"] == a.as_str())
+        .unwrap();
+    assert_eq!(
+        (moved["x"].as_u64(), moved["y"].as_u64()),
+        (Some(50), Some(300))
+    );
+
+    // Resize: length in whole cases, width free, past the terrain refused.
+    let err = invoke(
+        &window,
+        "modifier_planche",
+        json!({ "annee": year(), "id": a, "geometrie": {
+            "planche_type": "planche", "x": 50, "y": 300, "longueur_cm": 330, "largeur_cm": 120 } }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "longueur_invalide");
+    let view = invoke(
+        &window,
+        "modifier_planche",
+        json!({ "annee": year(), "id": a, "nom": "Les tomates", "geometrie": {
+            "planche_type": "planche", "x": 50, "y": 300, "longueur_cm": 400, "largeur_cm": 135 } }),
+    )
+    .unwrap();
+    assert_eq!(view["planches"][0]["nom"], "Les tomates");
+    assert_eq!(view["planches"][0]["troncons"], 8);
+
+    // The terrain cannot shrink under a planche.
+    let err = invoke(
+        &window,
+        "modifier_terrain",
+        json!({ "annee": year(), "terrain": { "longueur_cm": 1100, "largeur_cm": 400, "allee_cm": 50 } }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "planche_hors_terrain");
+
+    // A serie makes the deletion warn, and a shortening overflow.
+    let serie = json!({
+        "culture_id": "carotte", "planche_id": a, "troncon_debut": 1, "troncon_fin": 6,
+        "mode": "pleine_terre", "date": format!("{}-03-15", year()),
+        "abri_jours": null, "fin_manuelle": null
+    });
+    let view = invoke(
+        &window,
+        "creer_serie",
+        json!({ "annee": year(), "serie": serie }),
+    )
+    .unwrap();
+    let planche = view["planches"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|p| p["id"] == a.as_str())
+        .unwrap();
+    assert_eq!(planche["series_supprimees"].as_array().unwrap().len(), 1);
+    let over = invoke(
+        &window,
+        "series_depassant",
+        json!({ "annee": year(), "id": a, "longueurCm": 200 }),
+    )
+    .unwrap();
+    assert_eq!(over.as_array().unwrap().len(), 1);
+
+    // Delete A: its serie goes with it.
+    let view = invoke(
+        &window,
+        "supprimer_planche",
+        json!({ "annee": year(), "id": a }),
+    )
+    .unwrap();
+    assert_eq!(view["planches"].as_array().unwrap().len(), 1);
+    assert_eq!(view["series"].as_array().unwrap().len(), 0);
+}
+
 /// Every command of `command_names.rs` is registered and allowed for the main
 /// window: none answers "not found" or "not allowed".
 #[test]

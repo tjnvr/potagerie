@@ -27,6 +27,12 @@ export const commands = {
 	/**  Moves a planche from `annee` on, keeping its size. */
 	deplacerPlanche: (annee: number, id: PlancheId, x: number, y: number, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("deplacer_planche", { annee, id, x, y }, options)),
 	/**
+	 *  The series that would no longer fit if the planche were shortened to
+	 *  `longueur_cm` from `annee` on (S03 §4). Read-only: the interface warns
+	 *  before it calls `modifier_planche`.
+	 */
+	seriesDepassant: (annee: number, id: PlancheId, longueurCm: number, options?: InvokeOptions) => typedError<SerieId[], AppError>(__TAURI_INVOKE("series_depassant", { annee, id, longueurCm }, options)),
+	/**
 	 *  Deletes a planche from `annee` on, with its series that touch `annee` or
 	 *  later (F-PLN-4). The interface confirms first, with `series_deleted_by`.
 	 */
@@ -136,7 +142,7 @@ export type CultureView = {
  *  Stable error codes. The codes of [`PlanError`] are kept exactly as the
  *  `plan` crate names them (`PlanError::code`).
  */
-export type ErrorCode = "annee_passee" | "too_many_planches" | "planche_inconnue" | "serie_inconnue" | "planche_existante" | "serie_existante" | "culture_inconnue" | "zone_invalide" | "planche_absente" | "zone_hors_planche" | "conflict" | "pot_days_required" | "fin_manuelle_invalide" | "occupation_vide" | "longueur_invalide" | 
+export type ErrorCode = "annee_passee" | "too_many_planches" | "planche_inconnue" | "serie_inconnue" | "planche_existante" | "serie_existante" | "culture_inconnue" | "zone_invalide" | "planche_absente" | "zone_hors_planche" | "conflict" | "pot_days_required" | "fin_manuelle_invalide" | "occupation_vide" | "longueur_invalide" | "terrain_invalide" | "allee_invalide" | "largeur_invalide" | "nom_invalide" | "planche_hors_terrain" | "planche_chevauche" | "allee_trop_etroite" | 
 /**  A command needs a terrain, and none was created yet (E2). */
 "terrain_absent" | "terrain_existant" | 
 /**  The case size must be 25, 50 or 100 cm. */
@@ -192,6 +198,11 @@ export type PlancheView = {
 	largeur_cm: number,
 	/**  `n = longueur ÷ case` (S03 §4). */
 	troncons: number,
+	/**
+	 *  The series deleted with this planche if it is deleted from this year
+	 *  on (S03 §5): the interface warns before confirming.
+	 */
+	series_supprimees: SerieId[],
 };
 
 /**  Identifier of a serie. */
@@ -228,6 +239,12 @@ export type SerieView = {
 	end: string,
 	/**  True when `end` was modified by hand. */
 	manual_end: boolean,
+	/**
+	 *  Rows × plants per row on the planche (S03 §6); 0 when the planche has
+	 *  no layout to measure.
+	 */
+	rangs: number,
+	pieds_par_rang: number,
 	/**  What the garden view draws today (S03 §3). */
 	appearance_today: Appearance,
 };
@@ -297,6 +314,11 @@ export type YearView = {
 	series: SerieView[],
 	/**  Conflicting pairs among `series` (S03 §5). */
 	conflicts: ConflictView[],
+	/**
+	 *  The series that ended on or before January 1st of `year`: the past
+	 *  seasons of the planche panel (S01 F-VIS-7), read-only.
+	 */
+	historique: SerieView[],
 	/**  Free slots of `year` and their suggestions (S03 §8, §9). */
 	creneaux: CreneauView[],
 	/**  Annotations that touch `year`. */

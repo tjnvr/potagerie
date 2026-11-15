@@ -11,6 +11,7 @@
     "allow-creer-planche",
     "allow-modifier-planche",
     "allow-deplacer-planche",
+    "allow-series-depassant",
     "allow-supprimer-planche",
     "allow-creer-serie",
     "allow-modifier-serie",

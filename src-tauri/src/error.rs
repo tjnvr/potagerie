@@ -28,6 +28,13 @@ pub enum ErrorCode {
     FinManuelleInvalide,
     OccupationVide,
     LongueurInvalide,
+    TerrainInvalide,
+    AlleeInvalide,
+    LargeurInvalide,
+    NomInvalide,
+    PlancheHorsTerrain,
+    PlancheChevauche,
+    AlleeTropEtroite,
     // From the app.
     /// A command needs a terrain, and none was created yet (E2).
     TerrainAbsent,
@@ -86,6 +93,13 @@ impl From<PlanError> for AppError {
             PlanError::InvalidManualEnd { .. } => ErrorCode::FinManuelleInvalide,
             PlanError::EmptyOccupation => ErrorCode::OccupationVide,
             PlanError::InvalidLength { .. } => ErrorCode::LongueurInvalide,
+            PlanError::InvalidTerrain { .. } => ErrorCode::TerrainInvalide,
+            PlanError::InvalidAllee(_) => ErrorCode::AlleeInvalide,
+            PlanError::InvalidWidth(_) => ErrorCode::LargeurInvalide,
+            PlanError::InvalidName => ErrorCode::NomInvalide,
+            PlanError::OutsideTerrain { .. } => ErrorCode::PlancheHorsTerrain,
+            PlanError::PlanchesOverlap { .. } => ErrorCode::PlancheChevauche,
+            PlanError::AlleeTooNarrow { .. } => ErrorCode::AlleeTropEtroite,
         };
         Self::new(code, error.to_string())
     }

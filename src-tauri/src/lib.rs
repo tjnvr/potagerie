@@ -36,6 +36,7 @@ pub fn specta_builder<R: tauri::Runtime>() -> Builder<R> {
             commands::creer_planche,
             commands::modifier_planche,
             commands::deplacer_planche,
+            commands::series_depassant,
             commands::supprimer_planche,
             commands::creer_serie,
             commands::modifier_serie,
