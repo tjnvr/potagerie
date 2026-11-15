@@ -19,6 +19,7 @@ mod stages;
 mod suggestions;
 mod tasks;
 mod validation;
+mod view;
 mod window;
 mod zone;
 
@@ -36,5 +37,9 @@ pub use stages::{Appearance, Stage};
 pub use suggestions::{MAX_SUGGESTIONS, Suggestion, evaluate};
 pub use tasks::{Task, TaskType};
 pub use validation::Fraction;
+pub use view::{
+    AnnotationView, ConflictView, CreneauView, PlancheView, SerieView, SuggestionView, TaskView,
+    TerrainView, YearView,
+};
 pub use window::{in_window, window_starting_in};
 pub use zone::{Occupation, Zone};

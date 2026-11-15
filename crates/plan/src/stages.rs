@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::serie::{Mode, Serie};
 
+#[cfg_attr(feature = "specta", derive(specta::Type))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Stage {
@@ -15,6 +16,7 @@ pub enum Stage {
 }
 
 /// What the garden view draws on the zone at a given day.
+#[cfg_attr(feature = "specta", derive(specta::Type))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "appearance", content = "stage", rename_all = "snake_case")]
 pub enum Appearance {

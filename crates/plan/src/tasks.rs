@@ -11,6 +11,7 @@ use crate::ids::{PlancheId, SerieId};
 use crate::model::Plan;
 use crate::serie::{Mode, Serie};
 
+#[cfg_attr(feature = "specta", derive(specta::Type))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum TaskType {
     #[serde(rename = "semer-abri")]

@@ -10,6 +10,7 @@ use crate::ids::PlancheId;
 use crate::zone::{Occupation, Zone};
 
 /// How the serie starts (S01 F-PLA-1).
+#[cfg_attr(feature = "specta", derive(specta::Type))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Mode {
