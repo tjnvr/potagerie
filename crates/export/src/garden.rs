@@ -4,7 +4,7 @@ use std::fs;
 use std::path::Path;
 
 use chrono::{DateTime, Utc};
-use plan::Plan;
+use plan::{Incoherence, Plan};
 use serde::{Deserialize, Serialize};
 
 use crate::ExportError;
@@ -40,6 +40,9 @@ pub struct ImportSummary {
     pub older: bool,
     /// True when the device already has a plan, which the import would replace.
     pub replaces: bool,
+    /// What breaks the rules of the plan (S03 §13). The file is accepted all
+    /// the same: nothing is deleted or corrected, the user resolves them.
+    pub incoherences: Vec<Incoherence>,
 }
 
 /// Writes the whole plan to `path`, in pretty JSON.
@@ -55,7 +58,8 @@ pub fn export_garden(plan: &Plan, path: &Path) -> Result<(), ExportError> {
     Ok(())
 }
 
-/// Reads the plan of an export file.
+/// Reads the plan of an export file: schema, format and version, then the
+/// structure (S03 §13). Incoherences do not refuse it.
 pub fn read_garden(path: &Path) -> Result<Plan, ExportError> {
     let text = fs::read_to_string(path)?;
     let envelope: EnvelopeIn =
@@ -72,7 +76,13 @@ pub fn read_garden(path: &Path) -> Result<Plan, ExportError> {
             supported: FORMAT_VERSION,
         });
     }
-    serde_json::from_value(envelope.plan).map_err(|e| ExportError::InvalidImport(e.to_string()))
+    let plan: Plan = serde_json::from_value(envelope.plan)
+        .map_err(|e| ExportError::InvalidImport(e.to_string()))?;
+    // A plan the calculations cannot run on is refused; the other
+    // incoherences are listed by `read_import` (S03 §13).
+    plan.check_structure()
+        .map_err(|e| ExportError::InvalidImport(e.to_string()))?;
+    Ok(plan)
 }
 
 /// Reads an export file and compares it with the plan of the device, without
@@ -81,15 +91,20 @@ pub fn read_garden(path: &Path) -> Result<Plan, ExportError> {
 /// "Older" compares the `mis_a_jour_le` timestamps: versions are counted per
 /// device and cannot be compared across devices.
 pub fn read_import(path: &Path, local: Option<&Plan>) -> Result<ImportSummary, ExportError> {
-    let plan = read_garden(path)?;
-    Ok(ImportSummary {
+    Ok(summarise(&read_garden(path)?, local))
+}
+
+/// The summary of a plan received, compared with the plan of the device.
+pub fn summarise(plan: &Plan, local: Option<&Plan>) -> ImportSummary {
+    ImportSummary {
         updated_at: plan.mis_a_jour_le,
         version: plan.version,
         planche_count: plan.planches.len(),
         serie_count: plan.series.len(),
         older: local.is_some_and(|l| plan.mis_a_jour_le < l.mis_a_jour_le),
         replaces: local.is_some(),
-    })
+        incoherences: plan.incoherences(),
+    }
 }
 
 #[cfg(test)]
@@ -161,5 +176,69 @@ mod tests {
             read_garden(&path),
             Err(ExportError::ImportTooNew { found: 99, .. })
         ));
+    }
+
+    fn write_plan_json(path: &Path, edit: impl FnOnce(&mut serde_json::Value)) {
+        let mut doc = serde_json::json!({
+            "format": "potagerie",
+            "format_version": 1,
+            "plan": plan_at(9),
+        });
+        edit(&mut doc["plan"]);
+        fs::write(path, doc.to_string()).unwrap();
+    }
+
+    #[test]
+    fn invalid_files_are_refused_and_nothing_is_read() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("bad.json");
+        let refused = |path: &Path| matches!(read_garden(path), Err(ExportError::InvalidImport(_)));
+
+        fs::write(&path, "not json at all").unwrap();
+        assert!(refused(&path));
+        fs::write(&path, "").unwrap();
+        assert!(refused(&path));
+        // Right envelope, wrong plan schema.
+        fs::write(
+            &path,
+            r#"{"format":"potagerie","format_version":1,"plan":{"id":3}}"#,
+        )
+        .unwrap();
+        assert!(refused(&path));
+        // Unknown case size, invalid allée, broken layout, broken serie.
+        write_plan_json(&path, |p| p["terrain"]["case_cm"] = 40.into());
+        assert!(refused(&path));
+        write_plan_json(&path, |p| p["terrain"]["allee_cm"] = 7.into());
+        assert!(refused(&path));
+        write_plan_json(&path, |p| {
+            p["planches"] = serde_json::json!({"0190c5a0-0000-7000-8000-000000000001": {
+                "nom": "A",
+                "dispositions": {"2027": {"etat":"presente","type":"planche","x":0,"y":0,"longueur_cm":30,"largeur_cm":100}}
+            }});
+        });
+        assert!(refused(&path));
+        // Missing file: an I/O error, not an invalid import.
+        assert!(matches!(
+            read_garden(&dir.path().join("none.json")),
+            Err(ExportError::Io(_))
+        ));
+    }
+
+    #[test]
+    fn incoherent_files_are_accepted_with_their_list() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("incoherent.json");
+        write_plan_json(&path, |p| {
+            p["series"] = serde_json::json!({"0190c5a0-0000-7000-8000-000000000002": {
+                "culture_id": "tomate",
+                "planche_id": "0190c5a0-0000-7000-8000-000000000003",
+                "troncon_debut": 1, "troncon_fin": 2, "mode": "plants",
+                "date": "2027-05-20", "abri_jours": 0, "apres_jours": 60, "duree_jours": 40
+            }});
+        });
+        let summary = read_import(&path, None).unwrap();
+        assert_eq!(summary.serie_count, 1);
+        assert_eq!(summary.incoherences.len(), 1);
+        assert_eq!(summary.incoherences[0].code(), "serie_orpheline");
     }
 }

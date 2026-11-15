@@ -9,7 +9,9 @@
 mod garden;
 mod timeline;
 
-pub use garden::{FORMAT, FORMAT_VERSION, ImportSummary, export_garden, read_garden, read_import};
+pub use garden::{
+    FORMAT, FORMAT_VERSION, ImportSummary, export_garden, read_garden, read_import, summarise,
+};
 pub use timeline::{TimelineFormat, export_timeline, render_timeline};
 
 use thiserror::Error;
