@@ -8,7 +8,7 @@
   import Icone from "../coquille/Icone.svelte";
   import { m } from "../paraglide/messages.js";
   import { nomDeType } from "../planches";
-  import { dateCurseur, lectureEnCours } from "../temps";
+  import { curseur, lectureEnCours } from "../temps";
   import { apparenceAu, jourDeLecture, SYMBOLE_ETIQUETTE } from "./animation";
   import CompteurImages from "./CompteurImages.svelte";
   import Curseur from "./Curseur.svelte";
@@ -43,7 +43,7 @@
   let lecture = $state(false);
   let largeur = $state(900);
   /** The day of the cursor, whole; the playback moves a fraction of it in `jourExact`. */
-  let jourEntier = $state(jourDepuis(untrack(() => $dateCurseur)));
+  let jourEntier = $state(jourDepuis(untrack(() => $curseur)));
   let jourExact = untrack(() => jourEntier);
 
   const reduitMq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -96,7 +96,7 @@
 
   // A date set from outside (the timeline, the « Aujourd'hui » button).
   $effect(() => {
-    const j = jourDepuis($dateCurseur);
+    const j = jourDepuis($curseur);
     untrack(() => {
       if (j === jourEntier) return;
       if (lecture) arreter();
@@ -131,7 +131,7 @@
     if (lecture) arreter();
     jourEntier = jour;
     jourExact = jour;
-    $dateCurseur = isoDepuis(jour);
+    $curseur = isoDepuis(jour);
   }
 
   // ---- « Jouer la saison » ----
@@ -202,7 +202,7 @@
     const entier = Math.floor(jour);
     if (entier !== jourEntier) {
       jourEntier = entier;
-      $dateCurseur = isoDepuis(entier);
+      $curseur = isoDepuis(entier);
     }
     if (termine) arreter(true);
     else trame = requestAnimationFrame(boucle);

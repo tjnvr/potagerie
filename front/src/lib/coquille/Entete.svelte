@@ -10,7 +10,6 @@
   import { allerA, allerAujourdhui, curseur } from "../temps";
   import Icone, { type NomIcone } from "./Icone.svelte";
   import Logo from "./Logo.svelte";
-  import { aujourdhuiIso, dateCurseur } from "../temps";
 
   const anneeEnCours = new Date().getFullYear();
   /** A season of the selector: the cursor goes to the same day of that year. */
