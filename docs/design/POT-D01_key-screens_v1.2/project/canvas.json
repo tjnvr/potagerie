@@ -1,0 +1,117 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-11-15T17:26:58Z"
+ },
+ "title": "POT-D01 · Key screens V1",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "E03_plan-editor_desktop.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 1440,
+   "h": 980,
+   "title": "① E03 · Plan editor — computer",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "Main.dc.html": {
+   "x": 1640,
+   "y": 0,
+   "w": 1440,
+   "h": 1560,
+   "title": "② E05 · Garden — computer",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "E05_garden_mobile.dc.html": {
+   "x": 0,
+   "y": 1900,
+   "w": 390,
+   "h": 844,
+   "title": "② E05 · Garden — phone",
+   "is_interactive": true
+  },
+  "E07_planting_mobile.dc.html": {
+   "x": 590,
+   "y": 1900,
+   "w": 390,
+   "h": 1180,
+   "title": "③ E07 · New planting — phone",
+   "is_interactive": true
+  },
+  "DV01_visual-direction.dc.html": {
+   "x": 1640,
+   "y": 1900,
+   "w": 1440,
+   "h": 1080,
+   "title": "DV01 · Visual direction"
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "E03_plan-editor_desktop.dc.html",
+  "E05_garden_mobile.dc.html",
+  "E07_planting_mobile.dc.html",
+  "DV01_visual-direction.dc.html"
+ ],
+ "notes": {
+  "titre": {
+   "x": 0,
+   "y": -300,
+   "text": "Flow on a computer: design the plan, then plan the crops",
+   "kind": "title1",
+   "maxW": 3080
+  },
+  "lien1": {
+   "x": 1460,
+   "y": 40,
+   "w": 160,
+   "fill": "green",
+   "size": "s",
+   "text": "Tabs at the top of the screen:\n“Garden” ↔ “Plan”.\n\n① → ② also with “See the garden”."
+  },
+  "lien2": {
+   "x": 1460,
+   "y": 360,
+   "w": 160,
+   "fill": "green",
+   "size": "s",
+   "text": "② → ③\n“Plant here” or a free slot of the timeline opens the new planting."
+  },
+  "titre2": {
+   "x": 0,
+   "y": 1600,
+   "text": "Flow on a phone",
+   "kind": "title1",
+   "maxW": 980
+  },
+  "lien3": {
+   "x": 405,
+   "y": 1940,
+   "w": 170,
+   "fill": "green",
+   "size": "s",
+   "text": "② → ③\nThe “+” button of the bed.\n\n③ → ②\n“Plant” or the cross."
+  },
+  "titre3": {
+   "x": 1640,
+   "y": 1600,
+   "text": "Visual direction",
+   "kind": "title1",
+   "maxW": 1440
+  },
+  "hyp": {
+   "x": 3160,
+   "y": 0,
+   "w": 320,
+   "fill": "orange",
+   "text": "Example: 2027 season, cursor on 20 June.\nExample garden of 7 beds (11 × 6.5 m), 10 at most, with the 6 reference crops (S02).\nThe Play button of each sheet follows the links.\nComing: crop sheet (E09) and export preview (E11)."
+  }
+ },
+ "designSystems": []
+}

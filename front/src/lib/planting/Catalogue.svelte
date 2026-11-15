@@ -47,12 +47,12 @@
   }
 
   /** `MM-JJ` as « 1er mars ». */
-  function dayMonth(mmjj: string): string {
-    const [month = 1, day = 1] = mmjj.split("-").map(Number);
+  function dayMonth(monthDay: string): string {
+    const [month = 1, day = 1] = monthDay.split("-").map(Number);
     return new Date(Date.UTC(2001, month - 1, day)).toLocaleDateString(localeTag(), { day: "numeric", month: "long", timeZone: "UTC" });
   }
 
-  const STADES = [
+  const STAGES = [
     { stade: 0, text: m.catalogue_stage_sowing },
     { stade: 1, text: m.catalogue_stage_grows },
     { stade: 2, text: m.catalogue_stage_adult },
@@ -117,7 +117,7 @@
           {#if season.includes(fiche.id)}<em class="badge">{m.catalogue_badge_season()}</em>{/if}
         </div>
         <div class="stades">
-          {#each STADES as s (s.stade)}
+          {#each STAGES as s (s.stade)}
             <figure>
               <PlantIcon crop={fiche.id} stade={s.stade} width={58} />
               <figcaption>{s.text()}</figcaption>

@@ -1,0 +1,148 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-11-15T17:26:58Z"
+ },
+ "title": "POT-D02 · Additional screens V1",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 1320,
+   "h": 900,
+   "title": "① E02 · Plot creation — computer",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "E06_bed-panel_desktop.dc.html": {
+   "x": 1480,
+   "y": 0,
+   "w": 1440,
+   "h": 760,
+   "title": "④ E06 · Bed panel — computer",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "E07_planting_desktop.dc.html": {
+   "x": 3080,
+   "y": 0,
+   "w": 1320,
+   "h": 720,
+   "title": "⑤ E07 · New planting — computer",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "E09_catalogue_desktop.dc.html": {
+   "x": 0,
+   "y": 1000,
+   "w": 1400,
+   "h": 620,
+   "title": "E09 · Catalogue — computer",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "E10_settings_desktop.dc.html": {
+   "x": 1560,
+   "y": 1000,
+   "w": 1440,
+   "h": 820,
+   "title": "E10 · Settings — computer",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "E10_settings_mobile.dc.html": {
+   "x": 3160,
+   "y": 1000,
+   "w": 390,
+   "h": 844,
+   "title": "E10 · Settings — phone",
+   "is_interactive": true
+  },
+  "E11_timeline-export_desktop.dc.html": {
+   "x": 0,
+   "y": 1780,
+   "w": 1440,
+   "h": 600,
+   "title": "E11 · Timeline export — computer",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "ET01_states_desktop.dc.html": {
+   "x": 1600,
+   "y": 1780,
+   "w": 1360,
+   "h": 920,
+   "title": "ET01 · Cross-cutting states — computer"
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "E06_bed-panel_desktop.dc.html",
+  "E07_planting_desktop.dc.html",
+  "E09_catalogue_desktop.dc.html",
+  "E10_settings_desktop.dc.html",
+  "E10_settings_mobile.dc.html",
+  "E11_timeline-export_desktop.dc.html",
+  "ET01_states_desktop.dc.html"
+ ],
+ "notes": {
+  "titre": {
+   "x": 0,
+   "y": -300,
+   "text": "Flow 6.1: from plot creation to planning (continued in D01)",
+   "kind": "title1",
+   "maxW": 4400
+  },
+  "lien1": {
+   "x": 1340,
+   "y": 40,
+   "w": 160,
+   "fill": "green",
+   "size": "s",
+   "text": "① → D01 E03\n“Create the plot” opens the plan editor (D01)."
+  },
+  "lien2": {
+   "x": 2940,
+   "y": 40,
+   "w": 160,
+   "fill": "green",
+   "size": "s",
+   "text": "D01 E05 → ④\n“Edit” in the simplified panel of D01 opens the full panel.\n\n④ → ⑤\n“Plant here”."
+  },
+  "lien3": {
+   "x": 4540,
+   "y": 40,
+   "w": 160,
+   "fill": "green",
+   "size": "s",
+   "text": "⑤ → D01 E05\n“Plant …” goes back to the garden.\n\n④ → D01 E03\n“Move”."
+  },
+  "titre2": {
+   "x": 0,
+   "y": 900,
+   "text": "Side screens (catalogue, settings, export) — settings on a phone too",
+   "kind": "title1",
+   "maxW": 4000
+  },
+  "titre3": {
+   "x": 0,
+   "y": 1680,
+   "text": "Cross-cutting states",
+   "kind": "title1",
+   "maxW": 1360
+  },
+  "hyp": {
+   "x": 1600,
+   "y": 2760,
+   "w": 360,
+   "fill": "orange",
+   "text": "Example garden: 8 beds out of 10, the 6 reference crops (S02), 2027 season.\nDates and quantities checked by an S03 script (see the README), not computed by hand.\nThe Play button of each sheet follows the links, including to D01."
+  }
+ },
+ "designSystems": []
+}

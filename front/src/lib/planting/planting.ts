@@ -23,7 +23,7 @@ export type Form = {
   mode: Mode;
   /** The date the user types: sowing, planting, or transplanting if `transplanting`. */
   date: string;
-  /** « Je know plutôt la date of transplanting » (S03 §2, mode indoor). */
+  /** « I rather know the transplanting date » (S03 §2, mode indoor). */
   transplanting: boolean;
   /** Days in pots, typed, for a crop the catalogue does not start in pots. */
   indoorDays: string;
@@ -139,11 +139,11 @@ export function versPlantingInput(f: Form): PlantingInput {
     date: f.date,
     indoor_days: f.mode === "indoor" && Number.isFinite(days) && days > 0 ? days : null,
     manual_end: f.manualEnd,
-    date_est_transplanting: f.mode === "indoor" && f.transplanting,
+    date_is_transplanting: f.mode === "indoor" && f.transplanting,
   };
 }
 
-/** Toggling « Je know plutôt la date of transplanting »: the field shows the
+/** Toggling « I rather know the transplanting date »: the field shows the
  *  other date, as Rust computed it, so the planting does not move. */
 export function toggleTransplanting(f: Form, preview: PlantingPreview | null): Form {
   const d = preview?.dates;

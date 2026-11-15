@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { imagesBySeconde, measure, respectsLeCriterion } from "./measure";
+import { framesPerSecond, measure, respectsLeCriterion } from "./measure";
 
 describe("measure", () => {
   test("too short a run gives nothing", () => {
@@ -29,9 +29,9 @@ describe("measure", () => {
   });
 });
 
-describe("imagesBySeconde", () => {
+describe("framesPerSecond", () => {
   test("from recent frame times", () => {
-    expect(imagesBySeconde([20, 20, 20])).toBe(50);
-    expect(imagesBySeconde([])).toBe(0);
+    expect(framesPerSecond([20, 20, 20])).toBe(50);
+    expect(framesPerSecond([])).toBe(0);
   });
 });

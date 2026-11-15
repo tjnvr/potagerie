@@ -1,6 +1,6 @@
 // Isometric projection of P01 and D01 (gen.py, Iso): a 50 cm tile is a
 // diamond 48 px wide and 24 px high. Plot coordinates are in centimetres;
-// the scene works in tiles ("unités") and in pixels of the SVG view box.
+// the scene works in tiles ("units") and in pixels of the SVG view box.
 
 export const UNIT_CM = 50;
 export const TW = 48;
@@ -32,7 +32,7 @@ export function dimensions(quarter: Quarter, l: number, h: number): { l: number;
 }
 
 /** A point of the plot (tiles) turned by `quarter` quarter turns, clockwise. */
-export function pivoter(p: Point, quarter: Quarter, l: number, h: number): Point {
+export function rotate(p: Point, quarter: Quarter, l: number, h: number): Point {
   const [x, y] = p;
   switch (quarter) {
     case 0:
@@ -50,8 +50,8 @@ export type Rect = { x: number; y: number; l: number; h: number };
 
 /** A rectangle of the plot (tiles) turned with the plot. */
 export function pivoterRect(r: Rect, quarter: Quarter, l: number, h: number): Rect {
-  const a = pivoter([r.x, r.y], quarter, l, h);
-  const b = pivoter([r.x + r.l, r.y + r.h], quarter, l, h);
+  const a = rotate([r.x, r.y], quarter, l, h);
+  const b = rotate([r.x + r.l, r.y + r.h], quarter, l, h);
   return {
     x: Math.min(a[0], b[0]),
     y: Math.min(a[1], b[1]),

@@ -1,8 +1,8 @@
 ## Installation
 
-Les installers ne sont pas signés : le système request une confirmation to premier lancement.
+The installers are not signed: the system asks for a confirmation at the first launch.
 
-- **macOS** (`.dmg`, universel) : open le `.dmg`, drag Potagerie in Applications, then click droit on l'app et Open. Si macOS dit que l'app est endommagée : `xattr -dr com.apple.quarantine /Applications/Potagerie.app`.
-- **Windows** (`.exe` ou `.msi`) : si SmartScreen s'shown, cliquer on « Informations complémentaires », then « Exécuter when même ».
+- **macOS** (`.dmg`, universal): open the `.dmg`, drag Potagerie into Applications, then right-click the app and choose Open. On recent macOS versions, open System Settings, Privacy & Security, then "Open Anyway". If macOS says the app is damaged: `xattr -dr com.apple.quarantine /Applications/Potagerie.app`.
+- **Windows** (`.exe` or `.msi`): if SmartScreen shows a warning, click "More info", then "Run anyway".
 
-Les données restent on l'ordinateur, in `potagerie.db` (see le README for l'emplacement et la désinstallation).
+Your data stays on your computer, in `potagerie.db` (see the README for its location and for uninstalling).

@@ -13,7 +13,7 @@
   import { todayLocal } from "../dates";
   import { call, app } from "../state.svelte";
   import { m } from "../paraglide/messages.js";
-  import { cursor, viewportTimeline } from "../temps";
+  import { cursor, viewportTimeline } from "../time";
   import { serializeTimeline } from "./exportSvg";
   import { yearsOfPeriod, scaleForPeriod, periodByDefault, periodVisible, problemPeriod } from "./exportPlan";
   import TimelineSvg, { WIDTH_LABELS } from "./TimelineSvg.svelte";
@@ -31,7 +31,7 @@
   let marker = $state(true);
   let annotations = $state(true);
   let enProgress = $state(false);
-  /** Why the last export failed (ET01): shown in the panel, with « Réessayer ». */
+  /** Why the last export failed (ET01): shown in the panel, with « Retry ». */
   let failure = $state<AppError["code"] | null>(null);
   let root: HTMLElement;
   let drawing: HTMLElement | undefined = $state();

@@ -1,6 +1,6 @@
 <script lang="ts">
-  // A small drawing of a crop at one of the four stages (S02: sowing, jeune
-  // grows, adult, récolte) for the cards of E07 and E09. Simplified: the
+  // A small drawing of a crop at one of the four stages (S02: sowing, young
+  // grows, adult, harvest) for the cards of E07 and E09. Simplified: the
   // illustrations of the garden view (P01) belong to the diorama; this one
   // only needs to tell the crops and the stages apart at a glance.
   import { colorCrop, melange } from "../timeline/colors";

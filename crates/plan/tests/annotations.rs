@@ -95,7 +95,7 @@ fn past_years_are_read_only() {
     .unwrap();
     // A stored past annotation is neither edited nor deleted.
     plan.annotations
-        .insert(aid(3), note(d(2025, 3, 1), None, "vieux"));
+        .insert(aid(3), note(d(2025, 3, 1), None, "old"));
     assert!(matches!(
         plan.replace_annotation(aid(3), 2026, note(d(2026, 3, 1), None, "x"), today()),
         Err(PlanError::PastYear { .. })

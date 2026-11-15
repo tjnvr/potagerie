@@ -49,7 +49,7 @@ export type Context = {
   refusal: (code: ErrorCode) => never;
 };
 
-export const NON_HANDLES = Symbol("non géré");
+export const NON_HANDLES = Symbol("unhandled");
 
 const crop = (id: string) => CROPS.find((c) => c.id === id);
 const day = (iso: string) => dayOf(iso);
@@ -62,7 +62,7 @@ function compute(c: CropView, entree: PlantingInput, refusal: (code: ErrorCode) 
   const pots = c.indoor_days > 0 ? c.indoor_days : (entree.indoor_days ?? 0);
   if (entree.mode === "indoor" && pots < 1) refusal("pot_days_required");
   const A = entree.mode === "indoor" ? pots : 0;
-  const stored = entree.mode === "indoor" && entree.date_est_transplanting ? iso(day(entree.date) - A) : entree.date;
+  const stored = entree.mode === "indoor" && entree.date_is_transplanting ? iso(day(entree.date) - A) : entree.date;
   const s = day(stored);
   const m = entree.mode === "indoor" ? s + A : s;
   const r = entree.mode === "open_ground" ? m + c.harvest_after_days + c.indoor_days : m + c.harvest_after_days;

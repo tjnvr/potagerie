@@ -1,69 +1,72 @@
 # Potagerie
 
-Une appli installée pour planifier son potager : un seul utilisateur, sans compte ni serveur. Le cœur est en Rust, l'interface en Svelte 5 + TypeScript, le tout emballé par Tauri v2 (macOS et Windows au lot 1).
+An installed app to plan a vegetable garden: a single user, no account and no server. The core is written in Rust, the interface in Svelte 5 + TypeScript, and everything is packaged by Tauri v2 (macOS and Windows in lot 1).
 
-La documentation (specs, designs, prototypes) est dans [`docs/`](docs/POT-00_index.md). La référence technique est [S05](docs/specs/POT-S05_spec-technique_v0.11.md).
+The documentation (specs, designs, prototypes) is in [`docs/`](docs/POT-00_index.md). The technical reference is [S05](docs/specs/POT-S05_technical-spec_v0.12.md).
 
-## Installer
+## Install
 
-1. Ouvrir la page [Releases](../../releases) du dépôt et télécharger l'installeur de la dernière version : le `.dmg` sur macOS (universel, Apple Silicon et Intel), le `.exe` ou le `.msi` sur Windows.
-2. Installer : glisser Potagerie dans Applications sur macOS, lancer l'installeur sur Windows.
+1. Open the [Releases](../../releases) page of the repository and download the installer of the latest version: the `.dmg` on macOS (universal, Apple Silicon and Intel), the `.exe` or the `.msi` on Windows.
+2. Install: drag Potagerie into Applications on macOS, run the installer on Windows.
 
-Les installeurs ne sont pas signés, le système demande donc une confirmation au premier lancement.
+The installers are not signed, so the system asks for a confirmation at the first launch.
 
-- **macOS** : clic droit sur Potagerie dans Applications, puis Ouvrir, puis Ouvrir de nouveau. Si macOS dit que l'appli est « endommagée », retirer la quarantaine : `xattr -dr com.apple.quarantine /Applications/Potagerie.app`.
-- **Windows** : si SmartScreen bloque l'installeur, cliquer sur « Informations complémentaires », puis « Exécuter quand même ».
+- **macOS**: right-click Potagerie in Applications, then Open, then Open again. On recent macOS versions, open System Settings, Privacy & Security, then "Open Anyway". If macOS says the app is "damaged", remove the quarantine: `xattr -dr com.apple.quarantine /Applications/Potagerie.app`.
+- **Windows**: if SmartScreen blocks the installer, click "More info", then "Run anyway".
 
-**Données.** Tout reste sur l'ordinateur, dans `potagerie.db` : `~/Library/Application Support/garden.potagerie/` sur macOS, `%APPDATA%\garden.potagerie\` sur Windows. Les réglages permettent d'exporter le potager en JSON.
+**Data.** Everything stays on the computer, in `potagerie.db`: `~/Library/Application Support/garden.potagerie/` on macOS, `%APPDATA%\garden.potagerie\` on Windows. The settings let you export the garden as JSON.
 
-**Désinstaller.** macOS : mettre Potagerie à la corbeille. Windows : Paramètres > Applications > Potagerie > Désinstaller. Les données ne sont pas supprimées : effacer le dossier ci-dessus pour repartir de zéro.
+**Uninstall.** macOS: move Potagerie to the trash. Windows: Settings > Apps > Potagerie > Uninstall. The data is not deleted: erase the folder above to start from scratch.
 
-## Prérequis
+**Language.** The interface follows the language of the browser or the system: French or English (`front/messages/`).
 
-- Rust stable (`rustup`), avec `rustfmt` et `clippy`.
-- La CLI Tauri : `cargo install tauri-cli --version "^2" --locked`.
-- Node.js 22 ou plus, et pnpm (la version est fixée dans `front/package.json`, `corepack enable` suffit).
-- macOS : les outils en ligne de commande de Xcode. Windows : WebView2, présent par défaut sur Windows 10 et 11 à jour. Linux (CI seulement) : `libwebkit2gtk-4.1-dev` et les paquets listés dans `.github/workflows/ci.yml`.
+## Requirements
 
-## Commandes
+- Rust stable (`rustup`), with `rustfmt` and `clippy`.
+- The Tauri CLI: `cargo install tauri-cli --version "^2" --locked`.
+- Node.js 22 or later, and pnpm (the version is pinned in `front/package.json`, `corepack enable` is enough).
+- macOS: the Xcode command line tools. Windows: WebView2, present by default on up-to-date Windows 10 and 11. Linux (CI only): `libwebkit2gtk-4.1-dev` and the packages listed in `.github/workflows/ci.yml`.
 
-| Commande | Rôle |
+## Commands
+
+| Command | Role |
 |---|---|
-| `make dev` | Ouvre l'appli (`cargo tauri dev`) ; l'interface se recharge à chaud. Régénère `front/src/lib/bindings.ts` |
-| `make build` | Compile `Potagerie.app` et le `.dmg` sur macOS, le `.exe` et le `.msi` sur Windows, dans `target/release/bundle/` |
-| `make test` | `cargo test` sur tout le workspace, puis Vitest |
-| `make check` | `cargo fmt --check`, clippy en `-D warnings`, `svelte-check` : ce que vérifie la CI |
-| `make fmt` | Formate le code Rust |
-| `make bindings` | Réécrit `bindings.ts` depuis les commandes Rust (un test échoue s'il est périmé) |
+| `make dev` | Opens the app (`cargo tauri dev`); the interface hot-reloads. Regenerates `front/src/lib/bindings.ts` |
+| `make build` | Builds `Potagerie.app` and the `.dmg` on macOS, the `.exe` and the `.msi` on Windows, in `target/release/bundle/` |
+| `make test` | `cargo test` on the whole workspace, then Vitest |
+| `make check` | `cargo fmt --check`, clippy with `-D warnings`, `svelte-check`: what the CI checks |
+| `make fmt` | Formats the Rust code |
+| `make bindings` | Rewrites `bindings.ts` from the Rust commands (a test fails if it is out of date) |
 
-Pour travailler sur l'interface seule, `pnpm --dir front dev` l'ouvre dans un navigateur, sur `http://localhost:5173`, avec de fausses commandes en mémoire (`?exemple` pour partir d'un potager rempli, `?reglages` ou `?potager` pour ouvrir un écran).
+To work on the interface alone, `pnpm --dir front dev` opens it in a browser, on `http://localhost:5173`, with fake in-memory commands (`?example` to start from a filled garden, `?settings` or `?garden` to open a screen).
 
-Les données sont dans `potagerie.db`, dans le dossier de données de l'appli (`~/Library/Application Support/garden.potagerie/` sur macOS, `%APPDATA%\garden.potagerie\` sur Windows).
+The data is in `potagerie.db`, in the data folder of the app (`~/Library/Application Support/garden.potagerie/` on macOS, `%APPDATA%\garden.potagerie\` on Windows).
 
-## Arborescence
+## Layout
 
 ```
 Cargo.toml              workspace
-crates/plan/            modèle, règles et calculs (S03), vue de l'année
-crates/catalogue/       cultures.json (S02), embarqué
-crates/store/           trait Store et implémentation SQLite (rusqlite)
-crates/export/          JSON du potager, PNG et PDF de la frise (resvg, svg2pdf), polices embarquées
-src-tauri/              appli Tauri : commandes, capacités, icônes
-front/                  interface Svelte + TypeScript (Vite, pnpm)
-  messages/fr.json      tous les textes de l'interface (Paraglide JS)
-  src/lib/bindings.ts   généré par tauri-specta, jamais modifié à la main
-  src/lib/atelier/      onglet Plan
-  src/lib/diorama/      onglet Potager
-  src/lib/reglages/     réglages, export et import
+crates/plan/            model, rules and calculations (S03), year view
+crates/catalogue/       crops.json (S02), embedded
+crates/store/           Store trait and SQLite implementation (rusqlite)
+crates/export/          garden JSON, timeline PNG and PDF (resvg, svg2pdf), embedded fonts
+src-tauri/              Tauri app: commands, capabilities, icons
+front/                  Svelte + TypeScript interface (Vite, pnpm)
+  messages/en.json      all the texts of the interface, base language (Paraglide JS)
+  messages/fr.json      their French translation
+  src/lib/bindings.ts   generated by tauri-specta, never edited by hand
+  src/lib/editor/       Plan tab
+  src/lib/diorama/      Garden tab
+  src/lib/settings/     settings, export and import
 docs/                   specs, designs, prototypes
 Makefile                dev, build, test, check, fmt
 ```
 
-## Skills Claude
+## Claude skills
 
-Les skills du projet sont dans `skills/<nom>/SKILL.md`, versionnées avec le dépôt.
+The project skills are in `skills/<name>/SKILL.md`, versioned with the repository.
 
-Claude Code les lit dans `.claude/skills/`. Pour qu'il trouve celles du dépôt, crée une fois ce lien depuis la racine :
+Claude Code reads them in `.claude/skills/`. For it to find the ones of the repository, create this link once from the root:
 
 ```
 mkdir -p .claude && ln -s ../skills .claude/skills

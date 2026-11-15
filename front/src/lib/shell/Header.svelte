@@ -7,18 +7,18 @@
   import IconTimeline from "../timeline/IconTimeline.svelte";
   import { m } from "../paraglide/messages.js";
   import { yearsProposees } from "../beds";
-  import { allerA, allerToday, cursor } from "../temps";
+  import { goTo, allerToday, cursor } from "../time";
   import Icon, { type NameIcon } from "./Icon.svelte";
   import Logo from "./Logo.svelte";
 
   const yearEnProgress = new Date().getFullYear();
   /** A season of the selector: the cursor goes to the same day of that year. */
   function chooseYear(year: number) {
-    allerA(sameDayYear(get(cursor), year));
+    goTo(sameDayYear(get(cursor), year));
     void app.charger(year);
   }
 
-  /** « Aujourd'hui » brings back the cursor, the timeline and the season. */
+  /** “Today” brings back the cursor, the timeline and the season. */
   function returnToday() {
     allerToday();
     void app.charger(yearEnProgress);

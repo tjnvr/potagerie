@@ -1,5 +1,5 @@
 <script lang="ts">
-  // Settings (E10, D02): allée width, export and import of the garden
+  // Settings (E10, D02): aisle width, export and import of the garden
   // (F-CPT-3), empty the plan (F-PLN-4), erase the data (F-CPT-4). A side
   // panel on a computer, the full screen on a phone.
   import { open, save } from "@tauri-apps/plugin-dialog";

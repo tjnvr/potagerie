@@ -16,7 +16,7 @@ fn at(x: u32, y: u32, length_cm: u32, width_cm: u32) -> Geometry {
     }
 }
 
-/// An empty plan on a 20 × 10 m plot, 50 cm cases and allées.
+/// An empty plan on a 20 × 10 m plot, 50 cm cases and aisles.
 fn empty() -> Plan {
     Plan::new(PlanId::from_uuid(Uuid::from_u128(1)), plot(), now())
 }
@@ -179,7 +179,7 @@ fn a_width_under_10_cm_is_refused() {
 
 #[test]
 fn names_have_1_to_30_characters() {
-    assert!(plan::check_name("Les tomatoes").is_ok());
+    assert!(plan::check_name("The tomatoes").is_ok());
     assert!(plan::check_name(&"é".repeat(30)).is_ok());
     assert_eq!(plan::check_name("  "), Err(PlanError::InvalidName));
     assert_eq!(

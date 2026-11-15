@@ -59,7 +59,7 @@
     scope?: string | null;
     yearShown?: number;
     selectionBedId?: string | null;
-    /** Notes and periods to draw (S01 F-VIS-5); the caller already applied « Show les annotations ». */
+    /** Notes and periods to draw (S01 F-VIS-5); the caller already applied « Show the annotations ». */
     annotations?: AnnotationView[];
     /** The dashed « today » marker (an option of the export). */
     markerToday?: boolean;

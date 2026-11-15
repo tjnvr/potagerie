@@ -101,14 +101,14 @@ export function simulerTauri(): void {
   } else if (new URLSearchParams(location.search).has("example")) {
     plot = { length_cm: 1100, width_cm: 650, cell_cm: 50, aisle_cm: 50 };
     beds = [
-      bed("Fond from garden", "bed", 50, 50, 300, 120),
+      bed("Back of the garden", "bed", 50, 50, 300, 120),
       bed("Roots", "bed", 400, 50, 300, 120),
-      bed("Les tomatoes", "bed", 50, 220, 400, 100),
-      bed("Côté shed", "bed", 500, 220, 300, 120),
-      bed("Les zucchinis", "bed", 50, 370, 300, 120),
-      bed("Carré leeks", "square", 400, 370, 100, 100),
-      bed("Carré salads", "square", 550, 390, 100, 100),
-      bed("To bout of l’allée", "mound", 750, 50, 300, 120),
+      bed("The tomatoes", "bed", 50, 220, 400, 100),
+      bed("Shed side", "bed", 500, 220, 300, 120),
+      bed("The zucchinis", "bed", 50, 370, 300, 120),
+      bed("Leek square", "square", 400, 370, 100, 100),
+      bed("Salad square", "square", 550, 390, 100, 100),
+      bed("End of the aisle", "mound", 750, 50, 300, 120),
     ];
     const Y = annee0;
     const [fond, tomatoes, shed, zucchinis, roots, leeks, salads] = [
@@ -152,14 +152,14 @@ export function simulerTauri(): void {
     annotations = [
       { id: "n0", annotation_type: "period", date_start: `${Y}-08-01`, date_end: `${Y}-08-21`, bed_id: null, text: "Holidays", hidden: false },
       { id: "n1", annotation_type: "period", date_start: `${Y}-05-05`, date_end: `${Y}-06-10`, bed_id: tomatoes.id, text: "Mulching", hidden: false },
-      { id: "n2", annotation_type: "note", date_start: `${Y}-06-02`, date_end: null, bed_id: tomatoes.id, text: "Stake les tomatoes", hidden: false },
-      { id: "n3", annotation_type: "note", date_start: `${Y}-04-10`, date_end: null, bed_id: null, text: "Dernières frostées ?", hidden: false },
+      { id: "n2", annotation_type: "note", date_start: `${Y}-06-02`, date_end: null, bed_id: tomatoes.id, text: "Stake the tomatoes", hidden: false },
+      { id: "n3", annotation_type: "note", date_start: `${Y}-04-10`, date_end: null, bed_id: null, text: "Last frosts?", hidden: false },
     ];
     version = 4;
   }
 
 
-  /** Overlap, allée and plot edges: a rough copy of S03 §15, for the demo. */
+  /** Overlap, aisle and plot edges: a rough copy of S03 §15, for the demo. */
   function verifier(id: string, g: Geometry): void {
     const t = plot;
     if (!t) refusal("plot_absent");
@@ -236,8 +236,8 @@ export function simulerTauri(): void {
     const readIncoherences = () => [
       incoherence("too_many_beds", { year: annee0, count: 11 }),
       incoherence("planting_orphan", { year: annee0, bed_name: "Roots", crop_id: "carrot" }),
-      incoherence("overlap", { bed_name: "Les tomatoes", crop_id: "tomato", other_crop_id: "lettuce" }),
-      incoherence("aisle_too_narrow", { year: annee0, bed_name: "Carré leeks", other_bed_name: "Carré salads" }),
+      incoherence("overlap", { bed_name: "The tomatoes", crop_id: "tomato", other_crop_id: "lettuce" }),
+      incoherence("aisle_too_narrow", { year: annee0, bed_name: "Leek square", other_bed_name: "Salad square" }),
     ];
     switch (cmd) {
       case "plugin:dialog|save":

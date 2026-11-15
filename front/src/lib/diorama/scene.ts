@@ -9,7 +9,7 @@ import {
   cadre,
   dimensions,
   enUnites,
-  pivoter,
+  rotate,
   pivoterRect,
   depth,
   project,
@@ -156,7 +156,7 @@ function tufts(l: number, h: number, beds: Rect[], quarter: Quarter): Tuft[] {
     const flower = rng() < 0.25;
     const tint = Math.floor(rng() * 3);
     if (beds.some((r) => gx > r.x - 0.3 && gx < r.x + r.l + 0.3 && gy > r.y - 0.3 && gy < r.y + r.h + 0.3)) continue;
-    const [x, y] = project(...pivoter([gx, gy], quarter, l, h));
+    const [x, y] = project(...rotate([gx, gy], quarter, l, h));
     result.push({ x, y, flower, tint });
   }
   return result;
@@ -169,7 +169,7 @@ function rectOf(p: BedView): Rect {
 function plantingScene(p: BedView, s: PlantingView, plot: PlotView, quarter: Quarter, lt: number, ht: number, ground: number): PlantingScene {
   const brut = positionsPlants(p, s, plot.cell_cm);
   const plants = brut
-    .map((b) => pivoter([b.gx, b.gy], quarter, lt, ht))
+    .map((b) => rotate([b.gx, b.gy], quarter, lt, ht))
     .sort((a, b) => depth(a[0], a[1]) - depth(b[0], b[1]))
     .map(([gx, gy]) => {
       const [x, y] = project(gx, gy, ground);
@@ -177,7 +177,7 @@ function plantingScene(p: BedView, s: PlantingView, plot: PlotView, quarter: Qua
     });
   const start = p.x + (s.segment_start - 1) * plot.cell_cm;
   const length = (s.segment_end - s.segment_start + 1) * plot.cell_cm;
-  const [cx, cy] = pivoter([enUnites(start + length / 2), enUnites(p.y + p.width_cm / 2)], quarter, lt, ht);
+  const [cx, cy] = rotate([enUnites(start + length / 2), enUnites(p.y + p.width_cm / 2)], quarter, lt, ht);
   const [x, y] = project(cx, cy, ground);
   return {
     id: s.id,

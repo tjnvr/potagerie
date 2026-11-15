@@ -11,14 +11,14 @@ test("a new draft is an empty note on the given day", () => {
 });
 
 test("a note is sent with trimmed text and no end date", () => {
-  const b = { ...draftEmpty("2026-12-01"), text: "  Mulch les tomatoes ", end: "2030-01-01" };
+  const b = { ...draftEmpty("2026-12-01"), text: "  Mulch the tomatoes ", end: "2030-01-01" };
   expect(sendable(b)).toBe(true);
   expect(versEntree(b)).toEqual({
     annotation_type: "note",
     date_start: "2026-12-01",
     date_end: null,
     bed_id: null,
-    text: "Mulch les tomatoes",
+    text: "Mulch the tomatoes",
     hidden: false,
   });
 });

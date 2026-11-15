@@ -8,13 +8,13 @@
   import Icon from "../shell/Icon.svelte";
   import { m } from "../paraglide/messages.js";
   import { nameOfType } from "../beds";
-  import { cursor, playbackEnProgress } from "../temps";
+  import { cursor, playbackEnProgress } from "../time";
   import { apparenceTo, dayOfPlayback, SYMBOL_ETIQUETTE } from "./animation";
-  import CounterImages from "./CounterImages.svelte";
+  import FrameCounter from "./FrameCounter.svelte";
   import Cursor from "./Cursor.svelte";
   import { ETIQUETTE_SVG } from "./etiquette";
   import { bornesYear, dateEnAllLetters, isoSince, daySince } from "./days";
-  import { imagesBySeconde, measure, type Measure } from "./measure";
+  import { framesPerSecond, measure, type Measure } from "./measure";
   import PanelDiorama from "./PanelDiorama.svelte";
   import type { Quarter } from "./projection";
   import { RenderingPlants } from "./rendering";
@@ -94,7 +94,7 @@
     });
   });
 
-  // A date set from outside (the timeline, the « Aujourd'hui » button).
+  // A date set from outside (the timeline, the “Today” button).
   $effect(() => {
     const j = daySince($cursor);
     untrack(() => {
@@ -143,7 +143,7 @@
   let recent: number[] = [];
   let ips = $state(0);
   let plantsMax = $state(0);
-  let dernierResult = $state<(Measure & { plants: number }) | null>(null);
+  let lastResult = $state<(Measure & { plants: number }) | null>(null);
 
   function play() {
     if (playback) {
@@ -173,7 +173,7 @@
   function conclude() {
     const result = measure(durations);
     if (!result) return;
-    dernierResult = { ...result, plants: plantsMax };
+    lastResult = { ...result, plants: plantsMax };
     const globalWindow = window as unknown as { __potagerieMeasures?: unknown[] };
     (globalWindow.__potagerieMeasures ??= []).push({ ...result, plants: plantsMax });
   }
@@ -186,7 +186,7 @@
       durations.push(dt);
       recent.push(dt);
       if (recent.length > 60) recent.shift();
-      ips = imagesBySeconde(recent);
+      ips = framesPerSecond(recent);
     }
     previous = t;
     const { day, termine } = dayOfPlayback({
@@ -353,7 +353,7 @@
         <p class="empty">{m.diorama_empty()}</p>
       {/if}
       {#if measureActive}
-        <CounterImages direct={ips} plants={plantsMax} dernier={dernierResult} />
+        <FrameCounter direct={ips} plants={plantsMax} dernier={lastResult} />
       {/if}
     </div>
 

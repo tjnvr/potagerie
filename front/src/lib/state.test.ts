@@ -4,7 +4,7 @@ import { app, type Result } from "./state.svelte";
 
 const view = { year: 2026, version: 2 } as YearView;
 
-test("a write failure keeps the change retryable, then « Réessayer » runs it again", async () => {
+test("a write failure keeps the change retryable, then « Retry » runs it again", async () => {
   let calls = 0;
   const action = async (): Promise<Result<YearView>> => {
     calls++;

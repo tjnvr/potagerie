@@ -14,7 +14,7 @@ pub fn d(year: i32, month: u32, day: u32) -> NaiveDate {
     NaiveDate::from_ymd_opt(year, month, day).unwrap()
 }
 
-/// "Aujourd'hui" of S03 §12 unless a case says otherwise.
+/// "Today" of S03 §12 unless a case says otherwise.
 pub fn today() -> NaiveDate {
     d(2026, 11, 14)
 }

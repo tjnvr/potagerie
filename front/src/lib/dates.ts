@@ -37,7 +37,7 @@ export function shiftDate(iso: string, days: number): string {
   return dateOf(dayOf(iso) + days);
 }
 
-/** A civil date as « 2 août », with the year when it is not `year`. */
+/** A civil date as « 2 August », with the year when it is not `year`. */
 export function dateAbbreviated(iso: string, year?: number): string {
   const day = new Date(`${iso}T12:00:00`);
   const options: Intl.DateTimeFormatOptions =
@@ -45,7 +45,7 @@ export function dateAbbreviated(iso: string, year?: number): string {
   return day.toLocaleDateString(localeTag(), options);
 }
 
-/** « lundi 2 août 2027 ». */
+/** « Monday 2 August 2027 ». */
 export function dateComplete(iso: string): string {
   return new Date(`${iso}T12:00:00`).toLocaleDateString(localeTag(), {
     weekday: "long",

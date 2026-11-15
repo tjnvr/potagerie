@@ -1,5 +1,5 @@
 <script lang="ts">
-  // Plan tab: the editor (E03). Top view, tray (Bed, Carré, Mound, Planter),
+  // Plan tab: the editor (E03). Top view, tray (Bed, Square, Mound, Planter),
   // right panel with the selected bed (E06) or the balance of the plan.
   import { commands, type BedView, type TypeBed, type YearView } from "../bindings";
   import Confirmation from "../shell/Confirmation.svelte";

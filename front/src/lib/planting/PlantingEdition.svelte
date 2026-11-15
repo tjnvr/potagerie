@@ -17,7 +17,7 @@
   import IconTimeline from "../timeline/IconTimeline.svelte";
   import { m } from "../paraglide/messages.js";
   import { enMeters, nameCrop } from "../beds";
-  import { cursor } from "../temps";
+  import { cursor } from "../time";
   import { get } from "svelte/store";
   import { enOk } from "./call";
   import { catalogue } from "./crops.svelte";
@@ -103,7 +103,7 @@
     return () => clearTimeout(timer);
   });
 
-  // From « Planter here »: if the whole bed is taken during that time, start
+  // From « Plant here »: if the whole bed is taken during that time, start
   // from the first free shortcut Rust offers.
   $effect(() => {
     if (!preview || !zoneAuto) return;
@@ -124,7 +124,7 @@
     });
   });
 
-  // A new planting from « Planter here » starts on the first crop in season.
+  // A new planting from « Plant here » starts on the first crop in season.
   $effect(() => {
     if (cropChosen || season.length === 0 || opening.type !== "new") return;
     untrack(() => {

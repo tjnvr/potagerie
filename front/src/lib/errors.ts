@@ -49,6 +49,6 @@ export function translateError(error: AppError): string {
 }
 
 /** Write failures: the change is kept on screen and can be retried (F-CPT-2). */
-export function estFailureSaving(error: AppError): boolean {
+export function isFailureSaving(error: AppError): boolean {
   return error.code === "saving";
 }

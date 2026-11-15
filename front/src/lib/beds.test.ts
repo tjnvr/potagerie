@@ -14,7 +14,7 @@ describe("nameByDefault", () => {
   });
 
   test("takes the first letter no bed ends with", () => {
-    const beds = [bed("Bed A", 50, 50), bed("Les tomatoes", 400, 50), bed("Square C", 50, 250)];
+    const beds = [bed("Bed A", 50, 50), bed("The tomatoes", 400, 50), bed("Square C", 50, 250)];
     expect(nameByDefault("square", beds)).toBe("Square B");
   });
 });
@@ -26,12 +26,12 @@ describe("letterOf", () => {
 });
 
 describe("positionFree", () => {
-  test("keeps the allée width from the edges", () => {
+  test("keeps the aisle width from the edges", () => {
     expect(positionFree(plot, [], "bed")).toEqual({ x: 50, y: 50 });
   });
 
-  test("keeps the allée width from the other beds", () => {
-    // 50 + 300 + 50 of allée: the next one starts at x = 400.
+  test("keeps the aisle width from the other beds", () => {
+    // 50 + 300 + 50 of aisle: the next one starts at x = 400.
     expect(positionFree(plot, [bed("A", 50, 50)], "bed")).toEqual({ x: 400, y: 50 });
   });
 
@@ -51,7 +51,7 @@ test("the season selector offers last year to two years ahead", () => {
 });
 
 describe("summary", () => {
-  test("adds up the beds and keeps the rest for the allées", () => {
+  test("adds up the beds and keeps the rest for the aisles", () => {
     const b = summary(plot, [bed("A", 50, 50), bed("B", 400, 50, 100, 100)]);
     expect(b).toEqual({ total: 715_000, cultivable: 36_000 + 10_000, aisles: 669_000, count: 2 });
   });

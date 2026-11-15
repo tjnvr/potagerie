@@ -54,7 +54,7 @@ pub enum PlanError {
         /// `[max(m), min(f)[`.
         period: Occupation,
     },
-    /// Mode "à l'indoor" for a crop without pots needs at least 1 day (S03 §2).
+    /// Mode "indoor" for a crop without pots needs at least 1 day (S03 §2).
     #[error("at least 1 day in pots is required")]
     PotDaysRequired,
     /// A manual end must be after the start of harvest (S03 §2).
@@ -71,8 +71,8 @@ pub enum PlanError {
     /// Plot dimensions out of range (S03 §15).
     #[error("plot {length_cm} × {width_cm} cm is out of range")]
     InvalidPlot { length_cm: u32, width_cm: u32 },
-    /// The allée width must be 30, 50 or 80 cm (S01 F-PLN-2).
-    #[error("allée width {0} cm is not 30, 50 or 80")]
+    /// The aisle width must be 30, 50 or 80 cm (S01 F-PLN-2).
+    #[error("aisle width {0} cm is not 30, 50 or 80")]
     InvalidAisle(u32),
     /// A bed width must be at least 10 cm (S03 §15).
     #[error("width {0} cm is not valid")]
@@ -86,7 +86,7 @@ pub enum PlanError {
     /// Two beds overlap (S01 F-PLN-1).
     #[error("beds {a} and {b} overlap in {year}")]
     BedsOverlap { a: BedId, b: BedId, year: i32 },
-    /// Two beds are closer than the allée width (S01 F-PLN-2).
+    /// Two beds are closer than the aisle width (S01 F-PLN-2).
     #[error("beds {a} and {b} are closer than {aisle_cm} cm in {year}")]
     AisleTooNarrow {
         a: BedId,

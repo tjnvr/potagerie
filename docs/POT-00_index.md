@@ -1,72 +1,73 @@
-# Potagerie — Index de la documentation
+# Potagerie — Documentation index
 
-## Arborescence
+## Layout
 
 ```
 docs/
-├── POT-00_index.md                         ← ce fichier
-├── POT-00_couverture-lot1.md               ← état des exigences F-… au lot 1
+├── POT-00_index.md                         ← this file
+├── POT-00_lot1-coverage.md                 ← state of the F-… requirements at lot 1
 ├── specs/
-│   ├── POT-S01_spec-fonctionnelle_v1.5.md   ← versions courantes
-│   ├── POT-S02_catalogue-cultures_v0.3.md
-│   ├── POT-S03_regles-calculs_v0.10.md
-│   ├── POT-S05_spec-technique_v0.11.md
-│   └── archives/                            ← versions précédentes
+│   ├── POT-S01_functional-spec_v1.6.md     ← current versions
+│   ├── POT-S02_crop-catalogue_v0.4.md
+│   ├── POT-S03_rules-and-calculations_v0.11.md
+│   ├── POT-S05_technical-spec_v0.12.md
+│   └── archives/                           ← previous versions (the ones before v1.6 / v0.4 / v0.11 / v0.12 are in French)
 ├── design/
-│   ├── POT-D01_ecrans-cles_v1.1/            ← version courante (un dossier par canvas)
-│   ├── POT-D02_ecrans-complementaires_v0.1/
-│   └── archives/                            ← versions précédentes
+│   ├── POT-D01_key-screens_v1.2/           ← current version (one folder per canvas)
+│   ├── POT-D02_additional-screens_v0.2/
+│   └── archives/                           ← previous versions
 └── prototypes/
-    ├── POT-P01_rendu-iso_v0.1/              ← un dossier par prototype
+    ├── POT-P01_iso-rendering_v0.2/         ← one folder per prototype
     └── archives/
 ```
 
-## Convention de nommage (identique pour specs, designs et prototypes)
+## Naming convention (the same for specs, designs and prototypes)
 
 ```
-POT-<T><NN>_<sujet>_v<X.Y>      (.md pour une spec, dossier pour un design ou un prototype)
+POT-<T><NN>_<subject>_v<X.Y>      (.md for a spec, folder for a design or a prototype)
 ```
 
-| Élément | Règle | Exemple |
+| Element | Rule | Example |
 |---|---|---|
-| `POT` | Préfixe du projet Potagerie | `POT` |
-| `<T>` | Type : `S` spec, `D` design, `P` prototype | `S`, `D`, `P` |
-| `<NN>` | Numéro sur 2 chiffres, propre à chaque type, attribué une fois pour toutes, jamais réutilisé | `01` |
-| `<sujet>` | Minuscules, sans accents, mots séparés par des tirets | `spec-fonctionnelle`, `ecrans-cles` |
-| `v<X.Y>` | Version : `v0.Y` brouillon, `v1.0` validé. Les évolutions suivantes, même de périmètre, font avancer Y (`v1.1`). X ne passe à 2 qu'une fois une première version de l'appli sortie (lot 1 livré) | `v0.5`, `v1.1` |
+| `POT` | Prefix of the Potagerie project | `POT` |
+| `<T>` | Type: `S` spec, `D` design, `P` prototype | `S`, `D`, `P` |
+| `<NN>` | 2-digit number, specific to each type, assigned once and for all, never reused | `01` |
+| `<subject>` | Lowercase English, no accents, words separated by hyphens | `functional-spec`, `key-screens` |
+| `v<X.Y>` | Version: `v0.Y` draft, `v1.0` validated. Later changes, even of scope, advance Y (`v1.1`). X only moves to 2 once a first version of the app has shipped (lot 1 released) | `v0.5`, `v1.1` |
 
-Règles communes :
-- **Une seule version courante** par document dans `specs/`, `design/` ou `prototypes/`. À chaque nouvelle version, la précédente est déplacée telle quelle dans le dossier `archives/` voisin.
-- **En-tête** : chaque spec, et le `README.md` de chaque dossier de design ou de prototype, commence par `Version · Date · Auteur`, cohérents avec le nom.
-- **Index** : ce fichier est mis à jour à chaque création, renommage ou nouvelle version.
-- Le titre du canvas sur claude.ai reprend le code : « POT-D01 · Écrans clés V1 ».
+Common rules:
+- **A single current version** of each document in `specs/`, `design/` or `prototypes/`. At each new version, the previous one is moved as is into the neighbouring `archives/` folder.
+- **Header**: each spec, and the `README.md` of each design or prototype folder, starts with `Version · Date · Author`, consistent with the name.
+- **Index**: this file is updated at each creation, renaming or new version.
+- **Language**: everything is written in English (documents, code, comments, commit messages). The archives keep the language they were written in.
+- The title of the canvas on claude.ai takes up the code: "POT-D01 · Key screens V1".
 
-Propre aux designs :
-- Contenu d'un dossier : `README.md`, `project/` (copie exacte des fichiers du canvas), `exports/` (PNG, PDF), et un éventuel générateur.
-- Planches : `<code-écran>_<ecran>_<support>.dc.html`, avec le code écran de la spec (`E05`, `E07`) ou `DV<NN>` pour la direction visuelle, et `desktop` ou `mobile` comme support. Exception : la planche d'entrée du canvas s'appelle toujours `Main.dc.html`, car l'outil l'impose.
-- Les exports portent le nom de leur planche : `exports/E05_potager_mobile.png`.
+Specific to designs:
+- Content of a folder: `README.md`, `project/` (exact copy of the files of the canvas), `exports/` (PNG, PDF), and an optional generator.
+- Sheets: `<screen-code>_<screen>_<medium>.dc.html`, with the screen code of the spec (`E05`, `E07`) or `DV<NN>` for the visual direction, and `desktop` or `mobile` as the medium. Exception: the entry sheet of the canvas is always called `Main.dc.html`, because the tool requires it.
+- The exports carry the name of their sheet: `exports/E05_garden_mobile.png`.
 
-Propre aux prototypes :
-- Code jetable, autonome (s'ouvre sans installation), qui répond à **une question** précise.
-- Exception : quand la question porte sur la stack elle-même (par exemple Tauri + Svelte), le prototype peut demander une compilation. Son `README.md` donne alors les commandes d'installation et de lancement, et un `.gitignore` exclut les dépendances et les produits de compilation.
-- Le `README.md` contient : la question, le protocole, les résultats et la décision prise.
+Specific to prototypes:
+- Throwaway, standalone code (opens without installation), that answers **one** precise question.
+- Exception: when the question is about the stack itself (for example Tauri + Svelte), the prototype may require a build. Its `README.md` then gives the install and launch commands, and a `.gitignore` excludes the dependencies and the build output.
+- The `README.md` contains: the question, the protocol, the results and the decision taken.
 
 ## Documents
 
-| Code | Document | Version | Statut | Lien |
+| Code | Document | Version | Status | Link |
 |---|---|---|---|---|
-| S01 | Spec fonctionnelle V1 (appli installée, sans compte, lots bureau, mobile et synchro) | 1.5 | Brouillon | [specs/POT-S01_spec-fonctionnelle_v1.5.md](specs/POT-S01_spec-fonctionnelle_v1.5.md) |
-| S02 | Catalogue des cultures (67 légumes de la V1, 6 de référence, schéma figé) | 0.3 | Brouillon | [specs/POT-S02_catalogue-cultures_v0.3.md](specs/POT-S02_catalogue-cultures_v0.3.md) |
-| S03 | Règles et calculs (dates, stades, conflits, quantités, dispositions, créneaux, suggestions, tâches, validation après fusion ; terrain et placement des planches ; ensoleillement en annexe) | 0.10 | Brouillon | [specs/POT-S03_regles-calculs_v0.10.md](specs/POT-S03_regles-calculs_v0.10.md) |
-| S05 | Spec technique (Rust + Svelte, appli Tauri bureau puis mobile, synchro CRDT sans serveur) | 0.11 | Brouillon | [specs/POT-S05_spec-technique_v0.11.md](specs/POT-S05_spec-technique_v0.11.md) |
-| P01 | Prototype rendu isométrique (SVG ou Canvas ?) | 0.1 | Brouillon | [prototypes/POT-P01_rendu-iso_v0.1/](prototypes/POT-P01_rendu-iso_v0.1/README.md) · [page](https://claude.ai/artifact/PBrzt3qta6sHKisnhfZWMv) |
-| D01 | Écrans clés V1 (E03 atelier, E05 ordinateur et téléphone, E07, direction visuelle) | 1.1 | Brouillon | [design/POT-D01_ecrans-cles_v1.1/](design/POT-D01_ecrans-cles_v1.1/README.md) · [canvas](https://claude.ai/artifact/DoHRUtcujzwPF6bfjdQtSN) |
-| D02 | Écrans complémentaires V1 (E02, E06, E07 ordinateur, E09, E10 ordinateur et téléphone, E11, états transverses) | 0.1 | Brouillon | [design/POT-D02_ecrans-complementaires_v0.1/](design/POT-D02_ecrans-complementaires_v0.1/README.md) |
+| S01 | V1 functional spec (installed app, no account, desktop, mobile and sync lots) | 1.6 | Draft | [specs/POT-S01_functional-spec_v1.6.md](specs/POT-S01_functional-spec_v1.6.md) |
+| S02 | Crop catalogue (67 V1 crops, 6 reference, frozen schema) | 0.4 | Draft | [specs/POT-S02_crop-catalogue_v0.4.md](specs/POT-S02_crop-catalogue_v0.4.md) |
+| S03 | Rules and calculations (dates, stages, conflicts, quantities, layouts, slots, suggestions, tasks, validation after a merge; plot and placement of the beds; sunlight in an annex) | 0.11 | Draft | [specs/POT-S03_rules-and-calculations_v0.11.md](specs/POT-S03_rules-and-calculations_v0.11.md) |
+| S05 | Technical spec (Rust + Svelte, desktop then mobile Tauri app, serverless CRDT sync) | 0.12 | Draft | [specs/POT-S05_technical-spec_v0.12.md](specs/POT-S05_technical-spec_v0.12.md) |
+| P01 | Isometric rendering prototype (SVG or Canvas?) | 0.2 | Draft | [prototypes/POT-P01_iso-rendering_v0.2/](prototypes/POT-P01_iso-rendering_v0.2/README.md) · [page](https://claude.ai/artifact/PBrzt3qta6sHKisnhfZWMv) |
+| D01 | Key V1 screens (E03 editor, E05 computer and phone, E07, visual direction) | 1.2 | Draft | [design/POT-D01_key-screens_v1.2/](design/POT-D01_key-screens_v1.2/README.md) · [canvas](https://claude.ai/artifact/DoHRUtcujzwPF6bfjdQtSN) |
+| D02 | Additional V1 screens (E02, E06, E07 computer, E09, E10 computer and phone, E11, cross-cutting states) | 0.2 | Draft | [design/POT-D02_additional-screens_v0.2/](design/POT-D02_additional-screens_v0.2/README.md) |
 
-## Codes réservés
+## Reserved codes
 
-| Code | Document prévu |
+| Code | Planned document |
 |---|---|
-| S04 | Direction visuelle |
+| S04 | Visual direction |
 
-D02 était réservé à « Atelier du plan et export » ; l'atelier a finalement été couvert par D01 (E03), et D02 est devenu les écrans complémentaires restants — voir sa section Décisions.
+D02 was reserved for "Plan editor and export"; the editor was finally covered by D01 (E03), and D02 became the remaining additional screens — see its Decisions section.

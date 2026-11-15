@@ -8,7 +8,7 @@
   import { app } from "../state.svelte";
   import { get } from "svelte/store";
   import { m } from "../paraglide/messages.js";
-  import { cursor } from "../temps";
+  import { cursor } from "../time";
   import { dateShort, enM2, enMeters, nameCrop, nameOfType } from "../beds";
   import type { Geo, Response } from "./drag";
 

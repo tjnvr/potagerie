@@ -25,7 +25,7 @@ export function monthOf(day: number): number {
   return new Date(Math.floor(day) * MS_BY_DAY).getUTCMonth() + 1;
 }
 
-/** A day number as « 20 june 2027 ». */
+/** A day number as « 20 June 2027 ». */
 export function dateEnAllLetters(day: number): string {
   return new Date(Math.floor(day) * MS_BY_DAY).toLocaleDateString(localeTag(), {
     day: "numeric",

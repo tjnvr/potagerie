@@ -58,7 +58,7 @@
   >
     <Icon name={playback ? "pause" : "play"} size={22} />
   </button>
-  <button class="pas" type="button" aria-label={m.diorama_week_previous()} onclick={() => week(-1)}>
+  <button class="step" type="button" aria-label={m.diorama_week_previous()} onclick={() => week(-1)}>
     <Icon name="back" size={16} />
   </button>
   <div class="lead">
@@ -78,7 +78,7 @@
       {/each}
     </div>
   </div>
-  <button class="pas next" type="button" aria-label={m.diorama_week_next()} onclick={() => week(1)}>
+  <button class="step next" type="button" aria-label={m.diorama_week_next()} onclick={() => week(1)}>
     <Icon name="back" size={16} />
   </button>
   <div class="speed" role="group" aria-label={m.diorama_speed()}>
@@ -108,7 +108,7 @@
     box-shadow: 0 6px 16px rgba(242, 166, 90, 0.35);
   }
 
-  .pas {
+  .step {
     flex: none;
     display: grid;
     place-items: center;

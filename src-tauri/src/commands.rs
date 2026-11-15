@@ -133,7 +133,7 @@ pub struct PlantingInput {
     /// Mode indoor only: `date` is the transplanting date, not the sowing date.
     /// The planting stores the sowing date `s = x - A` (S03 §2).
     #[serde(default)]
-    pub date_est_transplanting: bool,
+    pub date_is_transplanting: bool,
 }
 
 /// A zone of segments.
@@ -448,7 +448,7 @@ pub fn create_plot(
     Ok(view(Some(&plan), year))
 }
 
-/// Changes the dimensions of the plot and the allée width. The case size
+/// Changes the dimensions of the plot and the aisle width. The case size
 /// is fixed at creation.
 #[tauri::command]
 #[specta::specta]
@@ -590,7 +590,7 @@ fn build_planting(
         .crop(&input.crop_id)
         .ok_or_else(|| plan::PlanError::UnknownCrop(input.crop_id.clone()))?;
     let zone = Zone::new(input.segment_start, input.segment_end)?;
-    let date = if input.date_est_transplanting && input.mode == Mode::Indoor {
+    let date = if input.date_is_transplanting && input.mode == Mode::Indoor {
         let pot_days = if crop.indoor_days > 0 {
             crop.indoor_days
         } else {

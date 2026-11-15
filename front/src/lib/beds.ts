@@ -26,7 +26,7 @@ export function nameOfType(type: TypeBed): string {
 }
 
 /** Default name of a new bed: its type and the first letter no other
- *  bed ends with, « Bed A », « Carré B »… (S01 F-PLN-1). */
+ *  bed ends with, « Bed A », « Square B »… (S01 F-PLN-1). */
 export function nameByDefault(type: TypeBed, beds: readonly BedView[]): string {
   let i = 0;
   while (beds.some((p) => p.name.endsWith(` ${letterOf(i)}`))) {
@@ -58,8 +58,8 @@ function overlaps(a: Rect, b: Rect, marge: number): boolean {
 }
 
 /**
- * Where the demo button « Add une bed » drops a new bed: the first
- * spot, on the case grid, read row by row, that keeps the allée width from the
+ * Where the demo button « Add a bed » drops a new bed: the first
+ * spot, on the case grid, read row by row, that keeps the aisle width from the
  * edges and from the other beds. `null` if there is no room.
  *
  * This only replaces the drag and drop of the editor (F-PLN-6) for now: Rust
@@ -71,17 +71,17 @@ export function positionFree(
   type: TypeBed,
 ): { x: number; y: number } | null {
   const { length_cm, width_cm } = SIZE_BY_DEFAULT[type];
-  const pas = plot.cell_cm;
+  const step = plot.cell_cm;
   const marge = plot.aisle_cm;
-  const start = Math.ceil(marge / pas) * pas;
+  const start = Math.ceil(marge / step) * step;
   const others: Rect[] = beds.map((p) => ({
     x: p.x,
     y: p.y,
     l: p.length_cm,
     h: p.width_cm,
   }));
-  for (let y = start; y + width_cm + marge <= plot.width_cm; y += pas) {
-    for (let x = start; x + length_cm + marge <= plot.length_cm; x += pas) {
+  for (let y = start; y + width_cm + marge <= plot.width_cm; y += step) {
+    for (let x = start; x + length_cm + marge <= plot.length_cm; x += step) {
       const here = { x, y, l: length_cm, h: width_cm };
       if (!others.some((other) => overlaps(here, other, marge))) {
         return { x, y };
@@ -113,7 +113,7 @@ export function summary(plot: PlotView, beds: readonly BedView[]) {
   return { total, cultivable, aisles: total - cultivable, count: beds.length };
 }
 
-/** A civil date `YYYY-MM-DD` as « 15 mars », with the year when it is not `year`. */
+/** A civil date `YYYY-MM-DD` as « 15 March », with the year when it is not `year`. */
 export function dateShort(date: string, year?: number): string {
   const day = new Date(`${date}T12:00:00`);
   const options: Intl.DateTimeFormatOptions =

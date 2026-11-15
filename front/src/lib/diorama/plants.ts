@@ -1,6 +1,6 @@
 // Where the plants of a planting stand on its bed (S03 §6): the rows and the
 // plants per row come from the view (Rust), the zone along the length from its
-// tronçons. Rows run along the length of the bed, evenly across its width;
+// segments. Rows run along the length of the bed, evenly across its width;
 // the plants of a row are evenly spread along the zone.
 
 import { enUnites } from "./projection";

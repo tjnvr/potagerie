@@ -15,7 +15,7 @@
   import { translateError } from "../errors";
   import { call, app } from "../state.svelte";
   import { m } from "../paraglide/messages.js";
-  import { allerA, cursor, viewportTimeline, recentering } from "../temps";
+  import { goTo, cursor, viewportTimeline, recentering } from "../time";
   import { shiftShown, deposerBar } from "./bar";
   import { PALETTE, colorCrop, melange } from "./colors";
   import TimelineSvg, { WIDTH_LABELS, WIDTH_LABELS_NARROW } from "./TimelineSvg.svelte";
@@ -77,7 +77,7 @@
     });
   });
 
-  // « Aujourd'hui »: back to the middle of the timeline, even if the cursor did not move.
+  // “Today”: back to the middle of the timeline, even if the cursor did not move.
   $effect(() => {
     if ($recentering === 0) return;
     untrack(() => {
@@ -187,7 +187,7 @@
     }
     if (!geste) return;
     if (geste.type === "cursor") {
-      allerA(dateOf(dayUnderLePointer(scale, e.clientX, gauche())));
+      goTo(dateOf(dayUnderLePointer(scale, e.clientX, gauche())));
     } else if (geste.type === "bar") {
       if (geste.sending) return;
       const movement = controller.move({ x: e.clientX, y: e.clientY });
@@ -226,7 +226,7 @@
       const note = courant.target?.closest("[data-annotation]");
       if (note) openAnnotation(note.getAttribute("data-annotation")!);
       else if (slot) openSlot(slot.getAttribute("data-slot")!);
-      else allerA(dateOf(dayUnderLePointer(scale, e.clientX, gauche())));
+      else goTo(dateOf(dayUnderLePointer(scale, e.clientX, gauche())));
       return;
     }
     if (courant.sending) return;
@@ -270,14 +270,14 @@
       app.message = { text: m.timeline_refusal({ reason }), ton: "error" };
       refusal = id;
       setTimeout(() => (refusal = null), 1500);
-      await ramener(id, shiftShown(dxPx, pxByDay));
+      await bringBack(id, shiftShown(dxPx, pxByDay));
     } else {
       shifts = {};
     }
   }
 
   /** The bar goes back to its place; at once if the system asks to reduce motion. */
-  async function ramener(id: string, since: number) {
+  async function bringBack(id: string, since: number) {
     if (reduced()) {
       shifts = {};
       return;
@@ -285,13 +285,13 @@
     const duration = 180;
     const start = performance.now();
     await new Promise<void>((finished) => {
-      const pas = (t: number) => {
+      const step = (t: number) => {
         const p = Math.min(1, (t - start) / duration);
         shifts = { [id]: since * (1 - (1 - (1 - p) * (1 - p))) };
-        if (p < 1) requestAnimationFrame(pas);
+        if (p < 1) requestAnimationFrame(step);
         else finished();
       };
-      requestAnimationFrame(pas);
+      requestAnimationFrame(step);
     });
     shifts = {};
   }

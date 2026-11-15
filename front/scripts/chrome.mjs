@@ -17,10 +17,10 @@ const PATHS = [
 
 export async function lancerChrome(port = 9333) {
   const profil = mkdtempSync(join(tmpdir(), "potagerie-chrome-"));
-  let processus = null;
+  let proc = null;
   for (const path of PATHS) {
     try {
-      processus = spawn(
+      proc = spawn(
         path,
         [
           "--headless=new",
@@ -35,15 +35,15 @@ export async function lancerChrome(port = 9333) {
         { stdio: "ignore" },
       );
       await new Promise((ok, ko) => {
-        processus.once("spawn", ok);
-        processus.once("error", ko);
+        proc.once("spawn", ok);
+        proc.once("error", ko);
       });
       break;
     } catch {
-      processus = null;
+      proc = null;
     }
   }
-  if (!processus) throw new Error("Chrome not found: set CHROME to its path");
+  if (!proc) throw new Error("Chrome not found: set CHROME to its path");
 
   let target = null;
   for (let i = 0; i < 50 && !target; i++) {
@@ -89,7 +89,7 @@ export async function lancerChrome(port = 9333) {
     },
     async close() {
       socket.close();
-      processus.kill();
+      proc.kill();
       await new Promise((r) => setTimeout(r, 300));
       rmSync(profil, { recursive: true, force: true });
     },

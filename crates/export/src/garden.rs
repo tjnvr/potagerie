@@ -205,7 +205,7 @@ mod tests {
         )
         .unwrap();
         assert!(refused(&path));
-        // Unknown case size, invalid allée, broken layout, broken planting.
+        // Unknown case size, invalid aisle, broken layout, broken planting.
         write_plan_json(&path, |p| p["plot"]["cell_cm"] = 40.into());
         assert!(refused(&path));
         write_plan_json(&path, |p| p["plot"]["aisle_cm"] = 7.into());

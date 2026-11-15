@@ -1,6 +1,6 @@
 import { localeTag } from "./locale";
 import { commands, type AnnotationView, type AppError, type SlotView, type IncoherenceView, type BedId, type PlantingView, type SuggestionView, type YearView } from "./bindings";
-import { estFailureSaving, translateError } from "./errors";
+import { isFailureSaving, translateError } from "./errors";
 
 
 /** What a command resolves to (tauri-specta, ErrorHandlingMode::Result). */
@@ -13,7 +13,7 @@ export type Tab = "garden" | "plan";
 
 export type Message = { text: string; ton: "info" | "error" };
 
-/** What opens E07 (new planting and edition): from a bed (« Planter here »),
+/** What opens E07 (new planting and edition): from a bed (« Plant here »),
  *  from a free slot of the timeline (with its suggestions), or from a bar. */
 export type OpeningPlanting =
   | { type: "new"; bedId: string; slot?: SlotView; suggestion?: SuggestionView }
@@ -57,14 +57,14 @@ class App {
     const result = await call(() => commands.viewYear(year));
     if (result.status === "ok") {
       this.view = result.data;
-      await this.refreshAResolve();
+      await this.refreshToResolve();
     } else {
       this.signaler(result.error);
     }
   }
 
   /** Asks Rust what is left to resolve; the list stays until each case is settled. */
-  async refreshAResolve(): Promise<void> {
+  async refreshToResolve(): Promise<void> {
     const result = await call(() => commands.incoherencesPlan());
     if (result.status === "ok") this.toResolve = result.data;
   }
@@ -76,12 +76,12 @@ class App {
     this.dernierRefusal = null;
     if (result.status === "ok") {
       this.view = result.data;
-      void this.refreshAResolve();
+      void this.refreshToResolve();
       this.saving = "saved";
       this.#retry = null;
       return true;
     }
-    if (estFailureSaving(result.error)) {
+    if (isFailureSaving(result.error)) {
       this.saving = "error";
       this.#retry = async () => {
         await this.modify(action);
@@ -94,7 +94,7 @@ class App {
     return false;
   }
 
-  /** « Réessayer » of the save indicator. */
+  /** « Retry » of the save indicator. */
   async retry(): Promise<void> {
     await this.#retry?.();
   }
@@ -121,7 +121,7 @@ export async function call<T>(call: () => Promise<Result<T>>): Promise<Result<T>
 
 export const app = new App();
 
-/** A civil date `YYYY-MM-DD` or a UTC timestamp, as « 2 novembre 2026 ». */
+/** A civil date `YYYY-MM-DD` or a UTC timestamp, as “2 November 2026”. */
 export function dateLong(date: string): string {
   const day = /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(`${date}T12:00:00`) : new Date(date);
   return day.toLocaleDateString(localeTag(), { day: "numeric", month: "long", year: "numeric" });

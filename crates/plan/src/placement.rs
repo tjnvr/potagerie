@@ -1,18 +1,18 @@
 //! Placement rules of the editor (S03 §15): plot dimensions, beds
-//! inside the plot, no overlap, allée width between beds.
+//! inside the plot, no overlap, aisle width between beds.
 
 use crate::error::PlanError;
 use crate::ids::BedId;
 use crate::model::{Geometry, MAX_NAME_CHARS, MIN_WIDTH_CM, Plan, Plot};
 
-/// Allée widths offered by S01 F-PLN-2, in cm.
+/// Aisle widths offered by S01 F-PLN-2, in cm.
 pub const AISLE_CHOICES: [u32; 3] = [30, 50, 80];
 /// Smallest and largest plot side, in cm (S03 §15).
 pub const MIN_PLOT_CM: u32 = 100;
 pub const MAX_PLOT_CM: u32 = 10_000;
 
 impl Plot {
-    /// Checks the dimensions and the allée width (S03 §15).
+    /// Checks the dimensions and the aisle width (S03 §15).
     pub fn validate(&self) -> Result<(), PlanError> {
         let case = self.cell_cm.cm();
         let side_ok = |side: u32| (MIN_PLOT_CM.max(case)..=MAX_PLOT_CM).contains(&side);
@@ -48,7 +48,7 @@ impl Plan {
     /// Checks the layout of every bed, in every year from `from_year` to
     /// the last year with a recorded layout (a layout holds until the next
     /// one, S03 §7): the bed fits in the plot, has a valid width, does
-    /// not overlap another one and keeps the allée width from it.
+    /// not overlap another one and keeps the aisle width from it.
     ///
     /// Operations call it after changing a layout; the command then does not
     /// save when it fails.
@@ -118,7 +118,7 @@ impl Plan {
 }
 
 impl Plan {
-    /// Changes the dimensions and the allée width; the case size stays (S03 §4).
+    /// Changes the dimensions and the aisle width; the case size stays (S03 §4).
     /// Refused, with the plan untouched, if the new plot is invalid or no
     /// longer holds the beds of the current year and the following ones.
     pub fn set_plot(

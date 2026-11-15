@@ -29,23 +29,23 @@ export function pixelsVersCm(p: Point, rect: Rect, box: Box): Point {
 }
 
 /** The nearest multiple of the case size. */
-export function roundedCase(cm: number, pas: number): number {
-  return Math.round(cm / pas) * pas;
+export function roundedCase(cm: number, step: number): number {
+  return Math.round(cm / step) * step;
 }
 
 /** Top left of a bed carried by `shift` (where the pointer holds it),
  *  snapped to the grid of cases. */
-export function positionDropped(pointer: Point, shift: Point, pas: number): Point {
-  return { x: roundedCase(pointer.x - shift.x, pas), y: roundedCase(pointer.y - shift.y, pas) };
+export function positionDropped(pointer: Point, shift: Point, step: number): Point {
+  return { x: roundedCase(pointer.x - shift.x, step), y: roundedCase(pointer.y - shift.y, step) };
 }
 
 /** A bed dropped from the tray is held by its centre. */
 export function positionSincePlanter(
   pointer: Point,
   size: { length_cm: number; width_cm: number },
-  pas: number,
+  step: number,
 ): Point {
-  return positionDropped(pointer, { x: size.length_cm / 2, y: size.width_cm / 2 }, pas);
+  return positionDropped(pointer, { x: size.length_cm / 2, y: size.width_cm / 2 }, step);
 }
 
 /**
@@ -53,15 +53,15 @@ export function positionSincePlanter(
  * case (a whole number of cases, at least one); the width is free to the
  * centimetre (S01 F-PLN-1).
  */
-export function resize(g: Geo, handle: Handle, pointer: Point, pas: number): Geo {
+export function resize(g: Geo, handle: Handle, pointer: Point, step: number): Geo {
   const right = g.x + g.length_cm;
   const low = g.y + g.width_cm;
   let { x, y, length_cm, width_cm } = g;
   if (handle.includes("e")) {
-    length_cm = Math.max(pas, roundedCase(pointer.x - g.x, pas));
+    length_cm = Math.max(step, roundedCase(pointer.x - g.x, step));
   }
   if (handle.includes("w")) {
-    length_cm = Math.max(pas, roundedCase(right - pointer.x, pas));
+    length_cm = Math.max(step, roundedCase(right - pointer.x, step));
     x = right - length_cm;
   }
   if (handle.includes("s")) {
@@ -76,7 +76,7 @@ export function resize(g: Geo, handle: Handle, pointer: Point, pas: number): Geo
 
 /** Rust takes unsigned positions: a negative one is left of or above the
  *  plot, so it is refused as outside without a call. */
-export function estBeforeLePlot(g: Pick<Geo, "x" | "y">): boolean {
+export function isBeforePlot(g: Pick<Geo, "x" | "y">): boolean {
   return g.x < 0 || g.y < 0;
 }
 
@@ -200,7 +200,7 @@ export async function deposer(
   ) {
     return { position: origin, response: "unchanged" };
   }
-  if (estBeforeLePlot(target)) {
+  if (isBeforePlot(target)) {
     return { position: origin, response: "before-plot" };
   }
   const response = await envoyer(target);

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { TH, TW, cadre, dimensions, enUnites, pivoter, pivoterRect, project, type Quarter } from "./projection";
+import { TH, TW, cadre, dimensions, enUnites, rotate, pivoterRect, project, type Quarter } from "./projection";
 import { dateEnAllLetters, isoSince, daySince } from "./days";
 import { seasonOf } from "./season";
 
@@ -34,7 +34,7 @@ describe("rotation of the view", () => {
     let dl = l;
     let dh = h;
     for (let i = 0; i < 4; i++) {
-      p = pivoter(p, 1, dl, dh);
+      p = rotate(p, 1, dl, dh);
       [dl, dh] = [dh, dl];
     }
     expect(p).toEqual([3, 5]);
@@ -44,7 +44,7 @@ describe("rotation of the view", () => {
     for (const quarter of [0, 1, 2, 3] as Quarter[]) {
       const d = dimensions(quarter, l, h);
       for (const coin of [[0, 0], [l, 0], [0, h], [l, h]] as [number, number][]) {
-        const [x, y] = pivoter(coin, quarter, l, h);
+        const [x, y] = rotate(coin, quarter, l, h);
         expect([0, d.l]).toContain(x);
         expect([0, d.h]).toContain(y);
       }

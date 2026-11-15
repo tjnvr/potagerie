@@ -8,7 +8,8 @@ description: Name, version and file Potagerie specs and designs (POT-TNN convent
 **Format**: `POT-<T><NN>_<topic>_v<X.Y>`
 - `T`: `S` spec (`.md` file), `D` design (folder), `P` prototype (folder).
 - `NN`: 2-digit number per type, never reused.
-- `topic`: lowercase, no accents, words separated by hyphens.
+- `topic`: lowercase English, no accents, words separated by hyphens (`functional-spec`, `key-screens`).
+- Language: everything in the repository is written in English (documents, code, comments, messages, commit messages). The French UI lives in `front/messages/fr.json`. Archived versions keep the language they were written in.
 - `v0.Y` is a draft, `v1.0` is validated. Later changes, scope included, bump Y (`v1.1`, `v1.2`).
 - X moves to `v2.0` only once a first version of the app has shipped (lot 1 released).
 

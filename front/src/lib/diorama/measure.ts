@@ -13,13 +13,13 @@ export type Measure = {
 };
 
 /** Frames dropped at the start of a run: the first ones pay for the set-up. */
-export const IMAGES_IGNOREES = 5;
+export const IGNORED_FRAMES = 5;
 export const CRITERION_AVERAGE = 55;
 export const CRITERION_LOW_1PCT = 30;
 
 /** Metrics of a run from its frame durations in ms; null if too short. */
 export function measure(durations: readonly number[]): Measure | null {
-  const ft = durations.slice(IMAGES_IGNOREES).sort((a, b) => a - b);
+  const ft = durations.slice(IGNORED_FRAMES).sort((a, b) => a - b);
   if (ft.length < 20) return null;
   const moy = ft.reduce((a, b) => a + b, 0) / ft.length;
   const p99 = ft[Math.floor(ft.length * 0.99)] ?? 1;
@@ -38,7 +38,7 @@ export function respectsLeCriterion(m: Measure): boolean {
 }
 
 /** Mean images per second over the last frames of a running playback. */
-export function imagesBySeconde(recent: readonly number[]): number {
+export function framesPerSecond(recent: readonly number[]): number {
   if (recent.length === 0) return 0;
   return 1000 / (recent.reduce((a, b) => a + b, 0) / recent.length);
 }

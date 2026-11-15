@@ -54,7 +54,7 @@ describe("form to command input", () => {
       mode: "indoor",
       date: "2027-03-10",
       manual_end: null,
-      date_est_transplanting: false,
+      date_is_transplanting: false,
     });
   });
 
@@ -63,8 +63,8 @@ describe("form to command input", () => {
     expect(versPlantingInput(f).indoor_days).toBe(21);
     expect(versPlantingInput({ ...f, mode: "plants" }).indoor_days).toBeNull();
     expect(versPlantingInput({ ...f, indoorDays: "" }).indoor_days).toBeNull();
-    expect(versPlantingInput({ ...f, transplanting: true }).date_est_transplanting).toBe(true);
-    expect(versPlantingInput({ ...f, mode: "plants", transplanting: true }).date_est_transplanting).toBe(false);
+    expect(versPlantingInput({ ...f, transplanting: true }).date_is_transplanting).toBe(true);
+    expect(versPlantingInput({ ...f, mode: "plants", transplanting: true }).date_is_transplanting).toBe(false);
   });
 
   it("fills the form from a suggestion, with its end as an end modified by hand", () => {

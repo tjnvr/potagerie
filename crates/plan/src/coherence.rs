@@ -6,7 +6,7 @@
 //! - [`Plan::incoherences`]: what breaks the rules of the plan without
 //!   breaking the calculations (too many beds, orphan plantings, overlaps,
 //!   placement, bad annotations). Nothing is deleted or corrected: the import
-//!   is accepted and the list is shown "à résoudre" (S03 §13 default).
+//!   is accepted and the list is shown "to resolve" (S03 §13 default).
 
 use std::collections::BTreeSet;
 

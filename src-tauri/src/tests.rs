@@ -96,7 +96,7 @@ fn refusals_carry_a_code_and_change_nothing() {
     let err = invoke(
         &window,
         "create_bed",
-        json!({ "year": year(), "bedType": "square", "name": "Carré A", "x": 0, "y": 0 }),
+        json!({ "year": year(), "bedType": "square", "name": "Square A", "x": 0, "y": 0 }),
     )
     .unwrap_err();
     assert_eq!(err["code"], "plot_absent");
@@ -113,7 +113,7 @@ fn refusals_carry_a_code_and_change_nothing() {
     let err = invoke(
         &window,
         "create_bed",
-        json!({ "year": year() - 1, "bedType": "square", "name": "Carré A", "x": 0, "y": 0 }),
+        json!({ "year": year() - 1, "bedType": "square", "name": "Square A", "x": 0, "y": 0 }),
     )
     .unwrap_err();
     assert_eq!(err["code"], "year_past");
@@ -171,7 +171,7 @@ fn exported_timeline_is_a_valid_png_and_pdf() {
 <rect x="150" y="20" width="120" height="80" fill="#f1c40f" fill-opacity="0.3"/>
 <text x="154" y="34" font-family="sans-serif" font-size="11" fill="#333">Mulching</text>
 <line x1="60" y1="20" x2="60" y2="100" stroke="#c0392b"/>
-<text x="64" y="60" font-family="sans-serif" font-size="11" fill="#333">Sow les radish</text>
+<text x="64" y="60" font-family="sans-serif" font-size="11" fill="#333">Sow the radishes</text>
 </svg>"##;
     for (format, name, magic) in [
         ("png", "timeline.png", &b"\x89PNG\r\n\x1a\n"[..]),
@@ -225,7 +225,7 @@ fn journey_plot_place_move_refuse_delete() {
     let dir = tempfile::tempdir().unwrap();
     let (_app, window) = app(&dir.path().join(DB_FILE));
 
-    // Plot: dimensions and allée are validated.
+    // Plot: dimensions and aisle are validated.
     for bad in [
         json!({ "length_cm": 50, "width_cm": 650, "cell_cm": 50, "aisle_cm": 50 }),
         json!({ "length_cm": 1100, "width_cm": 650, "cell_cm": 50, "aisle_cm": 40 }),
@@ -242,14 +242,14 @@ fn journey_plot_place_move_refuse_delete() {
     assert_eq!(view["plot"], Value::Null);
     invoke(&window, "create_plot", plot_args()).unwrap();
 
-    // Two beds, 50 cm apart (the allée width).
+    // Two beds, 50 cm apart (the aisle width).
     let view = place(&window, "bed", "Bed A", 50, 50).unwrap();
     let a = view["beds"][0]["id"].as_str().unwrap().to_string();
-    let view = place(&window, "square", "Carré B", 400, 50).unwrap();
+    let view = place(&window, "square", "Square B", 400, 50).unwrap();
     assert_eq!(view["beds"].as_array().unwrap().len(), 2);
     let version = view["version"].clone();
 
-    // Refusals: overlap, allée too narrow, outside the plot. Nothing changes.
+    // Refusals: overlap, aisle too narrow, outside the plot. Nothing changes.
     let err = place(&window, "planter", "Planter C", 300, 100).unwrap_err();
     assert_eq!(err["code"], "bed_overlaps");
     let err = place(&window, "planter", "Planter C", 420, 100).unwrap_err();
@@ -301,11 +301,11 @@ fn journey_plot_place_move_refuse_delete() {
     let view = invoke(
         &window,
         "modify_bed",
-        json!({ "year": year(), "id": a, "name": "Les tomatoes", "geometry": {
+        json!({ "year": year(), "id": a, "name": "The tomatoes", "geometry": {
             "bed_type": "bed", "x": 50, "y": 300, "length_cm": 400, "width_cm": 135 } }),
     )
     .unwrap();
-    assert_eq!(view["beds"][0]["name"], "Les tomatoes");
+    assert_eq!(view["beds"][0]["name"], "The tomatoes");
     assert_eq!(view["beds"][0]["segments"], 8);
 
     // The plot cannot shrink under a bed.
@@ -609,7 +609,7 @@ fn preview_enters_a_transplanting_date_and_offers_shortcuts() {
     assert_eq!(preview["dates"], Value::Null);
     assert_eq!(preview["problems"][0]["code"], "pot_days_required");
     carrot["indoor_days"] = json!(21);
-    carrot["date_est_transplanting"] = json!(true);
+    carrot["date_is_transplanting"] = json!(true);
     let preview = invoke(
         &window,
         "preview_planting",
@@ -799,7 +799,7 @@ fn clear_plan_empties_the_year_and_the_following_ones() {
     let dir = tempfile::tempdir().unwrap();
     let (_app, window) = app(&dir.path().join(DB_FILE));
     let bed = start_with_a_bed(&window);
-    place(&window, "square", "Carré B", 600, 50).unwrap();
+    place(&window, "square", "Square B", 600, 50).unwrap();
     let dec1 = format!("{}-12-01", year());
     let dec2 = format!("{}-12-02", year());
     for (day, target, text) in [
@@ -850,7 +850,7 @@ fn invalid_imports_are_refused_and_the_plan_is_kept() {
     let short_layout = json!({"0190c5a0-0000-7000-8000-0000000000a1": {"name":"A","layouts":
         {y.to_string(): {"state":"present","type":"bed","x":0,"y":0,"length_cm":30,"width_cm":100}}}});
     let cases: Vec<(String, &str)> = vec![
-        ("pas from json".into(), "import_invalid"),
+        ("step from json".into(), "import_invalid"),
         (r#"{"hello":1}"#.into(), "import_invalid"),
         (
             r#"{"format":"potagerie","format_version":9,"plan":{}}"#.into(),

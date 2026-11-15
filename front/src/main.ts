@@ -3,7 +3,7 @@ import "./app.css";
 import App from "./App.svelte";
 import { app } from "./lib/state.svelte";
 import { setDensityBench } from "./lib/diorama/plants";
-import { allerA } from "./lib/temps";
+import { goTo } from "./lib/time";
 
 async function start() {
   // In a plain browser (`pnpm dev` without Tauri), answer the commands with an
@@ -18,7 +18,7 @@ async function start() {
     // `?date=2027-06-20`: the fake pretends it is that day (see simulation.ts).
     const date = params.get("date");
     if (date) {
-      allerA(date);
+      goTo(date);
       app.year = Number(date.slice(0, 4));
     }
     // `?density=4` draws four times as many plants, for the frame rate bench.

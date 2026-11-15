@@ -13,7 +13,7 @@ export const commands = {
 	/**  Creates the plot, and with it the plan (E2, F-TER-1). */
 	createPlot: (year: number, plot: PlotInput, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("create_plot", { year, plot }, options)),
 	/**
-	 *  Changes the dimensions of the plot and the allée width. The case size
+	 *  Changes the dimensions of the plot and the aisle width. The case size
 	 *  is fixed at creation.
 	 */
 	modifyPlot: (year: number, plot: PlotEdit, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("modify_plot", { year, plot }, options)),
@@ -301,7 +301,7 @@ export type PlantingInput = {
 	 *  Mode indoor only: `date` is the transplanting date, not the sowing date.
 	 *  The planting stores the sowing date `s = x - A` (S03 §2).
 	 */
-	date_est_transplanting?: boolean,
+	date_is_transplanting?: boolean,
 };
 
 /**

@@ -22,10 +22,10 @@ test("an orphan planting names its crop, with or without a known bed", () => {
     ...base,
     code: "planting_orphan",
     year: 2027,
-    bed_name: "Les tomatoes",
+    bed_name: "The tomatoes",
     crop_id: "tomato",
   });
-  expect(known).toBe('The planting of Tomato no longer has its bed "Les tomatoes" in 2027.');
+  expect(known).toBe('The planting of Tomato no longer has its bed "The tomatoes" in 2027.');
   const without = textIncoherence({ ...base, code: "planting_orphan", crop_id: "lettuce" });
   expect(without).toBe("The planting of Lettuce belongs to an unknown bed.");
 });

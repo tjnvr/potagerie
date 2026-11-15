@@ -16,7 +16,7 @@
     oncancel,
     ondelete,
   }: {
-    /** The beds of the year, for « Concerne ». */
+    /** The beds of the year, for “Applies to”. */
     beds: BedView[];
     /** The annotation to edit; none to create one. */
     annotation?: AnnotationView | null;

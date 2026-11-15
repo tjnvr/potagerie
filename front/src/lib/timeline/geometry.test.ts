@@ -170,7 +170,7 @@ describe("long press on a bar", () => {
 
 const BED: BedView = {
   id: "p1",
-  name: "Les tomatoes",
+  name: "The tomatoes",
   bed_type: "bed",
   x: 50,
   y: 50,

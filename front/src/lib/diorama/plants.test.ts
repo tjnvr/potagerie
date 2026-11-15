@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { gaps, scalePlant, positionsPlants, type GeoBed, type ZonePlanting } from "./plants";
 
-// « Les tomatoes »: 4 m × 1.2 m at (200, 150), 50 cm tiles.
+// « The tomatoes »: 4 m × 1.2 m at (200, 150), 50 cm tiles.
 const bed: GeoBed = { x: 200, y: 150, length_cm: 400, width_cm: 120 };
 
 function zone(start: number, end: number, rows: number, plants: number): ZonePlanting {
@@ -27,15 +27,15 @@ describe("positionsPlants", () => {
     expect(plants.map((p) => p.gy)).toEqual([(150 + 20) / 50, (150 + 60) / 50, (150 + 100) / 50]);
   });
 
-  test("a zone covers only its tronçons", () => {
-    // Tronçons 3 to 4 of a 50 cm grid: from 200 + 100 = 300 cm to 400 cm.
+  test("a zone covers only its segments", () => {
+    // Segments 3 to 4 of a 50 cm grid: from 200 + 100 = 300 cm to 400 cm.
     const plants = positionsPlants(bed, zone(3, 4, 1, 2), 50);
     expect(plants.map((p) => p.gx)).toEqual([(300 + 25) / 50, (300 + 75) / 50]);
   });
 
-  test("the tronçon size is the plot case size", () => {
+  test("the segment size is the plot case size", () => {
     const plants = positionsPlants(bed, zone(2, 2, 1, 1), 100);
-    // The second tronçon of a 100 cm grid: 300 to 400 cm, centre 350 cm.
+    // The second segment of a 100 cm grid: 300 to 400 cm, centre 350 cm.
     expect(plants).toEqual([{ gx: 7, gy: 4.2 }]);
   });
 

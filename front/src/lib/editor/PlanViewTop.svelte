@@ -108,7 +108,7 @@
   /** The bed in hand is drawn last, above the others. */
   const sorted = $derived([...beds].sort((a, b) => Number(a.id === geste?.id) - Number(b.id === geste?.id)));
   const active = $derived(beds.find((p) => p.id === selectionId) ?? null);
-  const pasFromMetre = $derived(100 / plot.cell_cm);
+  const stepFromMeter = $derived(100 / plot.cell_cm);
 
   const controller = new ControllerDrag({ onArmed: () => (armed = geste?.id ?? null) });
 
@@ -158,14 +158,14 @@
     if (movement === "start" && selectionId !== geste.id) onselect(geste.id);
     if (movement === "start" || movement === "dragged") {
       const pointer = enCm(e);
-      const pas = plot.cell_cm;
+      const step = plot.cell_cm;
       geste.preview =
         geste.nature === "move"
           ? {
               ...geste.origin,
-              ...positionDropped(pointer, geste.shift, pas),
+              ...positionDropped(pointer, geste.shift, step),
             }
-          : resize(geste.origin, geste.handle!, pointer, pas);
+          : resize(geste.origin, geste.handle!, pointer, step);
     }
   }
 
@@ -208,12 +208,12 @@
       onselect(null);
       return;
     }
-    const pas = plot.cell_cm;
+    const step = plot.cell_cm;
     const delta: Record<string, Point> = {
-      ArrowLeft: { x: -pas, y: 0 },
-      ArrowRight: { x: pas, y: 0 },
-      ArrowUp: { x: 0, y: -pas },
-      ArrowDown: { x: 0, y: pas },
+      ArrowLeft: { x: -step, y: 0 },
+      ArrowRight: { x: step, y: 0 },
+      ArrowUp: { x: 0, y: -step },
+      ArrowDown: { x: 0, y: step },
     };
     const d = delta[e.key];
     if (!d || readOnly || selectionId !== p.id) return;
@@ -257,10 +257,10 @@
     onclick={clickGrass}
   />
   {#each rowsX as x, i (x)}
-    <line x1={x} x2={x} y1="0" y2={plot.width_cm} class="grille" class:metre={(i + 1) % pasFromMetre === 0} />
+    <line x1={x} x2={x} y1="0" y2={plot.width_cm} class="grille" class:metre={(i + 1) % stepFromMeter === 0} />
   {/each}
   {#each rowsY as y, i (y)}
-    <line y1={y} y2={y} x1="0" x2={plot.length_cm} class="grille" class:metre={(i + 1) % pasFromMetre === 0} />
+    <line y1={y} y2={y} x1="0" x2={plot.length_cm} class="grille" class:metre={(i + 1) % stepFromMeter === 0} />
   {/each}
 
   {#each sorted as bed (bed.id)}

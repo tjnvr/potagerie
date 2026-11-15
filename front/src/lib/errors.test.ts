@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { estFailureSaving, translateError } from "./errors";
+import { isFailureSaving, translateError } from "./errors";
 
 test("an error code is translated, the technical detail is not shown", () => {
   const text = translateError({ code: "year_past", detail: "year 2026 is in the past" });
@@ -13,6 +13,6 @@ test("an unknown code falls back to a generic message", () => {
 });
 
 test("only write failures can be retried", () => {
-  expect(estFailureSaving({ code: "saving", detail: "" })).toBe(true);
-  expect(estFailureSaving({ code: "conflict", detail: "" })).toBe(false);
+  expect(isFailureSaving({ code: "saving", detail: "" })).toBe(true);
+  expect(isFailureSaving({ code: "conflict", detail: "" })).toBe(false);
 });

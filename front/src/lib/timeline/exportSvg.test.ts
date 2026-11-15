@@ -9,7 +9,7 @@ import { barOf, slotOf, type Row } from "./geometry";
 
 const bed: BedView = {
   id: "p1",
-  name: "Les tomatoes",
+  name: "The tomatoes",
   bed_type: "bed",
   x: 0,
   y: 0,
@@ -106,7 +106,7 @@ describe("timeline export", () => {
     expect(text).toContain('fill="url(#timeline-pots-tomato)"');
     expect(text).toContain('fill="url(#timeline-growth-tomato)"');
     expect(text).toContain('fill="#E5533D"');
-    expect(text).toContain("Les tomatoes");
+    expect(text).toContain("The tomatoes");
   });
 
   it("drops the cursor and the screen-only attributes, unless asked", () => {
