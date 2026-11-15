@@ -16,7 +16,7 @@
   "fermer": "Fermer",
   "annuler": "Annuler",
   "cm": "{valeur} cm",
-  "terrain_absent": "Pas encore de terrain : rien n’est encore dessiné.",
+  "terrain_absent": "Pas encore de terrain : dessine le tien pour commencer.",
   "terrain_creer": "Créer mon terrain",
   "terrain_titre": "Création du terrain",
   "terrain_longueur": "Longueur (m)",
