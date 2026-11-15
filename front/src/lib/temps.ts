@@ -32,3 +32,6 @@ export function allerAujourdhui(): void {
 export function avancerSemaines(semaines: number): void {
   curseur.set(decalerDate(get(curseur), 7 * semaines));
 }
+
+/** True while « Jouer la saison » runs (S01 F-VIS-4). */
+export const lectureEnCours = writable<boolean>(false);
