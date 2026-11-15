@@ -6,6 +6,8 @@
 // the family tie-break of the suggestions. The real rules are Rust's
 // (crates/plan), tested there. Dev only: main.ts never loads it in a build.
 import type {
+  Appearance,
+  AppearanceChange,
   CreneauView,
   CultureView,
   DatesApercu,
@@ -21,7 +23,7 @@ import type {
   TerrainView,
   ZoneView,
 } from "./bindings";
-import { dateDe, jourDe } from "./dates";
+import { dateDe, decalerDate, jourDe } from "./dates";
 
 type Args = Record<string, unknown>;
 
@@ -86,6 +88,31 @@ function quantite(c: CultureView, p: PlancheView, terrain: TerrainView, k: numbe
   };
 }
 
+/** What a serie looks like on a day, thresholds of S03 §3 (dev copy). */
+function apparenceLe(d: string, sowing: string | null, m: string, r: string, f: string, mode: SerieView["mode"]): Appearance {
+  if (d < m) return mode === "abri" && sowing !== null && d >= sowing ? { appearance: "label" } : { appearance: "nothing" };
+  if (d >= f) return { appearance: "nothing" };
+  const ecoule = (Date.parse(d) - Date.parse(m)) / 86_400_000;
+  const duree = (Date.parse(r) - Date.parse(m)) / 86_400_000;
+  const stage =
+    duree <= 0 || ecoule >= duree ? "harvest" : ecoule * 100 < duree * 15 ? "sowing" : ecoule * 100 < duree * 50 ? "young_shoot" : "adult";
+  return { appearance: "plant", stage: mode === "plants" && stage === "sowing" ? "young_shoot" : stage };
+}
+
+function changements(sowing: string | null, m: string, r: string, f: string, mode: SerieView["mode"]): AppearanceChange[] {
+  const resultat: AppearanceChange[] = [];
+  let precedent = "nothing:";
+  for (let d = sowing && sowing < m ? sowing : m; d <= f; d = decalerDate(d, 1)) {
+    const a = apparenceLe(d, sowing, m, r, f, mode);
+    const cle = a.appearance === "plant" ? `plant:${a.stage}` : `${a.appearance}:`;
+    if (cle !== precedent) {
+      resultat.push({ from: d, appearance: a });
+      precedent = cle;
+    }
+  }
+  return resultat;
+}
+
 function enVue(id: string, e: SerieInput, c: CultureView, p: PlancheView, terrain: TerrainView, calcul: Calcul): SerieView {
   const q = quantite(c, p, terrain, e.troncon_fin - e.troncon_debut + 1);
   return {
@@ -105,6 +132,7 @@ function enVue(id: string, e: SerieInput, c: CultureView, p: PlancheView, terrai
     rangs: q.rangs,
     pieds_par_rang: q.pieds,
     appearance_today: { appearance: "nothing" },
+    appearance_changes: changements(calcul.sowing, calcul.m, calcul.r, calcul.f, e.mode),
   };
 }
 

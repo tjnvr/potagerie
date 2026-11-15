@@ -62,7 +62,36 @@ export function simulerTauri(): void {
     };
   }
 
-  if (new URLSearchParams(location.search).has("exemple")) {
+  if (new URLSearchParams(location.search).has("banc")) {
+    // The bench of P01 for the frame rate: 10 planches, one or two crops each.
+    terrain = { longueur_cm: 1200, largeur_cm: 650, case_cm: 50, allee_cm: 50 };
+    const Y = annee0;
+    planches = [50, 200, 350, 500].flatMap((y) => [
+      planche(`Lit ${y}`, "planche", 50, y, 400, 100),
+      planche(`Lit ${y} bis`, "planche", 550, y, 400, 100),
+    ]);
+    planches.push(planche("Bac A", "bac", 1050, 50, 100, 100), planche("Bac B", "bac", 1050, 350, 100, 100));
+    const plan: [string, SerieInput["mode"], string][][] = [
+      [["laitue", "pleine_terre", "03-01"], ["haricot_vert", "pleine_terre", "07-20"]],
+      [["carotte", "pleine_terre", "03-15"], ["laitue", "pleine_terre", "09-01"]],
+      [["tomate", "abri", "03-10"]],
+      [["courgette", "abri", "04-15"]],
+      [["poireau", "abri", "03-01"]],
+      [["laitue", "pleine_terre", "03-10"], ["poireau", "plants", "09-01"]],
+      [["haricot_vert", "pleine_terre", "05-10"], ["laitue", "pleine_terre", "09-10"]],
+      [["carotte", "pleine_terre", "04-01"]],
+      [["tomate", "plants", "05-05"]],
+      [["laitue", "pleine_terre", "03-05"], ["laitue", "pleine_terre", "07-15"]],
+    ];
+    planches.forEach((p, i) => {
+      for (const [culture_id, mode, date] of plan[i] ?? []) {
+        series.push(
+          creerSerie(contexte, { culture_id, planche_id: p.id, troncon_debut: 1, troncon_fin: p.troncons, mode, date: `${Y}-${date}`, abri_jours: null, fin_manuelle: null }),
+        );
+      }
+    });
+    version = 1;
+  } else if (new URLSearchParams(location.search).has("exemple")) {
     terrain = { longueur_cm: 1100, largeur_cm: 650, case_cm: 50, allee_cm: 50 };
     planches = [
       planche("Fond du jardin", "planche", 50, 50, 300, 120),
