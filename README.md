@@ -4,6 +4,20 @@ Une appli installée pour planifier son potager : un seul utilisateur, sans comp
 
 La documentation (specs, designs, prototypes) est dans [`docs/`](docs/POT-00_index.md). La référence technique est [S05](docs/specs/POT-S05_spec-technique_v0.11.md).
 
+## Installer
+
+1. Ouvrir la page [Releases](../../releases) du dépôt et télécharger l'installeur de la dernière version : le `.dmg` sur macOS (universel, Apple Silicon et Intel), le `.exe` ou le `.msi` sur Windows.
+2. Installer : glisser Potagerie dans Applications sur macOS, lancer l'installeur sur Windows.
+
+Les installeurs ne sont pas signés, le système demande donc une confirmation au premier lancement.
+
+- **macOS** : clic droit sur Potagerie dans Applications, puis Ouvrir, puis Ouvrir de nouveau. Si macOS dit que l'appli est « endommagée », retirer la quarantaine : `xattr -dr com.apple.quarantine /Applications/Potagerie.app`.
+- **Windows** : si SmartScreen bloque l'installeur, cliquer sur « Informations complémentaires », puis « Exécuter quand même ».
+
+**Données.** Tout reste sur l'ordinateur, dans `potagerie.db` : `~/Library/Application Support/garden.potagerie/` sur macOS, `%APPDATA%\garden.potagerie\` sur Windows. Les réglages permettent d'exporter le potager en JSON.
+
+**Désinstaller.** macOS : mettre Potagerie à la corbeille. Windows : Paramètres > Applications > Potagerie > Désinstaller. Les données ne sont pas supprimées : effacer le dossier ci-dessus pour repartir de zéro.
+
 ## Prérequis
 
 - Rust stable (`rustup`), avec `rustfmt` et `clippy`.
@@ -25,8 +39,6 @@ La documentation (specs, designs, prototypes) est dans [`docs/`](docs/POT-00_ind
 Pour travailler sur l'interface seule, `pnpm --dir front dev` l'ouvre dans un navigateur, sur `http://localhost:5173`, avec de fausses commandes en mémoire (`?exemple` pour partir d'un potager rempli, `?reglages` ou `?potager` pour ouvrir un écran).
 
 Les données sont dans `potagerie.db`, dans le dossier de données de l'appli (`~/Library/Application Support/garden.potagerie/` sur macOS, `%APPDATA%\garden.potagerie\` sur Windows).
-
-Les compilations ne sont pas signées : au premier lancement, clic droit puis Ouvrir sur macOS, « Exécuter quand même » sur Windows.
 
 ## Arborescence
 
