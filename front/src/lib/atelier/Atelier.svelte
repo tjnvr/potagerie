@@ -67,6 +67,19 @@
     await poser(type, position.x, position.y);
   }
 
+  /** A click on free grass: a planche of the chosen tray type, centred there. */
+  async function poserIci(point: { x: number; y: number }) {
+    if (!vue.terrain || complet) return;
+    const type = portee ?? "planche";
+    const taille = TAILLE_PAR_DEFAUT[type];
+    const pos = positionDepuisBac(point, taille, vue.terrain.case_cm);
+    if (pos.x < 0 || pos.y < 0) {
+      appli.signaler({ code: "planche_hors_terrain", detail: "" });
+      return;
+    }
+    await poser(type, pos.x, pos.y);
+  }
+
   // Drag from the tray: the same long press on a finger, the same pointer logic.
   const bac = new ControleurGlisser({ surArme: () => {} });
   let typeBac: TypePlanche | null = null;
@@ -180,6 +193,7 @@
         onselect={(id) => (selectionId = id)}
         onmodifier={modifier}
         onavantterrain={() => appli.signaler({ code: "planche_hors_terrain", detail: "" })}
+        onposer={poserIci}
       />
       {#if vue.planches.length === 0}
         <p class="aide">{m.plan_vide()}</p>

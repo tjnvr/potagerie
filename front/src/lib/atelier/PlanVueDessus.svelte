@@ -32,6 +32,7 @@
     onselect = () => {},
     onmodifier = async () => "ok" as Reponse,
     onavantterrain = () => {},
+    onposer = () => {},
   }: {
     terrain: TerrainView;
     planches: PlancheView[];
@@ -43,7 +44,23 @@
     onmodifier?: (id: string, geo: Geo, nature: "deplacer" | "redimensionner") => Promise<Reponse>;
     /** The drop is left of or above the terrain: nothing to send, refused. */
     onavantterrain?: () => void;
+    /** A click on free grass, with nothing selected: put a planche there. */
+    onposer?: (point: Point) => void;
   } = $props();
+
+  // A click on the grass first clears the selection; only a click made with
+  // nothing selected puts a planche down.
+  let selectionAvantClic: string | null = null;
+  function appuiHerbe() {
+    if (geste) return;
+    selectionAvantClic = selectionId;
+    onselect(null);
+  }
+  function clicHerbe(e: MouseEvent) {
+    if (lectureSeule || selectionAvantClic !== null) return;
+    const point = versCm(e.clientX, e.clientY);
+    if (point) onposer(point);
+  }
 
   type Geste = {
     id: string;
@@ -236,7 +253,8 @@
     rx={terrain.case_cm / 3}
     fill="var(--grass)"
     role="presentation"
-    onpointerdown={() => !geste && onselect(null)}
+    onpointerdown={appuiHerbe}
+    onclick={clicHerbe}
   />
   {#each lignesX as x, i (x)}
     <line x1={x} x2={x} y1="0" y2={terrain.largeur_cm} class="grille" class:metre={(i + 1) % pasDuMetre === 0} />
@@ -344,6 +362,7 @@
   }
 
   .grille {
+    pointer-events: none;
     stroke: #ffffff;
     stroke-opacity: 0.25;
     stroke-width: 1;
