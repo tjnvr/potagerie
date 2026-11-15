@@ -1,0 +1,21 @@
+[package]
+name = "store"
+version = "0.1.0"
+description = "Potagerie storage: Store trait and its SQLite implementation (S05 §5)"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+chrono.workspace = true
+plan.workspace = true
+rusqlite.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true
