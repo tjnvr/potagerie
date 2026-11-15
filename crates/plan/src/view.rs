@@ -91,6 +91,9 @@ pub struct SerieView {
     pub end: NaiveDate,
     /// True when `end` was modified by hand.
     pub manual_end: bool,
+    /// Days in pots (mode abri): from the catalogue, or entered for a crop
+    /// without pots (S03 §2). The edit form shows it back.
+    pub pot_days: u32,
     /// Rows × plants per row on the planche (S03 §6); 0 when the planche has
     /// no layout to measure.
     pub rangs: u32,
@@ -202,6 +205,7 @@ fn serie_view(
         harvest_start: dates.harvest_start,
         end: dates.end,
         manual_end: s.fin_manuelle.is_some(),
+        pot_days: s.abri_jours,
         rangs,
         pieds_par_rang,
         appearance_today: s.appearance_on(today),

@@ -130,6 +130,117 @@ pub struct SerieInput {
     /// Days in pots, only for the mode abri of a crop without pots (S03 §2).
     pub abri_jours: Option<u32>,
     pub fin_manuelle: Option<NaiveDate>,
+    /// Mode abri only: `date` is the transplanting date, not the sowing date.
+    /// The serie stores the sowing date `s = x - A` (S03 §2).
+    #[serde(default)]
+    pub date_est_repiquage: bool,
+}
+
+/// A zone of troncons.
+#[derive(Debug, Clone, Copy, Serialize, Type)]
+pub struct ZoneView {
+    pub troncon_debut: u32,
+    pub troncon_fin: u32,
+}
+
+/// The zones of the shortcuts of F-PLA-1; `None` greys the shortcut out
+/// (S03 §4).
+#[derive(Debug, Clone, Serialize, Type)]
+pub struct RaccourcisView {
+    pub toute: Option<ZoneView>,
+    pub moitie: Option<ZoneView>,
+    pub tiers: Option<ZoneView>,
+    pub quart: Option<ZoneView>,
+}
+
+/// Why a serie is not valid (S03 §5): a code to translate, and what the
+/// interface needs to say where and when.
+#[derive(Debug, Clone, Serialize, Type)]
+pub struct ProblemeView {
+    pub code: ErrorCode,
+    /// The other serie of a conflict.
+    pub avec: Option<SerieId>,
+    /// Troncons in common (conflict) or the zone that does not fit.
+    pub zone: Option<ZoneView>,
+    /// Period in common (conflict), `[start, end[`.
+    pub start: Option<NaiveDate>,
+    pub end: Option<NaiveDate>,
+    /// Year of a missing planche or of a zone that does not fit.
+    pub annee: Option<i32>,
+    /// Troncons of the planche that year (zone that does not fit).
+    pub troncons: Option<u32>,
+}
+
+/// The dates and quantities of a serie being entered (S03 §2, §6).
+#[derive(Debug, Clone, Serialize, Type)]
+pub struct DatesApercu {
+    /// The date Rust would store (the sowing date, even if a transplanting
+    /// date was entered).
+    pub date: NaiveDate,
+    pub sowing: Option<NaiveDate>,
+    pub planting_out: NaiveDate,
+    pub harvest_start: NaiveDate,
+    pub end: NaiveDate,
+    /// `end` without the manual end: « Recalculer ».
+    pub default_end: NaiveDate,
+    pub manual_end: bool,
+    pub pot_days: u32,
+    pub rangs: u32,
+    pub pieds_par_rang: u32,
+}
+
+/// What the form of E07 shows while the user types: computed by Rust, never by
+/// the interface.
+#[derive(Debug, Clone, Serialize, Type)]
+pub struct SerieApercu {
+    /// `None` when the serie cannot be built (a required field is missing).
+    pub dates: Option<DatesApercu>,
+    /// Empty when the serie is valid.
+    pub problemes: Vec<ProblemeView>,
+    pub raccourcis: RaccourcisView,
+}
+
+fn zone_view(zone: Zone) -> ZoneView {
+    ZoneView {
+        troncon_debut: zone.t1,
+        troncon_fin: zone.t2,
+    }
+}
+
+fn probleme(error: plan::PlanError) -> ProblemeView {
+    let mut p = ProblemeView {
+        code: AppError::from(error.clone()).code,
+        avec: None,
+        zone: None,
+        start: None,
+        end: None,
+        annee: None,
+        troncons: None,
+    };
+    match error {
+        plan::PlanError::Conflict {
+            with,
+            troncons,
+            period,
+        } => {
+            p.avec = Some(with);
+            p.zone = Some(zone_view(troncons));
+            p.start = Some(period.start);
+            p.end = Some(period.end);
+        }
+        plan::PlanError::ZoneOutOfPlanche {
+            year,
+            troncons,
+            zone,
+        } => {
+            p.annee = Some(year);
+            p.troncons = Some(troncons);
+            p.zone = Some(zone_view(zone));
+        }
+        plan::PlanError::PlancheMissing { year, .. } => p.annee = Some(year),
+        _ => {}
+    }
+    p
 }
 
 #[derive(Debug, Clone, Deserialize, Type)]
@@ -386,7 +497,62 @@ pub fn supprimer_planche(
     })
 }
 
+/// The serie described by the form, ready to be validated (S03 §2).
+///
+/// Without `existing`, the durations are copied from the catalogue; with it,
+/// they are copied again only if the crop or the mode changes.
+fn build_serie(existing: Option<&Serie>, input: &SerieInput) -> Result<Serie, plan::PlanError> {
+    let culture = Catalogue::v1()
+        .culture(&input.culture_id)
+        .ok_or_else(|| plan::PlanError::UnknownCulture(input.culture_id.clone()))?;
+    let zone = Zone::new(input.troncon_debut, input.troncon_fin)?;
+    let date = if input.date_est_repiquage && input.mode == Mode::Abri {
+        let pot_days = if culture.abri_jours > 0 {
+            culture.abri_jours
+        } else {
+            input.abri_jours.unwrap_or(0)
+        };
+        if pot_days == 0 {
+            return Err(plan::PlanError::PotDaysRequired);
+        }
+        Serie::sowing_from_transplanting(input.date, pot_days)
+    } else {
+        input.date
+    };
+    let Some(old) = existing else {
+        return Serie::new(
+            culture,
+            input.planche_id,
+            zone,
+            input.mode,
+            date,
+            input.abri_jours,
+            input.fin_manuelle,
+        );
+    };
+    // The entered fields first: the checks of a change of crop or mode must
+    // see the new date and end, not the old manual end.
+    let mut edited = old.clone();
+    edited.planche_id = input.planche_id;
+    edited.troncon_debut = zone.t1;
+    edited.troncon_fin = zone.t2;
+    edited.date = date;
+    edited.fin_manuelle = input.fin_manuelle;
+    if edited.culture_id != input.culture_id {
+        edited.change_culture(culture, input.abri_jours)?;
+    }
+    if edited.mode != input.mode {
+        edited.change_mode(input.mode, culture, input.abri_jours)?;
+    } else if let (Mode::Abri, 0, Some(days)) = (input.mode, culture.abri_jours, input.abri_jours) {
+        edited.abri_jours = days;
+    }
+    edited.check()?;
+    Ok(edited)
+}
+
 /// Adds a serie; the durations are copied from the catalogue (S03 §2, §5).
+/// Refused, with the plan untouched, on a conflict, a zone outside the
+/// planche or a planche missing in a year the serie occupies.
 #[tauri::command]
 #[specta::specta]
 pub fn creer_serie(
@@ -395,19 +561,7 @@ pub fn creer_serie(
     serie: SerieInput,
 ) -> Result<YearView, AppError> {
     change(&state, annee, |plan, _| {
-        let culture = Catalogue::v1()
-            .culture(&serie.culture_id)
-            .ok_or_else(|| plan::PlanError::UnknownCulture(serie.culture_id.clone()))?;
-        let new = Serie::new(
-            culture,
-            serie.planche_id,
-            Zone::new(serie.troncon_debut, serie.troncon_fin)?,
-            serie.mode,
-            serie.date,
-            serie.abri_jours,
-            serie.fin_manuelle,
-        )?;
-        plan.add_serie(SerieId::generate(), new)?;
+        plan.add_serie(SerieId::generate(), build_serie(None, &serie)?)?;
         Ok(())
     })
 }
@@ -423,32 +577,29 @@ pub fn modifier_serie(
     serie: SerieInput,
 ) -> Result<YearView, AppError> {
     change(&state, annee, |plan, _| {
-        let mut edited = plan
+        let old = plan
             .series
             .get(&id)
-            .ok_or(plan::PlanError::UnknownSerie(id))?
-            .clone();
-        let culture = Catalogue::v1()
-            .culture(&serie.culture_id)
-            .ok_or_else(|| plan::PlanError::UnknownCulture(serie.culture_id.clone()))?;
-        if edited.culture_id != serie.culture_id {
-            edited.change_culture(culture, serie.abri_jours)?;
-        }
-        if edited.mode != serie.mode {
-            edited.change_mode(serie.mode, culture, serie.abri_jours)?;
-        } else if let (Mode::Abri, 0, Some(days)) =
-            (serie.mode, culture.abri_jours, serie.abri_jours)
-        {
-            edited.abri_jours = days;
-        }
-        let zone = Zone::new(serie.troncon_debut, serie.troncon_fin)?;
-        edited.planche_id = serie.planche_id;
-        edited.troncon_debut = zone.t1;
-        edited.troncon_fin = zone.t2;
-        edited.date = serie.date;
-        edited.fin_manuelle = serie.fin_manuelle;
-        edited.check()?;
+            .ok_or(plan::PlanError::UnknownSerie(id))?;
+        let edited = build_serie(Some(old), &serie)?;
         plan.replace_serie(id, edited)?;
+        Ok(())
+    })
+}
+
+/// Drags a bar by `jours` days (S03 §2, T12): the entered date and the manual
+/// end shift. Refused with `conflict` (or another code) if the shifted serie
+/// is not valid; nothing changes and the interface brings the bar back.
+#[tauri::command]
+#[specta::specta]
+pub fn decaler_serie(
+    state: State<'_, AppState>,
+    annee: i32,
+    id: SerieId,
+    jours: i32,
+) -> Result<YearView, AppError> {
+    change(&state, annee, |plan, _| {
+        plan.shift_serie(id, i64::from(jours))?;
         Ok(())
     })
 }
@@ -464,6 +615,115 @@ pub fn supprimer_serie(
         plan.delete_serie(id)?;
         Ok(())
     })
+}
+
+/// Checks a serie as the form of E07 fills in, without saving: its dates and
+/// quantities, why it is not valid, and the zones of the shortcuts. `id` is
+/// the serie being edited, which is not compared with its previous self.
+#[tauri::command]
+#[specta::specta]
+pub fn apercu_serie(
+    state: State<'_, AppState>,
+    id: Option<SerieId>,
+    serie: SerieInput,
+) -> Result<SerieApercu, AppError> {
+    let plan = state
+        .store()
+        .load()?
+        .ok_or_else(|| AppError::new(ErrorCode::TerrainAbsent, "create the terrain first"))?;
+    Ok(preview_serie(&plan, id, &serie))
+}
+
+fn preview_serie(plan: &Plan, id: Option<SerieId>, input: &SerieInput) -> SerieApercu {
+    let catalogue = Catalogue::v1();
+    let existing = id.and_then(|id| plan.series.get(&id));
+    let (built, problemes) = match build_serie(existing, input) {
+        Ok(serie) => {
+            let problems = plan
+                .serie_problems(id, &serie)
+                .into_iter()
+                .map(probleme)
+                .collect::<Vec<_>>();
+            (Some(serie), problems)
+        }
+        Err(error) => (None, vec![probleme(error)]),
+    };
+
+    // The shortcuts need the occupation, not the zone: probe with one troncon
+    // when the entered zone is the problem.
+    let probe = built.clone().or_else(|| {
+        let mut probe = input.clone();
+        (probe.troncon_debut, probe.troncon_fin) = (1, 1);
+        build_serie(existing, &probe).ok()
+    });
+    let shortcut = |fraction| {
+        let serie = probe.as_ref()?;
+        plan.shortcut(serie.planche_id, fraction, serie.occupation(), id)
+            .map(zone_view)
+    };
+    let raccourcis = RaccourcisView {
+        toute: shortcut(plan::Fraction::Whole),
+        moitie: shortcut(plan::Fraction::Half),
+        tiers: shortcut(plan::Fraction::Third),
+        quart: shortcut(plan::Fraction::Quarter),
+    };
+
+    let dates = built.map(|serie| {
+        let d = serie.dates();
+        let start = d.sowing.unwrap_or(d.planting_out).min(d.planting_out);
+        let default_end = Serie {
+            fin_manuelle: None,
+            ..serie.clone()
+        }
+        .dates()
+        .end;
+        let (rangs, pieds_par_rang) = match (
+            plan.planches
+                .get(&serie.planche_id)
+                .and_then(|p| p.disposition_in(chrono::Datelike::year(&start))),
+            catalogue.culture(&serie.culture_id),
+        ) {
+            (Some(g), Some(culture)) => {
+                let q = plan::quantity(
+                    g.largeur_cm,
+                    serie.troncon_fin - serie.troncon_debut + 1,
+                    plan.terrain.case_cm,
+                    culture,
+                );
+                (q.rows, q.plants_per_row)
+            }
+            _ => (0, 0),
+        };
+        DatesApercu {
+            date: serie.date,
+            sowing: d.sowing,
+            planting_out: d.planting_out,
+            harvest_start: d.harvest_start,
+            end: d.end,
+            default_end,
+            manual_end: serie.fin_manuelle.is_some(),
+            pot_days: serie.abri_jours,
+            rangs,
+            pieds_par_rang,
+        }
+    });
+    SerieApercu {
+        dates,
+        problemes,
+        raccourcis,
+    }
+}
+
+/// The crops whose planting-out window contains `date` (S03 §10, F-CAT-3
+/// « de saison maintenant »).
+#[tauri::command]
+#[specta::specta]
+pub fn cultures_de_saison(date: NaiveDate) -> Vec<String> {
+    Catalogue::v1()
+        .iter()
+        .filter(|c| plan::in_window(c, date))
+        .map(|c| c.id.clone())
+        .collect()
 }
 
 // TODO(plan): annotations have no rule in the plan crate yet (past years,

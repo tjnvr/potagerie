@@ -69,6 +69,7 @@ export function simulerTauri(): void {
       harvest_start: date,
       end: fin,
       manual_end: false,
+      pot_days: 0,
       rangs,
       pieds_par_rang: pieds,
       appearance_today: { appearance: "nothing" },

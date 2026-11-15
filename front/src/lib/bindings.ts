@@ -37,7 +37,11 @@ export const commands = {
 	 *  later (F-PLN-4). The interface confirms first, with `series_deleted_by`.
 	 */
 	supprimerPlanche: (annee: number, id: PlancheId, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("supprimer_planche", { annee, id }, options)),
-	/**  Adds a serie; the durations are copied from the catalogue (S03 §2, §5). */
+	/**
+	 *  Adds a serie; the durations are copied from the catalogue (S03 §2, §5).
+	 *  Refused, with the plan untouched, on a conflict, a zone outside the
+	 *  planche or a planche missing in a year the serie occupies.
+	 */
 	creerSerie: (annee: number, serie: SerieInput, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("creer_serie", { annee, serie }, options)),
 	/**
 	 *  Changes a serie. Durations are copied again only if the crop or the mode
@@ -45,6 +49,23 @@ export const commands = {
 	 */
 	modifierSerie: (annee: number, id: SerieId, serie: SerieInput, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("modifier_serie", { annee, id, serie }, options)),
 	supprimerSerie: (annee: number, id: SerieId, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("supprimer_serie", { annee, id }, options)),
+	/**
+	 *  Drags a bar by `jours` days (S03 §2, T12): the entered date and the manual
+	 *  end shift. Refused with `conflict` (or another code) if the shifted serie
+	 *  is not valid; nothing changes and the interface brings the bar back.
+	 */
+	decalerSerie: (annee: number, id: SerieId, jours: number, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("decaler_serie", { annee, id, jours }, options)),
+	/**
+	 *  Checks a serie as the form of E07 fills in, without saving: its dates and
+	 *  quantities, why it is not valid, and the zones of the shortcuts. `id` is
+	 *  the serie being edited, which is not compared with its previous self.
+	 */
+	apercuSerie: (id: SerieId | null, serie: SerieInput, options?: InvokeOptions) => typedError<SerieApercu, AppError>(__TAURI_INVOKE("apercu_serie", { id, serie }, options)),
+	/**
+	 *  The crops whose planting-out window contains `date` (S03 §10, F-CAT-3
+	 *  « de saison maintenant »).
+	 */
+	culturesDeSaison: (date: string, options?: InvokeOptions) => __TAURI_INVOKE<string[]>("cultures_de_saison", { date }, options),
 	creerAnnotation: (annee: number, annotation: AnnotationInput, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("creer_annotation", { annee, annotation }, options)),
 	modifierAnnotation: (annee: number, id: AnnotationId, annotation: AnnotationInput, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("modifier_annotation", { annee, id, annotation }, options)),
 	supprimerAnnotation: (annee: number, id: AnnotationId, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("supprimer_annotation", { annee, id }, options)),
@@ -138,6 +159,25 @@ export type CultureView = {
 	pied_cm: number,
 };
 
+/**  The dates and quantities of a serie being entered (S03 §2, §6). */
+export type DatesApercu = {
+	/**
+	 *  The date Rust would store (the sowing date, even if a transplanting
+	 *  date was entered).
+	 */
+	date: string,
+	sowing: string | null,
+	planting_out: string,
+	harvest_start: string,
+	end: string,
+	/**  `end` without the manual end: « Recalculer ». */
+	default_end: string,
+	manual_end: boolean,
+	pot_days: number,
+	rangs: number,
+	pieds_par_rang: number,
+};
+
 /**
  *  Stable error codes. The codes of [`PlanError`] are kept exactly as the
  *  `plan` crate names them (`PlanError::code`).
@@ -205,6 +245,48 @@ export type PlancheView = {
 	series_supprimees: SerieId[],
 };
 
+/**
+ *  Why a serie is not valid (S03 §5): a code to translate, and what the
+ *  interface needs to say where and when.
+ */
+export type ProblemeView = {
+	code: ErrorCode,
+	/**  The other serie of a conflict. */
+	avec: SerieId | null,
+	/**  Troncons in common (conflict) or the zone that does not fit. */
+	zone: ZoneView | null,
+	/**  Period in common (conflict), `[start, end[`. */
+	start: string | null,
+	end: string | null,
+	/**  Year of a missing planche or of a zone that does not fit. */
+	annee: number | null,
+	/**  Troncons of the planche that year (zone that does not fit). */
+	troncons: number | null,
+};
+
+/**
+ *  The zones of the shortcuts of F-PLA-1; `None` greys the shortcut out
+ *  (S03 §4).
+ */
+export type RaccourcisView = {
+	toute: ZoneView | null,
+	moitie: ZoneView | null,
+	tiers: ZoneView | null,
+	quart: ZoneView | null,
+};
+
+/**
+ *  What the form of E07 shows while the user types: computed by Rust, never by
+ *  the interface.
+ */
+export type SerieApercu = {
+	/**  `None` when the serie cannot be built (a required field is missing). */
+	dates: DatesApercu | null,
+	/**  Empty when the serie is valid. */
+	problemes: ProblemeView[],
+	raccourcis: RaccourcisView,
+};
+
 /**  Identifier of a serie. */
 export type SerieId = string;
 
@@ -219,6 +301,11 @@ export type SerieInput = {
 	/**  Days in pots, only for the mode abri of a crop without pots (S03 §2). */
 	abri_jours: number | null,
 	fin_manuelle: string | null,
+	/**
+	 *  Mode abri only: `date` is the transplanting date, not the sowing date.
+	 *  The serie stores the sowing date `s = x - A` (S03 §2).
+	 */
+	date_est_repiquage?: boolean,
 };
 
 export type SerieView = {
@@ -239,6 +326,11 @@ export type SerieView = {
 	end: string,
 	/**  True when `end` was modified by hand. */
 	manual_end: boolean,
+	/**
+	 *  Days in pots (mode abri): from the catalogue, or entered for a crop
+	 *  without pots (S03 §2). The edit form shows it back.
+	 */
+	pot_days: number,
 	/**
 	 *  Rows × plants per row on the planche (S03 §6); 0 when the planche has
 	 *  no layout to measure.
@@ -325,6 +417,12 @@ export type YearView = {
 	annotations: AnnotationView[],
 	/**  Tasks dated in `year` (S03 §11). */
 	tasks: TaskView[],
+};
+
+/**  A zone of troncons. */
+export type ZoneView = {
+	troncon_debut: number,
+	troncon_fin: number,
 };
 
 /* Tauri Specta runtime */
