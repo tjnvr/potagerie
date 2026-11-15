@@ -1,7 +1,7 @@
 # POT-S03 · Règles et calculs — v0.6
 
 > Version : 0.6 (brouillon) · Date : 2026-11-14 · Auteur : Tim
-> Références : [S01](POT-S01_spec-fonctionnelle_v1.3.md) · [S02](POT-S02_catalogue-cultures_v0.2.md) · [S05](POT-S05_spec-technique_v0.6.md)
+> Références : [S01](POT-S01_spec-fonctionnelle_v1.3.md) · [S02](POT-S02_catalogue-cultures_v0.2.md) · [S05](POT-S05_spec-technique_v0.7.md)
 > La v0.6 précise, à l'écriture de `crates/plan`, les cas que la v0.5 laissait ouverts. Aucun calcul de T1 à T13 ne change.
 
 Cette spec fixe **chaque calcul** de l'appli, assez précisément pour être codé en Rust (`crates/plan`) et testé. Les cas de la section 12 servent de premiers tests unitaires.
