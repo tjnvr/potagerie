@@ -2,7 +2,7 @@
 
 Une appli installée pour planifier son potager : un seul utilisateur, sans compte ni serveur. Le cœur est en Rust, l'interface en Svelte 5 + TypeScript, le tout emballé par Tauri v2 (macOS et Windows au lot 1).
 
-La documentation (specs, designs, prototypes) est dans [`docs/`](docs/POT-00_index.md). La référence technique est [S05](docs/specs/POT-S05_spec-technique_v0.9.md).
+La documentation (specs, designs, prototypes) est dans [`docs/`](docs/POT-00_index.md). La référence technique est [S05](docs/specs/POT-S05_spec-technique_v0.10.md).
 
 ## Prérequis
 
