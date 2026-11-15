@@ -1,7 +1,7 @@
 # POT-S03 · Règles et calculs — v0.7
 
 > Version : 0.7 (brouillon) · Date : 2026-11-15 · Auteur : Tim
-> Références : [S01](POT-S01_spec-fonctionnelle_v1.3.md) · [S02](POT-S02_catalogue-cultures_v0.2.md) · [S05](POT-S05_spec-technique_v0.8.md)
+> Références : [S01](POT-S01_spec-fonctionnelle_v1.3.md) · [S02](POT-S02_catalogue-cultures_v0.2.md) · [S05](POT-S05_spec-technique_v0.9.md)
 > La v0.6 précisait, à l'écriture de `crates/plan`, les cas que la v0.5 laissait ouverts. La v0.7 ajoute, à l'écriture de l'atelier, les règles de placement des planches et de validation du terrain (section 15). Aucun calcul de T1 à T13 ne change.
 
 Cette spec fixe **chaque calcul** de l'appli, assez précisément pour être codé en Rust (`crates/plan`) et testé. Les cas de la section 12 servent de premiers tests unitaires.
