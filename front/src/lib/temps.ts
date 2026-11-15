@@ -33,5 +33,10 @@ export function avancerSemaines(semaines: number): void {
   curseur.set(decalerDate(get(curseur), 7 * semaines));
 }
 
+/** The days the timeline shows now, after zoom and scroll: the first day
+ *  (days since 1970, may be fractional) and how many. `null` before the
+ *  timeline is drawn. The export (E11) starts from it (S01 F-EXP-1). */
+export const fenetreFrise = writable<{ debutJour: number; jours: number } | null>(null);
+
 /** True while « Jouer la saison » runs (S01 F-VIS-4). */
 export const lectureEnCours = writable<boolean>(false);

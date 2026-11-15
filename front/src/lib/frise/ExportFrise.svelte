@@ -12,13 +12,16 @@
   import { aujourdhuiLocal } from "../dates";
   import { appeler, appli } from "../etat.svelte";
   import { m } from "../paraglide/messages.js";
-  import { curseur } from "../temps";
+  import { curseur, fenetreFrise } from "../temps";
   import { serialiserFrise } from "./exportSvg";
-  import { anneesDePeriode, echellePourPeriode, periodeParDefaut, problemePeriode } from "./exportPlan";
+  import { anneesDePeriode, echellePourPeriode, periodeParDefaut, periodeVisible, problemePeriode } from "./exportPlan";
   import FriseSvg, { LARGEUR_LIBELLES } from "./FriseSvg.svelte";
   import { construireLignes } from "./geometrie";
 
-  const defaut = periodeParDefaut(get(curseur));
+  // The period shown on screen, zoom and scroll included; the cursor's year
+  // only if the timeline was never drawn.
+  const fenetre = get(fenetreFrise);
+  const defaut = fenetre ? periodeVisible(fenetre) : periodeParDefaut(get(curseur));
   let format = $state<FriseFormat>("pdf");
   let du = $state(defaut.du);
   let au = $state(defaut.au);

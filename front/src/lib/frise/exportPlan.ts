@@ -1,7 +1,7 @@
 // What the export screen (E11) decides before drawing: the default period,
 // whether the chosen one can be exported, and the scale of the drawing.
 // The drawing itself comes from `FriseSvg`, the business from Rust.
-import { anneeDe, jourDe } from "../dates";
+import { anneeDe, dateDe, jourDe } from "../dates";
 import { JOURS_MAX, type Echelle } from "./geometrie";
 
 /** Pixels of the exported drawing for a year: wide enough to read once printed on A3. */
@@ -13,6 +13,14 @@ const PX_PAR_JOUR_MAX = 8;
 export function periodeParDefaut(curseur: string): { du: string; au: string } {
   const annee = anneeDe(curseur);
   return { du: `${annee}-01-01`, au: `${annee}-12-31` };
+}
+
+/** The period the timeline shows on screen: every day at least partly
+ *  visible, at most the 3 years an export allows (S01 F-EXP-1). */
+export function periodeVisible(fenetre: { debutJour: number; jours: number }): { du: string; au: string } {
+  const debut = Math.floor(fenetre.debutJour);
+  const fin = Math.min(Math.ceil(fenetre.debutJour + fenetre.jours) - 1, debut + JOURS_MAX - 1);
+  return { du: dateDe(debut), au: dateDe(Math.max(fin, debut)) };
 }
 
 export type ProblemePeriode = "vide" | "inversee" | "trop_longue";

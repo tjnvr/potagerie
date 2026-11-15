@@ -15,7 +15,7 @@
   import { traduireErreur } from "../erreurs";
   import { appeler, appli } from "../etat.svelte";
   import { m } from "../paraglide/messages.js";
-  import { allerA, curseur, recentrage } from "../temps";
+  import { allerA, curseur, fenetreFrise, recentrage } from "../temps";
   import { decalageAffiche, deposerBarre } from "./barre";
   import { PALETTE, couleurCulture, melange } from "./couleurs";
   import FriseSvg, { LARGEUR_LIBELLES, LARGEUR_LIBELLES_ETROIT } from "./FriseSvg.svelte";
@@ -60,6 +60,11 @@
         echelle = { ...echelle, largeur: largeurZone, pxParJour: largeurZone / joursVisibles(echelle) };
       }
     });
+  });
+
+  // Tell the export (E11) which days are on screen.
+  $effect(() => {
+    fenetreFrise.set(echelle ? { debutJour: echelle.debutJour, jours: joursVisibles(echelle) } : null);
   });
 
   // The cursor moved elsewhere (diorama, playback, ‹ ›): scroll to keep it in
