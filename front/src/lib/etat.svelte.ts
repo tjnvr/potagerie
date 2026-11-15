@@ -1,4 +1,4 @@
-import { commands, type AppError, type YearView } from "./bindings";
+import { commands, type AppError, type CreneauView, type SerieView, type SuggestionView, type YearView } from "./bindings";
 import { estEchecEnregistrement, traduireErreur } from "./erreurs";
 
 
@@ -12,6 +12,12 @@ export type Onglet = "potager" | "plan";
 
 export type Message = { texte: string; ton: "info" | "erreur" };
 
+/** What opens E07 (new serie and edition): from a planche (« Planter ici »),
+ *  from a free slot of the timeline (with its suggestions), or from a bar. */
+export type OuvertureSerie =
+  | { type: "nouvelle"; plancheId: string; creneau?: CreneauView; suggestion?: SuggestionView }
+  | { type: "edition"; serie: SerieView };
+
 /**
  * State of the interface (S05 §4). It keeps the last year view returned by
  * Rust and replaces it entirely after each command. No business rule here.
@@ -20,6 +26,13 @@ class Appli {
   annee = $state(new Date().getFullYear());
   onglet = $state<Onglet>("plan");
   reglagesOuverts = $state(false);
+  /** E07, new serie and edition. */
+  serieOuverte = $state<OuvertureSerie | null>(null);
+  /** E09, catalogue. */
+  catalogueOuvert = $state(false);
+  /** The last refusal of a command that changes the plan (not a save failure),
+   *  for the screens that word it themselves (a bar that goes back, S03 T12). */
+  dernierRefus = $state<AppError | null>(null);
   vue = $state<YearView | null>(null);
   enregistrement = $state<Enregistrement>("enregistre");
   message = $state<Message | null>(null);
@@ -40,6 +53,7 @@ class Appli {
   async modifier(action: (annee: number) => Promise<Resultat<YearView>>): Promise<boolean> {
     this.enregistrement = "enregistrement";
     const resultat = await appeler(() => action(this.annee));
+    this.dernierRefus = null;
     if (resultat.status === "ok") {
       this.vue = resultat.data;
       this.enregistrement = "enregistre";
@@ -53,6 +67,7 @@ class Appli {
       };
     } else {
       this.enregistrement = "enregistre";
+      this.dernierRefus = resultat.error;
       this.signaler(resultat.error);
     }
     return false;

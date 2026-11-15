@@ -5,6 +5,8 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   plugins: [svelte()],
   clearScreen: false,
+  // Component tests (happy-dom) need Svelte's browser build, not the server one.
+  resolve: process.env.VITEST ? { conditions: ["browser"] } : undefined,
   server: {
     port: 5173,
     strictPort: true,
