@@ -5,6 +5,7 @@
 // interpolation of the animation (scale and bounce after a change) and the
 // advance of the playback.
 
+import { dessinDe } from "../apparences";
 import type { Appearance, AppearanceChange } from "../bindings";
 import { jourDepuis } from "./jours";
 
@@ -45,7 +46,7 @@ const RIEN: Etat = { symbole: null, echelle: 1 };
 
 /** Id of the symbol of a crop at a stage: `plante-tomate-adult`. */
 export function symbolePlante(culture: string, stade: string): string {
-  return `plante-${culture.replaceAll("_", "-")}-${stade}`;
+  return `plante-${dessinDe(culture)}-${stade}`;
 }
 
 /** Days a plant takes to settle at its new size after a change. */

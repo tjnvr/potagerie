@@ -120,16 +120,9 @@ export function dateCourte(date: string, annee?: number): string {
   return jour.toLocaleDateString("fr-FR", options);
 }
 
-const NOMS_DE_CULTURE: Record<string, () => string> = {
-  tomate: m.culture_tomate,
-  laitue: m.culture_laitue,
-  carotte: m.culture_carotte,
-  haricot_vert: m.culture_haricot_vert,
-  courgette: m.culture_courgette,
-  poireau: m.culture_poireau,
-};
-
-/** The French name of a crop of the catalogue (`catalogue()` sends none). */
+/** The French name of a crop of the catalogue (`catalogue()` sends none):
+ *  the message `culture_<id>`, hyphens of the id written as underscores. */
 export function nomCulture(id: string): string {
-  return NOMS_DE_CULTURE[id]?.() ?? id;
+  const nom = (m as unknown as Record<string, (() => string) | undefined>)[`culture_${id.replaceAll("-", "_")}`];
+  return nom ? nom() : id;
 }

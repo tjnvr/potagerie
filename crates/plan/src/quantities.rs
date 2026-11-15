@@ -45,7 +45,12 @@ mod tests {
     use super::*;
 
     fn q(id: &str, width: u32, k: u32) -> Quantity {
-        quantity(width, k, CaseCm::C50, Catalogue::v1().culture(id).unwrap())
+        quantity(
+            width,
+            k,
+            CaseCm::C50,
+            Catalogue::reference().culture(id).unwrap(),
+        )
     }
 
     #[test]
@@ -67,7 +72,7 @@ mod tests {
 
     #[test]
     fn zero_spacing_does_not_panic() {
-        let mut culture = Catalogue::v1().culture("tomate").unwrap().clone();
+        let mut culture = Catalogue::reference().culture("tomate").unwrap().clone();
         culture.rang_cm = 0;
         culture.pied_cm = 0;
         assert_eq!(quantity(120, 3, CaseCm::C50, &culture).total(), 1);

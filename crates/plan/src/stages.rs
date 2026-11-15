@@ -116,7 +116,7 @@ mod tests {
 
     /// Tomato sown under cover on 2027-03-10: m 05-05, r 07-19 (75 days), f 09-27.
     fn tomate(mode: Mode, date: NaiveDate) -> Serie {
-        let culture = Catalogue::v1().culture("tomate").unwrap();
+        let culture = Catalogue::reference().culture("tomate").unwrap();
         Serie::new(
             culture,
             PlancheId::generate(),

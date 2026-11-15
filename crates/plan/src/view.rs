@@ -420,7 +420,7 @@ mod tests {
 
     #[test]
     fn no_plan_gives_an_empty_view() {
-        let view = YearView::build(None, 2027, day(2027, 6, 20), Catalogue::v1());
+        let view = YearView::build(None, 2027, day(2027, 6, 20), Catalogue::reference());
         assert_eq!(view.terrain, None);
         assert!(view.planches.is_empty());
         assert!(!view.read_only);
@@ -429,7 +429,7 @@ mod tests {
 
     #[test]
     fn past_years_are_read_only() {
-        let view = YearView::build(None, 2026, day(2027, 6, 20), Catalogue::v1());
+        let view = YearView::build(None, 2026, day(2027, 6, 20), Catalogue::reference());
         assert!(view.read_only);
     }
 
@@ -437,20 +437,20 @@ mod tests {
     fn planches_follow_their_dispositions() {
         let (plan, id) = plan_with_one_planche();
         let today = day(2027, 1, 10);
-        let view = YearView::build(Some(&plan), 2027, today, Catalogue::v1());
+        let view = YearView::build(Some(&plan), 2027, today, Catalogue::reference());
         assert_eq!(view.planches.len(), 1);
         assert_eq!(view.planches[0].id, id);
         assert_eq!(view.planches[0].troncons, 6);
-        let before = YearView::build(Some(&plan), 2026, today, Catalogue::v1());
+        let before = YearView::build(Some(&plan), 2026, today, Catalogue::reference());
         assert!(before.planches.is_empty());
-        let after = YearView::build(Some(&plan), 2028, today, Catalogue::v1());
+        let after = YearView::build(Some(&plan), 2028, today, Catalogue::reference());
         assert_eq!(after.planches.len(), 1);
     }
 
     #[test]
     fn series_carry_their_calculated_dates() {
         let (mut plan, planche_id) = plan_with_one_planche();
-        let tomate = Catalogue::v1().culture("tomate").unwrap();
+        let tomate = Catalogue::reference().culture("tomate").unwrap();
         let serie = Serie::new(
             tomate,
             planche_id,
@@ -464,20 +464,21 @@ mod tests {
         let expected = serie.dates();
         plan.add_serie(SerieId::generate(), serie).unwrap();
 
-        let view = YearView::build(Some(&plan), 2027, day(2027, 6, 20), Catalogue::v1());
+        let view = YearView::build(Some(&plan), 2027, day(2027, 6, 20), Catalogue::reference());
         assert_eq!(view.series.len(), 1);
         assert_eq!(view.series[0].planting_out, expected.planting_out);
         assert_eq!(view.series[0].end, expected.end);
         assert_eq!(view.tasks.len(), 3);
         assert!(view.conflicts.is_empty());
-        let other_year = YearView::build(Some(&plan), 2029, day(2027, 6, 20), Catalogue::v1());
+        let other_year =
+            YearView::build(Some(&plan), 2029, day(2027, 6, 20), Catalogue::reference());
         assert!(other_year.series.is_empty());
     }
 
     #[test]
     fn deletion_warning_quantities_and_history() {
         let (mut plan, planche_id) = plan_with_one_planche();
-        let carotte = Catalogue::v1().culture("carotte").unwrap();
+        let carotte = Catalogue::reference().culture("carotte").unwrap();
         let serie = |date| {
             Serie::new(
                 carotte,
@@ -492,7 +493,7 @@ mod tests {
         };
         let in_2027 = SerieId::generate();
         plan.add_serie(in_2027, serie(day(2027, 3, 15))).unwrap();
-        let view = YearView::build(Some(&plan), 2027, day(2027, 1, 10), Catalogue::v1());
+        let view = YearView::build(Some(&plan), 2027, day(2027, 1, 10), Catalogue::reference());
         assert_eq!(view.planches[0].series_supprimees, vec![in_2027]);
         // 2 troncons of 50 cm on 1.2 m: 4 rows (30 cm) of 100 / 4 cm plants (S03 T4).
         assert_eq!(
@@ -501,7 +502,7 @@ mod tests {
         );
         assert!(view.historique.is_empty());
         // The 2027 serie is history in 2028 and is no longer deleted by a 2028 deletion.
-        let next = YearView::build(Some(&plan), 2028, day(2027, 1, 10), Catalogue::v1());
+        let next = YearView::build(Some(&plan), 2028, day(2027, 1, 10), Catalogue::reference());
         assert_eq!(next.historique.len(), 1);
         assert!(next.planches[0].series_supprimees.is_empty());
     }

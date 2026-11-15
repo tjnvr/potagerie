@@ -2,12 +2,12 @@
 // Rust decides what is incoherent; this only writes it.
 import type { IncoherenceView } from "../bindings";
 import { m } from "../paraglide/messages.js";
+import { nomCulture } from "../planches";
 
 /** « Tomate » for a catalogue crop, the raw id for an unknown one. */
 function culture(id: string | null): string {
   if (!id) return "?";
-  const nom = (m as unknown as Record<string, (() => string) | undefined>)[`culture_${id}`];
-  return nom ? nom() : id;
+  return nomCulture(id);
 }
 
 export function texteIncoherence(i: IncoherenceView): string {

@@ -4,6 +4,7 @@
   // illustrations of the garden view (P01) belong to the diorama; this one
   // only needs to tell the crops and the stages apart at a glance.
   import { couleurCulture, melange } from "../frise/couleurs";
+  import { dessinDe } from "../apparences";
 
   let {
     culture,
@@ -21,7 +22,7 @@
     poireau: "lames",
     courgette: "large",
   };
-  const forme = $derived(FORMES[culture] ?? "rosette");
+  const forme = $derived(FORMES[dessinDe(culture).replaceAll("-", "_")] ?? "rosette");
   /** Height of the plant, by stage. */
   const h = $derived([0, 0.35, 0.8, 1][stade] ?? 1);
   const fruit = $derived(stade === 3 ? (culture === "carotte" ? "#EF8A2E" : culture === "tomate" ? "#E5533D" : culture === "courgette" ? "#F2C94C" : null) : null);

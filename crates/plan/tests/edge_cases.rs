@@ -827,7 +827,7 @@ fn at_most_3_suggestions_ranked_by_filling_then_name() {
         start: d(2027, 5, 1),
         end: d(2027, 11, 15),
     };
-    let suggestions = plan.suggestions(&c, Catalogue::v1(), d(2027, 4, 20));
+    let suggestions = plan.suggestions(&c, Catalogue::reference(), d(2027, 4, 20));
     assert_eq!(suggestions.len(), 3);
     let ids: Vec<&str> = suggestions.iter().map(|s| s.culture_id.as_str()).collect();
     // Leek fills the slot (score 1.0, end cut to the slot); then the 0.7 group by name:
@@ -847,7 +847,7 @@ fn on_equal_score_a_different_family_from_the_last_serie_comes_first() {
             start: d(2027, 5, 1),
             end: d(2027, 11, 15),
         };
-        plan.suggestions(&c, Catalogue::v1(), d(2027, 4, 20))
+        plan.suggestions(&c, Catalogue::reference(), d(2027, 4, 20))
             .into_iter()
             .map(|s| s.culture_id)
             .collect()
@@ -972,7 +972,7 @@ fn families_of_the_two_previous_seasons() {
         serie("laitue", planche, 4, 6, Mode::Plants, d(2026, 4, 1)),
     )
     .unwrap();
-    let families = |year| plan.previous_families(planche, year, Catalogue::v1());
+    let families = |year| plan.previous_families(planche, year, Catalogue::reference());
     assert_eq!(families(2028), ["Astéracées", "Solanacées"]);
     assert_eq!(families(2029), ["Apiacées", "Solanacées"]);
     assert_eq!(families(2030), ["Apiacées"]);

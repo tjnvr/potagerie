@@ -38,7 +38,7 @@ mod tests {
 
     #[test]
     fn window_within_one_year_bounds_included() {
-        let tomate = Catalogue::v1().culture("tomate").unwrap();
+        let tomate = Catalogue::reference().culture("tomate").unwrap();
         assert!(!in_window(tomate, d(2027, 4, 30)));
         assert!(in_window(tomate, d(2027, 5, 1)));
         assert!(in_window(tomate, d(2027, 6, 15)));
@@ -47,7 +47,7 @@ mod tests {
 
     #[test]
     fn window_across_two_years() {
-        let mut ail = Catalogue::v1().culture("tomate").unwrap().clone();
+        let mut ail = Catalogue::reference().culture("tomate").unwrap().clone();
         ail.mise_en_place = Period {
             debut: MonthDay::new(10, 15).unwrap(),
             fin: MonthDay::new(2, 15).unwrap(),
@@ -66,7 +66,7 @@ mod tests {
 
     #[test]
     fn window_ending_on_feb_29_in_a_non_leap_year() {
-        let mut culture = Catalogue::v1().culture("tomate").unwrap().clone();
+        let mut culture = Catalogue::reference().culture("tomate").unwrap().clone();
         culture.mise_en_place = Period {
             debut: MonthDay::new(2, 1).unwrap(),
             fin: MonthDay::new(2, 29).unwrap(),

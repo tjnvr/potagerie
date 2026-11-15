@@ -11,19 +11,12 @@ export function cleFamille(famille: string): string {
     .toLowerCase();
 }
 
-const FAMILLES: Record<string, () => string> = {
-  solanacees: m.famille_solanacees,
-  asteracees: m.famille_asteracees,
-  apiacees: m.famille_apiacees,
-  fabacees: m.famille_fabacees,
-  cucurbitacees: m.famille_cucurbitacees,
-  amaryllidacees: m.famille_amaryllidacees,
-};
 
 /** The translated name of a botanical family; a family the messages do not
  *  know yet shows as the catalogue wrote it. */
 export function nomFamille(famille: string): string {
-  return FAMILLES[cleFamille(famille)]?.() ?? famille;
+  const nom = (m as unknown as Record<string, (() => string) | undefined>)[`famille_${cleFamille(famille)}`];
+  return nom ? nom() : famille;
 }
 
 /** The crops sorted by their translated name. */

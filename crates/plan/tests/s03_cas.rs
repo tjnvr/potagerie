@@ -137,7 +137,7 @@ fn t07_creneaux_after_the_carrot() {
 fn t08_creneau_suggestions() {
     let (plan, _) = plan_t7();
     let creneau = plan.creneaux(2027)[0];
-    let suggestions = plan.suggestions(&creneau, Catalogue::v1(), today());
+    let suggestions = plan.suggestions(&creneau, Catalogue::reference(), today());
     assert_eq!(suggestions.len(), 1);
     let laitue = &suggestions[0];
     assert_eq!(laitue.culture_id, "laitue");

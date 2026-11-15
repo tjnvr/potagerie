@@ -12,6 +12,16 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 /// Raw catalogue file, as shipped with the app (S02 §4).
 pub const CULTURES_JSON: &str = include_str!("../cultures.json");
 
+/// Ids of the reference catalogue (S02 §3): the cases of S03 §12 use it.
+pub const REFERENCE_IDS: [&str; 6] = [
+    "tomate",
+    "laitue",
+    "carotte",
+    "haricot-vert",
+    "courgette",
+    "poireau",
+];
+
 /// One crop sheet (S02 §2).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -153,6 +163,21 @@ impl Catalogue {
         })
     }
 
+    /// The 6 crops of the prototype (S02 §3), on which the cases of S03 §12
+    /// are written. Built once from the embedded catalogue.
+    pub fn reference() -> &'static Catalogue {
+        static REFERENCE: OnceLock<Catalogue> = OnceLock::new();
+        REFERENCE.get_or_init(|| {
+            Catalogue::from_cultures(
+                Catalogue::v1()
+                    .iter()
+                    .filter(|c| REFERENCE_IDS.contains(&c.id.as_str()))
+                    .cloned()
+                    .collect(),
+            )
+        })
+    }
+
     /// The crop with this `id`, if any.
     pub fn culture(&self, id: &str) -> Option<&Culture> {
         self.cultures.iter().find(|c| c.id == id)
@@ -172,8 +197,34 @@ mod tests {
     use super::*;
 
     #[test]
-    fn v1_has_the_6_cultures() {
-        let ids: Vec<&str> = Catalogue::v1().iter().map(|c| c.id.as_str()).collect();
+    fn v1_has_unique_ids_and_valid_sheets() {
+        let v1 = Catalogue::v1();
+        assert!(v1.cultures().len() >= 60);
+        let mut ids: Vec<&str> = v1.iter().map(|c| c.id.as_str()).collect();
+        ids.sort_unstable();
+        ids.dedup();
+        assert_eq!(ids.len(), v1.cultures().len());
+        for c in v1.iter() {
+            assert!(c.recolte_apres_jours > 0, "{}", c.id);
+            assert!(
+                c.recolte_duree_jours > 0 && c.rang_cm > 0 && c.pied_cm > 0,
+                "{}",
+                c.id
+            );
+            assert!(
+                c.id.chars().all(|ch| ch.is_ascii_lowercase() || ch == '-'),
+                "{}",
+                c.id
+            );
+        }
+    }
+
+    #[test]
+    fn reference_has_the_6_cultures() {
+        let ids: Vec<&str> = Catalogue::reference()
+            .iter()
+            .map(|c| c.id.as_str())
+            .collect();
         assert_eq!(
             ids,
             [

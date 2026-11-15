@@ -20,7 +20,7 @@ pub fn today() -> NaiveDate {
 }
 
 pub fn culture(id: &str) -> &'static Culture {
-    Catalogue::v1().culture(id).unwrap()
+    Catalogue::reference().culture(id).unwrap()
 }
 
 pub fn zone(t1: u32, t2: u32) -> Zone {

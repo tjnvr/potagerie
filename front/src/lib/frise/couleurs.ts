@@ -2,6 +2,8 @@
 // CSS variables: the exported SVG has no external CSS (S05 §4), so every colour
 // is written into the drawing itself.
 
+import { APPARENCES } from "../apparences";
+
 /** The palette of D01 (gen.py, C). */
 export const PALETTE = {
   fond: "#FFFFFF",
@@ -33,7 +35,8 @@ const COULEURS_CULTURE: Record<string, string> = {
 const COULEUR_PAR_DEFAUT = "#8A9A7B";
 
 export function couleurCulture(id: string): string {
-  return COULEURS_CULTURE[id] ?? COULEUR_PAR_DEFAUT;
+  const cle = id.replaceAll("-", "_");
+  return COULEURS_CULTURE[cle] ?? APPARENCES[id.replaceAll("_", "-")]?.couleur ?? COULEUR_PAR_DEFAUT;
 }
 
 /** Mixes a colour toward white by `t` (0 = unchanged, 1 = white), as D01 does. */
