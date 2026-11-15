@@ -5,6 +5,7 @@
 ```
 docs/
 ├── POT-00_index.md                         ← ce fichier
+├── POT-00_couverture-lot1.md               ← état des exigences F-… au lot 1
 ├── specs/
 │   ├── POT-S01_spec-fonctionnelle_v1.5.md   ← versions courantes
 │   ├── POT-S02_catalogue-cultures_v0.3.md
