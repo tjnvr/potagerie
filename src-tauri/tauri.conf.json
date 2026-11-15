@@ -2,12 +2,12 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Potagerie",
   "version": "0.1.0",
-  "identifier": "garden.potagerie.app",
+  "identifier": "garden.potagerie",
   "build": {
     "frontendDist": "../front/dist",
     "devUrl": "http://localhost:5173",
-    "beforeDevCommand": "pnpm --dir front dev",
-    "beforeBuildCommand": "pnpm --dir front build"
+    "beforeDevCommand": "pnpm --dir ../front dev",
+    "beforeBuildCommand": "pnpm --dir ../front build"
   },
   "app": {
     "windows": [
