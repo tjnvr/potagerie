@@ -90,9 +90,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           ls -R dist
+          # The installers sit in sub-folders (msi/, nsis/): send files only.
+          mapfile -t fichiers < <(find dist -type f)
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" dist/* --clobber
+            gh release upload "$GITHUB_REF_NAME" "${fichiers[@]}" --clobber
             gh release edit "$GITHUB_REF_NAME" --notes-file .github/release-notes.md
           else
-            gh release create "$GITHUB_REF_NAME" dist/* --title "Potagerie $GITHUB_REF_NAME" --notes-file .github/release-notes.md --prerelease
+            gh release create "$GITHUB_REF_NAME" "${fichiers[@]}" --title "Potagerie $GITHUB_REF_NAME" --notes-file .github/release-notes.md --prerelease
           fi
