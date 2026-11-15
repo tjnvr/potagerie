@@ -1,7 +1,7 @@
 # POT-D02 · Écrans complémentaires V1 — v0.1
 
 > Version : 0.1 (brouillon) · Date : 2026-11-14 · Auteur : Tim
-> Specs : [S01 v1.3](../../specs/POT-S01_spec-fonctionnelle_v1.4.md) · [S02 v0.2](../../specs/POT-S02_catalogue-cultures_v0.3.md) · [S03 v0.9](../../specs/POT-S03_regles-calculs_v0.10.md)
+> Specs : [S01 v1.3](../../specs/POT-S01_spec-fonctionnelle_v1.5.md) · [S02 v0.2](../../specs/POT-S02_catalogue-cultures_v0.3.md) · [S03 v0.9](../../specs/POT-S03_regles-calculs_v0.10.md)
 > Fait suite à [D01 v1.1](../POT-D01_ecrans-cles_v1.1/README.md), qui couvre déjà E03, E05 et E07 (téléphone), et la direction visuelle (DV01).
 
 Tim n'étant pas disponible pendant ce lot, les choix ci-dessous ont été tranchés seul ; ils sont listés dans « Décisions » plus bas.
