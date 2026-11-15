@@ -11,7 +11,7 @@ use serde::Serialize;
 use crate::ids::{AnnotationId, PlancheId, SerieId};
 use crate::model::{Plan, TypeAnnotation, TypePlanche};
 use crate::serie::Mode;
-use crate::stages::Appearance;
+use crate::stages::{Appearance, AppearanceChange};
 use crate::tasks::TaskType;
 use crate::zone::Occupation;
 
@@ -100,6 +100,10 @@ pub struct SerieView {
     pub pieds_par_rang: u32,
     /// What the garden view draws today (S03 §3).
     pub appearance_today: Appearance,
+    /// Every change of display over the life of the serie (S03 §3), so the
+    /// garden view can show any date, and play the season, without
+    /// calculating a stage itself.
+    pub appearance_changes: Vec<AppearanceChange>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -209,6 +213,7 @@ fn serie_view(
         rangs,
         pieds_par_rang,
         appearance_today: s.appearance_on(today),
+        appearance_changes: s.appearance_changes(),
     }
 }
 

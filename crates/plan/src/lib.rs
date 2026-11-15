@@ -36,7 +36,7 @@ pub use model::{MAX_NAME_CHARS, MIN_WIDTH_CM};
 pub use placement::{ALLEE_CHOICES, MAX_TERRAIN_CM, MIN_TERRAIN_CM, check_name};
 pub use quantities::{Quantity, quantity};
 pub use serie::{Mode, Phases, Serie, SerieDates};
-pub use stages::{Appearance, Stage};
+pub use stages::{Appearance, AppearanceChange, Stage};
 pub use suggestions::{MAX_SUGGESTIONS, Suggestion, evaluate};
 pub use tasks::{Task, TaskType};
 pub use validation::Fraction;

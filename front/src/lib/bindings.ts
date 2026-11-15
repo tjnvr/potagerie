@@ -121,6 +121,17 @@ export type Appearance = { appearance: "nothing" } |
 /**  A label planted on the zone: sown under cover, not yet transplanted. */
 { appearance: "label" } | { appearance: "plant"; stage: Stage };
 
+/**
+ *  The day from which the display of a serie changes (S05 §4): the garden
+ *  view and « Jouer la saison » read the stage at any date from these, with
+ *  no S03 calculation of their own.
+ */
+export type AppearanceChange = {
+	/**  First day of the new display. */
+	from: string,
+	appearance: Appearance,
+};
+
 export type ConflictView = {
 	a: SerieId,
 	b: SerieId,
@@ -344,6 +355,12 @@ export type SerieView = {
 	pieds_par_rang: number,
 	/**  What the garden view draws today (S03 §3). */
 	appearance_today: Appearance,
+	/**
+	 *  Every change of display over the life of the serie (S03 §3), so the
+	 *  garden view can show any date, and play the season, without
+	 *  calculating a stage itself.
+	 */
+	appearance_changes: AppearanceChange[],
 };
 
 export type Stage = "sowing" | "young_shoot" | "adult" | "harvest";
