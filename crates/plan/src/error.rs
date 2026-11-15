@@ -3,7 +3,7 @@
 use chrono::NaiveDate;
 use thiserror::Error;
 
-use crate::ids::{PlancheId, SerieId};
+use crate::ids::{AnnotationId, PlancheId, SerieId};
 use crate::zone::{Occupation, Zone};
 
 /// A refused operation. A refused command changes nothing.
@@ -19,6 +19,14 @@ pub enum PlanError {
     UnknownPlanche(PlancheId),
     #[error("unknown serie {0}")]
     UnknownSerie(SerieId),
+    #[error("unknown annotation {0}")]
+    UnknownAnnotation(AnnotationId),
+    /// A note or a period has 1 to 80 characters (S01 F-VIS-5).
+    #[error("an annotation text has 1 to 80 characters")]
+    InvalidAnnotationText,
+    /// A period must end on or after its start (S01 F-VIS-5).
+    #[error("a period needs an end date on or after its start")]
+    InvalidAnnotationDates,
     #[error("planche {0} already exists")]
     PlancheExists(PlancheId),
     #[error("serie {0} already exists")]
@@ -100,6 +108,9 @@ impl PlanError {
             Self::TooManyPlanches { .. } => "too_many_planches",
             Self::UnknownPlanche(_) => "planche_inconnue",
             Self::UnknownSerie(_) => "serie_inconnue",
+            Self::UnknownAnnotation(_) => "annotation_inconnue",
+            Self::InvalidAnnotationText => "texte_invalide",
+            Self::InvalidAnnotationDates => "annotation_dates_invalides",
             Self::PlancheExists(_) => "planche_existante",
             Self::SerieExists(_) => "serie_existante",
             Self::UnknownCulture(_) => "culture_inconnue",

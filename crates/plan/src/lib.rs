@@ -5,6 +5,8 @@
 //! are UTC. Nothing derived is stored in a [`Plan`]: dates, conflicts, slots,
 //! suggestions and tasks are recomputed from it.
 
+mod annotations;
+mod coherence;
 mod conflicts;
 mod creneaux;
 mod days;
@@ -20,10 +22,13 @@ mod stages;
 mod suggestions;
 mod tasks;
 mod validation;
+mod vidage;
 mod view;
 mod window;
 mod zone;
 
+pub use annotations::MAX_ANNOTATION_CHARS;
+pub use coherence::Incoherence;
 pub use conflicts::{ConflictDetail, conflict};
 pub use creneaux::{Creneau, MIN_CRENEAU_DAYS};
 pub use error::PlanError;
@@ -40,6 +45,7 @@ pub use stages::{Appearance, AppearanceChange, Stage};
 pub use suggestions::{MAX_SUGGESTIONS, Suggestion, evaluate};
 pub use tasks::{Task, TaskType};
 pub use validation::Fraction;
+pub use vidage::Cleared;
 pub use view::{
     AnnotationView, ConflictView, CreneauView, PlancheView, SerieView, SuggestionView, TaskView,
     TerrainView, YearView,
