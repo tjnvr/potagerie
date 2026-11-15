@@ -11,7 +11,11 @@
     | "alert"
     | "close"
     | "plus"
-    | "retry";
+    | "retry"
+    | "play"
+    | "pause"
+    | "rotate"
+    | "back";
 </script>
 
 <script lang="ts">
@@ -30,7 +34,16 @@
   stroke-linecap="round"
   stroke-linejoin="round"
 >
-  {#if nom === "garden"}
+  {#if nom === "play"}
+    <path d="M7 4.5v11l9-5.5z" fill="currentColor" />
+  {:else if nom === "pause"}
+    <path d="M6.5 4.5v11M13.5 4.5v11" stroke-width="3" />
+  {:else if nom === "rotate"}
+    <path d="M15.5 8A6 6 0 1 0 16 12" stroke-width="2" />
+    <path d="M16 3.5V8h-4.5" stroke-width="2" />
+  {:else if nom === "back"}
+    <path d="M12 4.5L6.5 10l5.5 5.5" stroke-width="2" />
+  {:else if nom === "garden"}
     <path d="M3 12l7-4 7 4-7 4z" />
     <path d="M10 8V4.5M8 6l2-1.5L12 6" />
   {:else if nom === "edit"}
