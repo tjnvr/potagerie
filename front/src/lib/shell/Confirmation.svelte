@@ -7,14 +7,14 @@
   let {
     title,
     confirm,
-    ton = "danger",
+    tone = "danger",
     onconfirm,
     oncancel,
     children,
   }: {
     title: string;
     confirm: string;
-    ton?: "danger" | "alert" | "principal";
+    tone?: "danger" | "alert" | "principal";
     onconfirm: () => void;
     oncancel: () => void;
     children: Snippet;
@@ -28,9 +28,9 @@
   });
 </script>
 
-<dialog bind:this={box} class="box" class:alert={ton === "alert"} oncancel={oncancel}>
+<dialog bind:this={box} class="box" class:alert={tone === "alert"} oncancel={oncancel}>
   <div class="title">
-    {#if ton !== "principal"}<span class="icon"><Icon name="alert" size={20} /></span>{/if}
+    {#if tone !== "principal"}<span class="icon"><Icon name="alert" size={20} /></span>{/if}
     <h2>{title}</h2>
   </div>
   <div class="text">{@render children()}</div>
@@ -38,10 +38,10 @@
     <button class="button" onclick={oncancel}>{m.cancel()}</button>
     <button
       class="button"
-      class:danger={ton === "danger"}
-      class:plein={ton === "danger"}
-      class:alert={ton === "alert"}
-      class:principal={ton === "principal"}
+      class:danger={tone === "danger"}
+      class:plein={tone === "danger"}
+      class:alert={tone === "alert"}
+      class:principal={tone === "principal"}
       onclick={onconfirm}>{confirm}</button
     >
   </div>

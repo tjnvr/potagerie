@@ -8,9 +8,9 @@ import {
   formEmpty,
   sameZone,
   modeInitial,
-  premierShortcutFree,
+  firstShortcutFree,
   segmentsMiniTimeline,
-  versPlantingInput,
+  toPlantingInput,
   zoneAfterClick,
 } from "./planting";
 
@@ -35,8 +35,8 @@ describe("strip of segments", () => {
 
   it("takes the first free shortcut, in order", () => {
     const z = { segment_start: 1, segment_end: 3 };
-    expect(premierShortcutFree({ all: null, half: z, third: null, quarter: null })).toEqual({ start: 1, end: 3 });
-    expect(premierShortcutFree({ all: null, half: null, third: null, quarter: null })).toBeNull();
+    expect(firstShortcutFree({ all: null, half: z, third: null, quarter: null })).toEqual({ start: 1, end: 3 });
+    expect(firstShortcutFree({ all: null, half: null, third: null, quarter: null })).toBeNull();
   });
 });
 
@@ -46,7 +46,7 @@ describe("form to command input", () => {
     expect(modeInitial(carrot)).toBe("open_ground");
     const f = formEmpty(tomato, "p1", 6, "2027-03-10");
     expect(f.zone).toEqual({ start: 1, end: 6 });
-    expect(versPlantingInput(f)).toMatchObject({
+    expect(toPlantingInput(f)).toMatchObject({
       crop_id: "tomato",
       bed_id: "p1",
       segment_start: 1,
@@ -60,11 +60,11 @@ describe("form to command input", () => {
 
   it("sends the days in pots only in the mode indoor", () => {
     const f = { ...formEmpty(carrot, "p1", 6, "2027-03-01"), mode: "indoor" as const, indoorDays: "21" };
-    expect(versPlantingInput(f).indoor_days).toBe(21);
-    expect(versPlantingInput({ ...f, mode: "plants" }).indoor_days).toBeNull();
-    expect(versPlantingInput({ ...f, indoorDays: "" }).indoor_days).toBeNull();
-    expect(versPlantingInput({ ...f, transplanting: true }).date_is_transplanting).toBe(true);
-    expect(versPlantingInput({ ...f, mode: "plants", transplanting: true }).date_is_transplanting).toBe(false);
+    expect(toPlantingInput(f).indoor_days).toBe(21);
+    expect(toPlantingInput({ ...f, mode: "plants" }).indoor_days).toBeNull();
+    expect(toPlantingInput({ ...f, indoorDays: "" }).indoor_days).toBeNull();
+    expect(toPlantingInput({ ...f, transplanting: true }).date_is_transplanting).toBe(true);
+    expect(toPlantingInput({ ...f, mode: "plants", transplanting: true }).date_is_transplanting).toBe(false);
   });
 
   it("fills the form from a suggestion, with its end as an end modified by hand", () => {

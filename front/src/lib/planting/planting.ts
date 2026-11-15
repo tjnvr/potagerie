@@ -62,7 +62,7 @@ export function zoneFromShortcut(r: ShortcutsView, key: KeyShortcut): Zone | nul
 }
 
 /** The first shortcut Rust says is free, to start from when the wanted zone is not. */
-export function premierShortcutFree(r: ShortcutsView): Zone | null {
+export function firstShortcutFree(r: ShortcutsView): Zone | null {
   for (const key of SHORTCUTS) {
     const z = zoneFromShortcut(r, key);
     if (z) return z;
@@ -128,7 +128,7 @@ export function formSincePlanting(s: PlantingView): Form {
 }
 
 /** The input of `create_planting`, `modify_planting` and `preview_planting`. */
-export function versPlantingInput(f: Form): PlantingInput {
+export function toPlantingInput(f: Form): PlantingInput {
   const days = Number.parseInt(f.indoorDays, 10);
   return {
     crop_id: f.cropId,

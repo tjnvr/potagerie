@@ -27,7 +27,7 @@ STAGES = ["sowing", "young_shoot", "adult", "harvest"]
 # The plant is drawn around (0, 0), its foot on the soil. One common viewBox.
 VIEWBOX = (-32, -66, 64, 76)
 
-SORTIE = os.path.join(ROOT, "front", "src", "lib", "diorama", "symboles.ts")
+OUTPUT = os.path.join(ROOT, "front", "src", "lib", "diorama", "symboles.ts")
 
 
 def main() -> None:
@@ -47,9 +47,9 @@ def main() -> None:
             rows.append(f'  "{crop}-{stade}": `{svg}`,')
     rows.append("};")
     rows.append("")
-    with open(SORTIE, "w", encoding="utf-8") as f:
+    with open(OUTPUT, "w", encoding="utf-8") as f:
         f.write("\n".join(rows))
-    print(f"{len(CROPS) * len(STAGES)} symbols written to {os.path.relpath(SORTIE, ROOT)}")
+    print(f"{len(CROPS) * len(STAGES)} symbols written to {os.path.relpath(OUTPUT, ROOT)}")
 
 
 if __name__ == "__main__":

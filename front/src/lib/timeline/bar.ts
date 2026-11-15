@@ -3,7 +3,7 @@
 // refusal brings the bar back to where it was. The gesture itself (mouse after
 // a few pixels, finger after a long press) is the `ControllerDrag` of the editor.
 import type { Response } from "../editor/drag";
-import { shiftEnDays } from "./geometry";
+import { shiftInDays } from "./geometry";
 
 export type IssueShift =
   /** The bar did not move by a whole day: a click, nothing is sent. */
@@ -19,7 +19,7 @@ export async function deposerBar(
   pxByDay: number,
   envoyer: (days: number) => Promise<Response>,
 ): Promise<IssueShift> {
-  const days = shiftEnDays(dxPx, pxByDay);
+  const days = shiftInDays(dxPx, pxByDay);
   if (days === 0) return { response: "unchanged", days: 0 };
   const response = await envoyer(days);
   return response === "ok" ? { response: "ok", days } : { response, days: 0 };
@@ -28,5 +28,5 @@ export async function deposerBar(
 /** Where the bar is drawn while it is dragged: its pixel offset snapped to
  *  whole days, so it jumps from day to day under the pointer. */
 export function shiftShown(dxPx: number, pxByDay: number): number {
-  return shiftEnDays(dxPx, pxByDay) * pxByDay;
+  return shiftInDays(dxPx, pxByDay) * pxByDay;
 }

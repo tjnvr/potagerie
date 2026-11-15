@@ -11,7 +11,7 @@
   import IconTimeline from "../timeline/IconTimeline.svelte";
   import { m } from "../paraglide/messages.js";
   import { nameCrop } from "../beds";
-  import { enOk } from "./call";
+  import { isOk } from "./call";
   import { catalogue } from "./crops.svelte";
   import PlantIcon from "./PlantIcon.svelte";
   import { nameFamily, tri } from "./catalogue";
@@ -25,7 +25,7 @@
 
   $effect(() => {
     const date = today;
-    void call(() => enOk(commands.cropsOfSeason(date))).then((r) => {
+    void call(() => isOk(commands.cropsOfSeason(date))).then((r) => {
       if (r.status === "ok") season = r.data;
     });
   });

@@ -11,7 +11,7 @@ export type Saving = "saved" | "saving" | "error";
 
 export type Tab = "garden" | "plan";
 
-export type Message = { text: string; ton: "info" | "error" };
+export type Message = { text: string; tone: "info" | "error" };
 
 /** What opens E07 (new planting and edition): from a bed (« Plant here »),
  *  from a free slot of the timeline (with its suggestions), or from a bar. */
@@ -45,21 +45,21 @@ class App {
   catalogueOpen = $state(false);
   /** The last refusal of a command that changes the plan (not a save failure),
    *  for the screens that word it themselves (a bar that goes back, S03 T12). */
-  dernierRefusal = $state<AppError | null>(null);
+  lastRefusal = $state<AppError | null>(null);
   view = $state<YearView | null>(null);
   saving = $state<Saving>("saved");
   message = $state<Message | null>(null);
   #retry: (() => Promise<void>) | null = null;
 
   /** Opens a year. */
-  async charger(year: number = this.year): Promise<void> {
+  async load(year: number = this.year): Promise<void> {
     this.year = year;
     const result = await call(() => commands.viewYear(year));
     if (result.status === "ok") {
       this.view = result.data;
       await this.refreshToResolve();
     } else {
-      this.signaler(result.error);
+      this.report(result.error);
     }
   }
 
@@ -73,7 +73,7 @@ class App {
   async modify(action: (year: number) => Promise<Result<YearView>>): Promise<boolean> {
     this.saving = "saving";
     const result = await call(() => action(this.year));
-    this.dernierRefusal = null;
+    this.lastRefusal = null;
     if (result.status === "ok") {
       this.view = result.data;
       void this.refreshToResolve();
@@ -88,8 +88,8 @@ class App {
       };
     } else {
       this.saving = "saved";
-      this.dernierRefusal = result.error;
-      this.signaler(result.error);
+      this.lastRefusal = result.error;
+      this.report(result.error);
     }
     return false;
   }
@@ -99,12 +99,12 @@ class App {
     await this.#retry?.();
   }
 
-  signaler(error: AppError): void {
-    this.message = { text: translateError(error), ton: "error" };
+  report(error: AppError): void {
+    this.message = { text: translateError(error), tone: "error" };
   }
 
   informer(text: string): void {
-    this.message = { text, ton: "info" };
+    this.message = { text, tone: "info" };
   }
 }
 

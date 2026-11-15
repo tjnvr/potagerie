@@ -47,7 +47,7 @@
     if (["file", "import_invalid", "import_too_recent"].includes(error.code)) {
       failureFile = error.code;
     } else {
-      app.signaler(error);
+      app.report(error);
     }
   }
 
@@ -99,10 +99,10 @@
     effacement = 0;
     const result = await call(() => commands.eraseData());
     if (result.status === "ok") {
-      await app.charger();
+      await app.load();
       app.informer(m.erase_ok());
     } else {
-      app.signaler(result.error);
+      app.report(result.error);
     }
   }
 </script>

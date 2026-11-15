@@ -22,7 +22,7 @@
   // adds the pointer feedback (cursor, focus), which the export drops.
   import { m } from "../paraglide/messages.js";
   import { dateAbbreviated, dateOf, dayOf } from "../dates";
-  import { enMeters, nameCrop, nameOfType } from "../beds";
+  import { formatMeters, nameCrop, nameOfType } from "../beds";
   import { PALETTE, colorCrop, melange } from "./colors";
   import type { AnnotationView } from "../bindings";
   import { monthVisible, xOf, type Bar, type Scale, type Row } from "./geometry";
@@ -382,8 +382,8 @@
         <text x="12" y={p.top + p.height / 2 + 15} font-size="12" fill={PALETTE.muted}>
           {m.timeline_bed_dim({
             type: nameOfType(row.bed.bed_type),
-            length: enMeters(row.bed.length_cm),
-            width: enMeters(row.bed.width_cm),
+            length: formatMeters(row.bed.length_cm),
+            width: formatMeters(row.bed.width_cm),
           })}
         </text>
       {/if}

@@ -5,11 +5,11 @@
   // bed goes back to its place if it refuses (S05 §4).
   import type { BedView, PlotView, TypeBed } from "../bindings";
   import { m } from "../paraglide/messages.js";
-  import { enMeters } from "../beds";
+  import { formatMeters } from "../beds";
   import {
     ControllerDrag,
     deposer,
-    pixelsVersCm,
+    pixelsToCm,
     positionDropped,
     resize,
     type Box,
@@ -118,11 +118,11 @@
     if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) {
       return null;
     }
-    return pixelsVersCm({ x: clientX, y: clientY }, rect, box);
+    return pixelsToCm({ x: clientX, y: clientY }, rect, box);
   }
 
   function enCm(e: PointerEvent): Point {
-    return pixelsVersCm({ x: e.clientX, y: e.clientY }, svg.getBoundingClientRect(), box);
+    return pixelsToCm({ x: e.clientX, y: e.clientY }, svg.getBoundingClientRect(), box);
   }
 
   function geoOf(p: BedView): Geo {
@@ -289,8 +289,8 @@
       aria-pressed={chosen}
       aria-label={m.bed_aria({
         name: bed.name,
-        length: enMeters(g.length_cm),
-        width: enMeters(g.width_cm),
+        length: formatMeters(g.length_cm),
+        width: formatMeters(g.width_cm),
       })}
       onpointerdown={(e) => (readOnly ? onselect(bed.id) : start(e, bed, "move"))}
       onkeydown={(e) => key(e, bed)}
@@ -314,7 +314,7 @@
     {@const g = geste?.id === active.id ? geste.preview : geoOf(active)}
       <rect class="cadre" x={g.x} y={g.y} width={g.length_cm} height={g.width_cm} rx="6" />
       <text class="cote" x={g.x + g.length_cm / 2} y={g.y - police * 0.5} font-size={police} text-anchor="middle">
-        {m.panel_dimensions({ length: enMeters(g.length_cm), width: enMeters(g.width_cm) })}
+        {m.panel_dimensions({ length: formatMeters(g.length_cm), width: formatMeters(g.width_cm) })}
       </text>
       {#if !readOnly}
         {#each HANDLES as h (h.name)}

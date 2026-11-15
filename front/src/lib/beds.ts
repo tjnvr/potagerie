@@ -92,17 +92,17 @@ export function positionFree(
 }
 
 /** The years offered by the season selector: last year to two years ahead. */
-export function yearsProposees(yearEnProgress: number): number[] {
-  return [yearEnProgress - 1, yearEnProgress, yearEnProgress + 1, yearEnProgress + 2];
+export function yearsProposees(yearInProgress: number): number[] {
+  return [yearInProgress - 1, yearInProgress, yearInProgress + 1, yearInProgress + 2];
 }
 
 /** Centimetres as « 1,2 » meters, the way the plan reads. */
-export function enMeters(cm: number): string {
+export function formatMeters(cm: number): string {
   return (cm / 100).toLocaleString(localeTag(), { maximumFractionDigits: 2 });
 }
 
 /** Square centimetres as « 71,5 » m². */
-export function enM2(cm2: number): string {
+export function formatM2(cm2: number): string {
   return (cm2 / 10_000).toLocaleString(localeTag(), { maximumFractionDigits: 1 });
 }
 

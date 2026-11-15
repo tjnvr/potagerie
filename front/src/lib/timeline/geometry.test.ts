@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SlotView, BedView, PlantingView, YearView } from "../bindings";
 import { dateOf, dayOf } from "../dates";
-import { ControllerDrag, DELAY_PRESS_LONG_MS } from "../editor/drag";
+import { ControllerDrag, LONG_PRESS_DELAY_MS } from "../editor/drag";
 import { shiftShown, deposerBar } from "./bar";
 import {
   DAYS_MAX,
@@ -10,7 +10,7 @@ import {
   barOf,
   centerOn,
   buildRows,
-  shiftEnDays,
+  shiftInDays,
   defiler,
   scaleCentered,
   stack,
@@ -101,9 +101,9 @@ describe("scrolling and zoom", () => {
 
 describe("drag of a bar", () => {
   it("moves by whole days", () => {
-    expect(shiftEnDays(10, 4)).toBe(3);
-    expect(shiftEnDays(-5, 4)).toBe(-1);
-    expect(shiftEnDays(1, 4)).toBe(0);
+    expect(shiftInDays(10, 4)).toBe(3);
+    expect(shiftInDays(-5, 4)).toBe(-1);
+    expect(shiftInDays(1, 4)).toBe(0);
     expect(shiftShown(10, 4)).toBe(12);
   });
 
@@ -141,7 +141,7 @@ describe("long press on a bar", () => {
   it("arms a finger after the delay, then drags", () => {
     const { timer, trigger } = withTimer();
     const armed = vi.fn();
-    const c = new ControllerDrag({ onArmed: armed, timer, delay: DELAY_PRESS_LONG_MS });
+    const c = new ControllerDrag({ onArmed: armed, timer, delay: LONG_PRESS_DELAY_MS });
     c.press("touch", { x: 10, y: 10 });
     expect(c.move({ x: 12, y: 10 })).toBe("nothing");
     trigger();

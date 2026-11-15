@@ -11,8 +11,8 @@
     MAX_BEDS,
     SIZE_BY_DEFAULT,
     summary,
-    enM2,
-    enMeters,
+    formatM2,
+    formatMeters,
     nameOfType,
     nameByDefault,
     positionFree,
@@ -74,7 +74,7 @@
     const size = SIZE_BY_DEFAULT[type];
     const pos = positionSincePlanter(point, size, view.plot.cell_cm);
     if (pos.x < 0 || pos.y < 0) {
-      app.signaler({ code: "bed_outside_plot", detail: "" });
+      app.report({ code: "bed_outside_plot", detail: "" });
       return;
     }
     await poser(type, pos.x, pos.y);
@@ -119,7 +119,7 @@
     ghost = null;
     if (end === "click") await add(type);
     else if (end === "end" && depot) {
-      if (depot.x < 0 || depot.y < 0) app.signaler({ code: "bed_outside_plot", detail: "" });
+      if (depot.x < 0 || depot.y < 0) app.report({ code: "bed_outside_plot", detail: "" });
       else await poser(type, depot.x, depot.y);
     }
   }
@@ -178,8 +178,8 @@
     <section class="scene">
       <p class="plot">
         {m.plan_plot({
-          length: enMeters(view.plot.length_cm),
-          width: enMeters(view.plot.width_cm),
+          length: formatMeters(view.plot.length_cm),
+          width: formatMeters(view.plot.width_cm),
           case: view.plot.cell_cm,
         })}
       </p>
@@ -192,7 +192,7 @@
         {ghost}
         onselect={(id) => (selectionId = id)}
         onmodify={modify}
-        onbeforeplot={() => app.signaler({ code: "bed_outside_plot", detail: "" })}
+        onbeforeplot={() => app.report({ code: "bed_outside_plot", detail: "" })}
         onplace={poserHere}
       />
       {#if view.beds.length === 0}
@@ -226,8 +226,8 @@
                 <span class="name">{nameOfType(type)}</span>
                 <span class="size">
                   {m.tray_size({
-                    length: enMeters(SIZE_BY_DEFAULT[type].length_cm),
-                    width: enMeters(SIZE_BY_DEFAULT[type].width_cm),
+                    length: formatMeters(SIZE_BY_DEFAULT[type].length_cm),
+                    width: formatMeters(SIZE_BY_DEFAULT[type].width_cm),
                   })}
                 </span>
               </button>
@@ -245,9 +245,9 @@
         <aside class="summary">
           <h2>{m.summary_title()}</h2>
           <dl>
-            <div><dd>{m.surface_m2({ value: enM2(account.total) })}</dd><dt>{m.summary_plot()}</dt></div>
-            <div><dd>{m.surface_m2({ value: enM2(account.cultivable) })}</dd><dt>{m.summary_workable()}</dt></div>
-            <div><dd>{m.surface_m2({ value: enM2(account.aisles) })}</dd><dt>{m.summary_aisles()}</dt></div>
+            <div><dd>{m.surface_m2({ value: formatM2(account.total) })}</dd><dt>{m.summary_plot()}</dt></div>
+            <div><dd>{m.surface_m2({ value: formatM2(account.cultivable) })}</dd><dt>{m.summary_workable()}</dt></div>
+            <div><dd>{m.surface_m2({ value: formatM2(account.aisles) })}</dd><dt>{m.summary_aisles()}</dt></div>
             <div><dd>{account.count} / {MAX_BEDS}</dd><dt>{m.summary_beds()}</dt></div>
           </dl>
         </aside>
@@ -261,7 +261,7 @@
   <Confirmation
     title={m.shorten_title({ name: request.bed.name })}
     confirm={m.shorten_button()}
-    ton="alert"
+    tone="alert"
     onconfirm={() => request.answer(true)}
     oncancel={() => request.answer(false)}
   >

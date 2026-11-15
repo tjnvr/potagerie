@@ -73,7 +73,7 @@
     const date = $cursor;
     untrack(() => {
       if (scale) scale = keepVisible(scale, dayOf(date));
-      if (yearOf(date) !== app.year) app.charger(yearOf(date));
+      if (yearOf(date) !== app.year) app.load(yearOf(date));
     });
   });
 
@@ -266,8 +266,8 @@
       return ok ? "ok" : "refusal";
     });
     if (issue.response === "refusal") {
-      const reason = app.dernierRefusal ? translateError(app.dernierRefusal) : "";
-      app.message = { text: m.timeline_refusal({ reason }), ton: "error" };
+      const reason = app.lastRefusal ? translateError(app.lastRefusal) : "";
+      app.message = { text: m.timeline_refusal({ reason }), tone: "error" };
       refusal = id;
       setTimeout(() => (refusal = null), 1500);
       await bringBack(id, shiftShown(dxPx, pxByDay));

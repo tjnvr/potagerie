@@ -9,7 +9,7 @@
   import { get } from "svelte/store";
   import { m } from "../paraglide/messages.js";
   import { cursor } from "../time";
-  import { dateShort, enM2, enMeters, nameCrop, nameOfType } from "../beds";
+  import { dateShort, formatM2, formatMeters, nameCrop, nameOfType } from "../beds";
   import type { Geo, Response } from "./drag";
 
   let {
@@ -97,9 +97,9 @@
 
   <div class="puces">
     <span class="puce">
-      {m.panel_dimensions({ length: enMeters(bed.length_cm), width: enMeters(bed.width_cm) })}
+      {m.panel_dimensions({ length: formatMeters(bed.length_cm), width: formatMeters(bed.width_cm) })}
     </span>
-    <span class="puce">{m.panel_surface({ value: enM2(bed.length_cm * bed.width_cm) })}</span>
+    <span class="puce">{m.panel_surface({ value: formatM2(bed.length_cm * bed.width_cm) })}</span>
   </div>
 
   {#if view.read_only}

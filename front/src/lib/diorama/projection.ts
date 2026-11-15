@@ -17,7 +17,7 @@ export type Quarter = 0 | 1 | 2 | 3;
 export type Point = [number, number];
 
 /** Plot position in cm to tiles. */
-export function enUnites(cm: number): number {
+export function inUnits(cm: number): number {
   return cm / UNIT_CM;
 }
 

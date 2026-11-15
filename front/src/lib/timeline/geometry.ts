@@ -76,7 +76,7 @@ export function keepVisible(e: Scale, day: number): Scale {
 }
 
 /** A bar dragged by `dxPx` moves by whole days (S03 §2: the shift is in days). */
-export function shiftEnDays(dxPx: number, pxByDay: number): number {
+export function shiftInDays(dxPx: number, pxByDay: number): number {
   return Math.round(dxPx / pxByDay);
 }
 

@@ -15,13 +15,13 @@ export type Handle = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
 export const THRESHOLD_MOUSE_PX = 4;
 /** On touch, the finger may drift this far while waiting for the long press. */
 export const TOLERANCE_PRESS_LONG_PX = 8;
-export const DELAY_PRESS_LONG_MS = 450;
+export const LONG_PRESS_DELAY_MS = 450;
 /** The narrowest width the handles can give: the same minimum as Rust (S03 §15),
  *  so a handle never proposes a width Rust would call invalid. */
 export const WIDTH_MIN_CM = 10;
 
 /** Pixels of the screen to centimetres of the plan. */
-export function pixelsVersCm(p: Point, rect: Rect, box: Box): Point {
+export function pixelsToCm(p: Point, rect: Rect, box: Box): Point {
   return {
     x: box.x + ((p.x - rect.left) / rect.width) * box.width,
     y: box.y + ((p.y - rect.top) / rect.height) * box.height,
@@ -110,7 +110,7 @@ export class ControllerDrag {
 
   constructor(options: { onArmed?: () => void; delay?: number; timer?: Timer } = {}) {
     this.#onArmed = options.onArmed ?? (() => {});
-    this.#delay = options.delay ?? DELAY_PRESS_LONG_MS;
+    this.#delay = options.delay ?? LONG_PRESS_DELAY_MS;
     this.#timers = options.timer ?? timerReal;
   }
 

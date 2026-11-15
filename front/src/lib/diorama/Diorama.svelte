@@ -13,7 +13,7 @@
   import FrameCounter from "./FrameCounter.svelte";
   import Cursor from "./Cursor.svelte";
   import { ETIQUETTE_SVG } from "./etiquette";
-  import { bornesYear, dateEnAllLetters, isoSince, daySince } from "./days";
+  import { bornesYear, dateInWords, isoSince, daySince } from "./days";
   import { framesPerSecond, measure, type Measure } from "./measure";
   import PanelDiorama from "./PanelDiorama.svelte";
   import type { Quarter } from "./projection";
@@ -244,7 +244,7 @@
   <section class="scene" style:background={palette.fond} aria-labelledby="diorama-date">
     <div class="header">
       <div class="title">
-        <h1 id="diorama-date">{dateEnAllLetters(dayWhole)}</h1>
+        <h1 id="diorama-date">{dateInWords(dayWhole)}</h1>
         <div class="puces">
           <span class="puce">{NAMES_SEASON[season]()}</span>
           <span class="puce">{m.diorama_plantings_in_ground({ count: countEnGround })}</span>
@@ -266,7 +266,7 @@
           viewBox={scene.cadre.join(" ")}
           role="group"
           aria-label={m.diorama_aria({
-            date: dateEnAllLetters(dayWhole),
+            date: dateInWords(dayWhole),
             beds: scene.beds.length,
             plantings: countEnGround,
           })}

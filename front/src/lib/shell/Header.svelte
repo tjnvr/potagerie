@@ -11,17 +11,17 @@
   import Icon, { type NameIcon } from "./Icon.svelte";
   import Logo from "./Logo.svelte";
 
-  const yearEnProgress = new Date().getFullYear();
+  const yearInProgress = new Date().getFullYear();
   /** A season of the selector: the cursor goes to the same day of that year. */
   function chooseYear(year: number) {
     goTo(sameDayYear(get(cursor), year));
-    void app.charger(year);
+    void app.load(year);
   }
 
   /** “Today” brings back the cursor, the timeline and the season. */
   function returnToday() {
     allerToday();
-    void app.charger(yearEnProgress);
+    void app.load(yearInProgress);
   }
 
   const tabs: { id: Tab; icon: NameIcon; text: () => string }[] = [
@@ -50,7 +50,7 @@
   </nav>
 
   <div class="seasons" role="group" aria-label={m.season_aria()}>
-    {#each yearsProposees(yearEnProgress) as year (year)}
+    {#each yearsProposees(yearInProgress) as year (year)}
       <button
         class="season"
         class:active={app.year === year}

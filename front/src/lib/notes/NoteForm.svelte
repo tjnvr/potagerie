@@ -5,7 +5,7 @@
   // `create_annotation` or `modify_annotation`.
   import type { AnnotationInput, AnnotationView, BedId, BedView } from "../bindings";
   import { m } from "../paraglide/messages.js";
-  import { draftOf, draftEmpty, sendable, TEXT_MAX, versEntree, type Draft } from "./note";
+  import { draftOf, draftEmpty, sendable, TEXT_MAX, toInput, type Draft } from "./note";
 
   let {
     beds,
@@ -47,7 +47,7 @@
 
   function envoyer(e: SubmitEvent) {
     e.preventDefault();
-    if (sendable(draft)) onsave(versEntree(draft));
+    if (sendable(draft)) onsave(toInput(draft));
   }
 </script>
 

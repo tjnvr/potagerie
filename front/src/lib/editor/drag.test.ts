@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
   ControllerDrag,
   deposer,
-  pixelsVersCm,
+  pixelsToCm,
   positionSincePlanter,
   positionDropped,
   resize,
@@ -14,11 +14,11 @@ import {
 const box = { x: -22, y: -22, width: 1144, height: 694 };
 const rect = { left: 100, top: 50, width: 572, height: 347 };
 
-describe("pixelsVersCm", () => {
+describe("pixelsToCm", () => {
   test("converts the corners and the centre", () => {
-    expect(pixelsVersCm({ x: 100, y: 50 }, rect, box)).toEqual({ x: -22, y: -22 });
-    expect(pixelsVersCm({ x: 672, y: 397 }, rect, box)).toEqual({ x: 1122, y: 672 });
-    const centre = pixelsVersCm({ x: 386, y: 223.5 }, rect, box);
+    expect(pixelsToCm({ x: 100, y: 50 }, rect, box)).toEqual({ x: -22, y: -22 });
+    expect(pixelsToCm({ x: 672, y: 397 }, rect, box)).toEqual({ x: 1122, y: 672 });
+    const centre = pixelsToCm({ x: 386, y: 223.5 }, rect, box);
     expect(centre.x).toBeCloseTo(550);
     expect(centre.y).toBeCloseTo(325);
   });

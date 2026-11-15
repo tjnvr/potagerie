@@ -26,7 +26,7 @@ export function monthOf(day: number): number {
 }
 
 /** A day number as « 20 June 2027 ». */
-export function dateEnAllLetters(day: number): string {
+export function dateInWords(day: number): string {
   return new Date(Math.floor(day) * MS_BY_DAY).toLocaleDateString(localeTag(), {
     day: "numeric",
     month: "long",

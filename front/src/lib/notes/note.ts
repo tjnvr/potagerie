@@ -42,7 +42,7 @@ export function sendable(b: Draft): boolean {
 }
 
 /** The input of `create_annotation` and `modify_annotation`. */
-export function versEntree(b: Draft): AnnotationInput {
+export function toInput(b: Draft): AnnotationInput {
   return {
     annotation_type: b.type,
     date_start: b.start,

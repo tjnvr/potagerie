@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { BedView, PlotView } from "./bindings";
-import { yearsProposees, summary, enM2, enMeters, letterOf, nameByDefault, positionFree } from "./beds";
+import { yearsProposees, summary, formatM2, formatMeters, letterOf, nameByDefault, positionFree } from "./beds";
 
 const plot: PlotView = { length_cm: 1100, width_cm: 650, cell_cm: 50, aisle_cm: 50 };
 
@@ -58,7 +58,7 @@ describe("summary", () => {
 });
 
 test("meters and square meters follow the app language", () => {
-  expect(enMeters(120)).toBe("1.2");
-  expect(enMeters(300)).toBe("3");
-  expect(enM2(36_000)).toBe("3.6");
+  expect(formatMeters(120)).toBe("1.2");
+  expect(formatMeters(300)).toBe("3");
+  expect(formatM2(36_000)).toBe("3.6");
 });

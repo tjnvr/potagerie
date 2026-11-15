@@ -8,7 +8,7 @@ import { scalePlant, positionsPlants } from "./plants";
 import {
   cadre,
   dimensions,
-  enUnites,
+  inUnits,
   rotate,
   pivoterRect,
   depth,
@@ -163,7 +163,7 @@ function tufts(l: number, h: number, beds: Rect[], quarter: Quarter): Tuft[] {
 }
 
 function rectOf(p: BedView): Rect {
-  return { x: enUnites(p.x), y: enUnites(p.y), l: enUnites(p.length_cm), h: enUnites(p.width_cm) };
+  return { x: inUnits(p.x), y: inUnits(p.y), l: inUnits(p.length_cm), h: inUnits(p.width_cm) };
 }
 
 function plantingScene(p: BedView, s: PlantingView, plot: PlotView, quarter: Quarter, lt: number, ht: number, ground: number): PlantingScene {
@@ -177,7 +177,7 @@ function plantingScene(p: BedView, s: PlantingView, plot: PlotView, quarter: Qua
     });
   const start = p.x + (s.segment_start - 1) * plot.cell_cm;
   const length = (s.segment_end - s.segment_start + 1) * plot.cell_cm;
-  const [cx, cy] = rotate([enUnites(start + length / 2), enUnites(p.y + p.width_cm / 2)], quarter, lt, ht);
+  const [cx, cy] = rotate([inUnits(start + length / 2), inUnits(p.y + p.width_cm / 2)], quarter, lt, ht);
   const [x, y] = project(cx, cy, ground);
   return {
     id: s.id,
@@ -193,8 +193,8 @@ function plantingScene(p: BedView, s: PlantingView, plot: PlotView, quarter: Qua
 export function buildScene(view: YearView, quarter: Quarter): Scene | null {
   const plot = view.plot;
   if (!plot) return null;
-  const l0 = enUnites(plot.length_cm);
-  const h0 = enUnites(plot.width_cm);
+  const l0 = inUnits(plot.length_cm);
+  const h0 = inUnits(plot.width_cm);
   const { l: lt, h: ht } = dimensions(quarter, l0, h0);
   const socle: Face[] = [
     ...box({ x: 0, y: 0, l: lt, h: ht }, -30, -8, ["ground-gauche", "ground-right", "grass-top"]),

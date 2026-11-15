@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { TH, TW, cadre, dimensions, enUnites, rotate, pivoterRect, project, type Quarter } from "./projection";
-import { dateEnAllLetters, isoSince, daySince } from "./days";
+import { TH, TW, cadre, dimensions, inUnits, rotate, pivoterRect, project, type Quarter } from "./projection";
+import { dateInWords, isoSince, daySince } from "./days";
 import { seasonOf } from "./season";
 
 describe("project", () => {
@@ -21,7 +21,7 @@ describe("project", () => {
   });
 
   test("a tile is 50 cm", () => {
-    expect(enUnites(300)).toBe(6);
+    expect(inUnits(300)).toBe(6);
   });
 });
 
@@ -76,7 +76,7 @@ describe("days", () => {
   });
 
   test("a date in words", () => {
-    expect(dateEnAllLetters(daySince("2027-06-20"))).toBe("20 June 2027");
+    expect(dateInWords(daySince("2027-06-20"))).toBe("20 June 2027");
   });
 
   test("calendar seasons, 20 June is summer (D01)", () => {

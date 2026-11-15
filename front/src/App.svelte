@@ -16,8 +16,8 @@
   import PlantingEdition from "./lib/planting/PlantingEdition.svelte";
 
   $effect(() => {
-    app.charger();
-    catalogue.charger();
+    app.load();
+    catalogue.load();
   });
 
   $effect(() => {
@@ -71,8 +71,8 @@
 {/if}
 
 {#if app.message}
-  <div class="announce" class:error={app.message.ton === "error"} role="alert">
-    {#if app.message.ton === "error"}<Icon name="alert" />{/if}
+  <div class="announce" class:error={app.message.tone === "error"} role="alert">
+    {#if app.message.tone === "error"}<Icon name="alert" />{/if}
     <span>{app.message.text}</span>
     <button aria-label={m.close()} onclick={() => (app.message = null)}><Icon name="close" size={14} /></button>
   </div>

@@ -28,7 +28,7 @@
         : commands.createAnnotation(year, entree),
     );
     if (ok) close();
-    else reason = app.dernierRefusal ? translateError(app.dernierRefusal) : "";
+    else reason = app.lastRefusal ? translateError(app.lastRefusal) : "";
   }
 
   async function remove() {
@@ -36,7 +36,7 @@
     const id = opening.annotation.id;
     reason = "";
     if (await app.modify((year) => commands.deleteAnnotation(year, id))) close();
-    else reason = app.dernierRefusal ? translateError(app.dernierRefusal) : "";
+    else reason = app.lastRefusal ? translateError(app.lastRefusal) : "";
   }
 </script>
 

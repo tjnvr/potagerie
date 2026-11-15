@@ -3,7 +3,7 @@
 // segments. Rows run along the length of the bed, evenly across its width;
 // the plants of a row are evenly spread along the zone.
 
-import { enUnites } from "./projection";
+import { inUnits } from "./projection";
 
 export type GeoBed = { x: number; y: number; length_cm: number; width_cm: number };
 export type ZonePlanting = {
@@ -54,9 +54,9 @@ export function positionsPlants(bed: GeoBed, planting: ZonePlanting, cellCm: num
   const lengthCm = (planting.segment_end - planting.segment_start + 1) * cellCm;
   const result: Spacing[] = [];
   for (let r = 0; r < rows; r++) {
-    const gy = enUnites(bed.y + ((r + 0.5) * bed.width_cm) / rows);
+    const gy = inUnits(bed.y + ((r + 0.5) * bed.width_cm) / rows);
     for (let p = 0; p < plants; p++) {
-      result.push({ gx: enUnites(startCm + ((p + 0.5) * lengthCm) / plants), gy });
+      result.push({ gx: inUnits(startCm + ((p + 0.5) * lengthCm) / plants), gy });
     }
   }
   return result;

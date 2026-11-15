@@ -114,7 +114,7 @@
     } else if (result.error.code === "file") {
       failure = "file";
     } else {
-      app.signaler(result.error);
+      app.report(result.error);
     }
   }
 </script>

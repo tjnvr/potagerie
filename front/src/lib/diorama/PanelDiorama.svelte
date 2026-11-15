@@ -42,7 +42,7 @@
   <Confirmation
     title={m.shorten_title({ name: bed.name })}
     confirm={m.shorten_button()}
-    ton="alert"
+    tone="alert"
     onconfirm={() => request.answer(true)}
     oncancel={() => request.answer(false)}
   >

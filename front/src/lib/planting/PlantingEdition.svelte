@@ -16,10 +16,10 @@
   import { call, app, type OpeningPlanting } from "../state.svelte";
   import IconTimeline from "../timeline/IconTimeline.svelte";
   import { m } from "../paraglide/messages.js";
-  import { enMeters, nameCrop } from "../beds";
+  import { formatMeters, nameCrop } from "../beds";
   import { cursor } from "../time";
   import { get } from "svelte/store";
-  import { enOk } from "./call";
+  import { isOk } from "./call";
   import { catalogue } from "./crops.svelte";
   import MiniTimeline from "./MiniTimeline.svelte";
   import PlantIcon from "./PlantIcon.svelte";
@@ -32,9 +32,9 @@
     formEmpty,
     sameZone,
     modeInitial,
-    premierShortcutFree,
+    firstShortcutFree,
     segmentsMiniTimeline,
-    versPlantingInput,
+    toPlantingInput,
     versZone,
     zoneAfterClick,
     zoneFromShortcut,
@@ -92,7 +92,7 @@
 
   let tokenPreview = 0;
   $effect(() => {
-    const entree = versPlantingInput(f);
+    const entree = toPlantingInput(f);
     const id = edition?.id ?? null;
     if (!entree.crop_id) return;
     const mon = ++tokenPreview;
@@ -110,7 +110,7 @@
     untrack(() => {
       zoneAuto = false;
       if (preview!.problems.length === 0) return;
-      const free = premierShortcutFree(preview!.shortcuts);
+      const free = firstShortcutFree(preview!.shortcuts);
       if (free && !sameZone(free, f.zone)) f.zone = free;
     });
   });
@@ -119,7 +119,7 @@
   $effect(() => {
     const date = f.date;
     if (!dateValid(date)) return;
-    void call(() => enOk(commands.cropsOfSeason(date))).then((r) => {
+    void call(() => isOk(commands.cropsOfSeason(date))).then((r) => {
       if (r.status === "ok") season = r.data;
     });
   });
@@ -232,7 +232,7 @@
   async function validate() {
     if (!valid || sending) return;
     sending = true;
-    const entree = versPlantingInput(f);
+    const entree = toPlantingInput(f);
     const ok = await app.modify((year) =>
       edition ? commands.modifyPlanting(year, edition.id, entree) : commands.createPlanting(year, entree),
     );
@@ -416,7 +416,7 @@
             </select>
           </label>
           {#if bed}
-            <span class="etiquette">{m.planting_zone_dimensions({ length: enMeters(bed.length_cm), width: enMeters(bed.width_cm) })}</span>
+            <span class="etiquette">{m.planting_zone_dimensions({ length: formatMeters(bed.length_cm), width: formatMeters(bed.width_cm) })}</span>
           {/if}
         </div>
         <div class="shortcuts" role="group" aria-label={m.planting_zone_title()}>

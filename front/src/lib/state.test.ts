@@ -29,6 +29,6 @@ test("other refusals leave the indicator alone and show a message", async () => 
   });
   expect(await app.modify(refusal)).toBe(false);
   expect(app.saving).toBe("saved");
-  expect(app.message?.ton).toBe("error");
+  expect(app.message?.tone).toBe("error");
   expect(app.message?.text).toBe("Past seasons can no longer be changed.");
 });
