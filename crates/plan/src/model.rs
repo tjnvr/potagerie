@@ -10,6 +10,10 @@ use crate::serie::Serie;
 
 /// Maximum number of planches in a year (S01 F-PLN-1).
 pub const MAX_PLANCHES: usize = 10;
+/// Longest planche name, in characters (S01 F-PLN-1).
+pub const MAX_NAME_CHARS: usize = 30;
+/// Narrowest planche, in cm (S03 §15).
+pub const MIN_WIDTH_CM: u32 = 10;
 
 /// The whole document of a user.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -60,6 +60,36 @@ pub enum PlanError {
     /// A planche length is a whole number of cases (S01 F-PLN-1).
     #[error("length {longueur_cm} cm is not a positive multiple of the {case_cm} cm case")]
     InvalidLength { longueur_cm: u32, case_cm: u32 },
+    /// Terrain dimensions out of range (S03 §15).
+    #[error("terrain {longueur_cm} × {largeur_cm} cm is out of range")]
+    InvalidTerrain { longueur_cm: u32, largeur_cm: u32 },
+    /// The allée width must be 30, 50 or 80 cm (S01 F-PLN-2).
+    #[error("allée width {0} cm is not 30, 50 or 80")]
+    InvalidAllee(u32),
+    /// A planche width must be at least 10 cm (S03 §15).
+    #[error("width {0} cm is not valid")]
+    InvalidWidth(u32),
+    /// A planche name is 1 to 30 characters (S01 F-PLN-1).
+    #[error("a planche name has 1 to 30 characters")]
+    InvalidName,
+    /// A planche, or the terrain once resized, leaves the terrain (S01 F-PLN-1).
+    #[error("planche {planche_id} is outside the terrain in {year}")]
+    OutsideTerrain { planche_id: PlancheId, year: i32 },
+    /// Two planches overlap (S01 F-PLN-1).
+    #[error("planches {a} and {b} overlap in {year}")]
+    PlanchesOverlap {
+        a: PlancheId,
+        b: PlancheId,
+        year: i32,
+    },
+    /// Two planches are closer than the allée width (S01 F-PLN-2).
+    #[error("planches {a} and {b} are closer than {allee_cm} cm in {year}")]
+    AlleeTooNarrow {
+        a: PlancheId,
+        b: PlancheId,
+        year: i32,
+        allee_cm: u32,
+    },
 }
 
 impl PlanError {
@@ -81,6 +111,13 @@ impl PlanError {
             Self::InvalidManualEnd { .. } => "fin_manuelle_invalide",
             Self::EmptyOccupation => "occupation_vide",
             Self::InvalidLength { .. } => "longueur_invalide",
+            Self::InvalidTerrain { .. } => "terrain_invalide",
+            Self::InvalidAllee(_) => "allee_invalide",
+            Self::InvalidWidth(_) => "largeur_invalide",
+            Self::InvalidName => "nom_invalide",
+            Self::OutsideTerrain { .. } => "planche_hors_terrain",
+            Self::PlanchesOverlap { .. } => "planche_chevauche",
+            Self::AlleeTooNarrow { .. } => "allee_trop_etroite",
         }
     }
 }

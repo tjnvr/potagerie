@@ -13,6 +13,7 @@ mod error;
 mod ids;
 mod model;
 mod operations;
+mod placement;
 mod quantities;
 mod serie;
 mod stages;
@@ -31,6 +32,8 @@ pub use model::{
     Annotation, CaseCm, Disposition, Geometry, MAX_PLANCHES, Plan, Planche, Terrain,
     TypeAnnotation, TypePlanche,
 };
+pub use model::{MAX_NAME_CHARS, MIN_WIDTH_CM};
+pub use placement::{ALLEE_CHOICES, MAX_TERRAIN_CM, MIN_TERRAIN_CM, check_name};
 pub use quantities::{Quantity, quantity};
 pub use serie::{Mode, Phases, Serie, SerieDates};
 pub use stages::{Appearance, Stage};
