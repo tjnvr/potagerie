@@ -1,58 +1,51 @@
 # Potagerie
 
-Appli de planification de potager, installée, sans serveur ni compte : Rust + Tauri v2, interface Svelte + TypeScript. Les specs sont dans `docs/specs/` (index : `docs/POT-00_index.md`).
+Une appli installée pour planifier son potager : un seul utilisateur, sans compte ni serveur. Le cœur est en Rust, l'interface en Svelte 5 + TypeScript, le tout emballé par Tauri v2 (macOS et Windows au lot 1).
 
-## Installation (développement)
+La documentation (specs, designs, prototypes) est dans [`docs/`](docs/POT-00_index.md). La référence technique est [S05](docs/specs/POT-S05_spec-technique_v0.7.md).
 
-Ce qu'il faut à ce stade : la chaîne Rust. Tauri, Node.js et pnpm viendront avec l'appli et l'interface (S05, sections 3 et 4) ; rien à installer pour eux aujourd'hui.
+## Prérequis
 
-1. **Installer rustup**, le gestionnaire de la chaîne Rust (une seule fois). Sur macOS :
-
-   ```
-   brew install rustup
-   export PATH="$(brew --prefix rustup)/bin:$PATH"   # à ajouter aussi à ~/.zshrc
-   ```
-
-   Ou, sans Homebrew : `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`, puis rouvrir le terminal.
-
-2. **Installer la chaîne stable et ses deux outils** (Rust 1.85 ou plus récent, édition 2024) :
-
-   ```
-   rustup default stable
-   rustup component add clippy rustfmt
-   ```
-
-3. **Vérifier** :
-
-   ```
-   cargo --version
-   cargo clippy --version
-   cargo fmt --version
-   ```
-
-   La première compilation télécharge les dépendances (chrono, serde, uuid, thiserror) : il faut une connexion Internet une fois.
+- Rust stable (`rustup`), avec `rustfmt` et `clippy`.
+- La CLI Tauri : `cargo install tauri-cli --version "^2" --locked`.
+- Node.js 22 ou plus, et pnpm (la version est fixée dans `front/package.json`, `corepack enable` suffit).
+- macOS : les outils en ligne de commande de Xcode. Windows : WebView2, présent par défaut sur Windows 10 et 11 à jour. Linux (CI seulement) : `libwebkit2gtk-4.1-dev` et les paquets listés dans `.github/workflows/ci.yml`.
 
 ## Commandes
 
-Depuis la racine du dépôt :
-
 | Commande | Rôle |
 |---|---|
-| `cargo test` | tous les tests, dont T1 à T13 de S03 §12 (`crates/plan/tests/s03_cas.rs`) |
-| `cargo test -p plan --test s03_cas` | seulement T1 à T13 |
-| `cargo clippy --all-targets -- -D warnings` | lint, sans aucun avertissement toléré |
-| `cargo fmt --check` | vérifie le formatage (`cargo fmt` pour l'appliquer) |
+| `make dev` | Ouvre l'appli (`cargo tauri dev`) ; l'interface se recharge à chaud. Régénère `front/src/lib/bindings.ts` |
+| `make build` | Compile `Potagerie.app` et le `.dmg` sur macOS, le `.exe` et le `.msi` sur Windows, dans `target/release/bundle/` |
+| `make test` | `cargo test` sur tout le workspace, puis Vitest |
+| `make check` | `cargo fmt --check`, clippy en `-D warnings`, `svelte-check` : ce que vérifie la CI |
+| `make fmt` | Formate le code Rust |
+| `make bindings` | Réécrit `bindings.ts` depuis les commandes Rust (un test échoue s'il est périmé) |
 
-## Crates
+Pour travailler sur l'interface seule, `pnpm --dir front dev` l'ouvre dans un navigateur, sur `http://localhost:5173`, avec de fausses commandes en mémoire (`?exemple` pour partir d'un potager rempli, `?reglages` ou `?potager` pour ouvrir un écran).
 
-| Crate | Contenu | Spec |
-|---|---|---|
-| `crates/catalogue` | `cultures.json` (les 6 cultures de la V1), embarqué et désérialisé | S02 |
-| `crates/plan` | modèle du plan et tous les calculs : dates, stades, zones, conflits, créneaux, suggestions, tâches | S03, S05 §5 |
+Les données sont dans `potagerie.db`, dans le dossier de données de l'appli (`~/Library/Application Support/garden.potagerie/` sur macOS, `%APPDATA%\garden.potagerie\` sur Windows).
 
-Les autres crates de S05 §8 (`export`, `store`), l'appli Tauri (`src-tauri`) et l'interface (`front`) ne sont pas encore créés.
+Les compilations ne sont pas signées : au premier lancement, clic droit puis Ouvrir sur macOS, « Exécuter quand même » sur Windows.
 
-Le crate `plan` ne lit jamais l'horloge : « aujourd'hui » est toujours un paramètre, et les dates du plan sont des dates civiles (`chrono::NaiveDate`).
+## Arborescence
+
+```
+Cargo.toml              workspace
+crates/plan/            modèle, règles et calculs (S03), vue de l'année
+crates/catalogue/       cultures.json (S02), embarqué
+crates/store/           trait Store et implémentation SQLite (rusqlite)
+crates/export/          JSON du potager, PNG et PDF de la frise (resvg, svg2pdf), polices embarquées
+src-tauri/              appli Tauri : commandes, capacités, icônes
+front/                  interface Svelte + TypeScript (Vite, pnpm)
+  messages/fr.json      tous les textes de l'interface (Paraglide JS)
+  src/lib/bindings.ts   généré par tauri-specta, jamais modifié à la main
+  src/lib/atelier/      onglet Plan
+  src/lib/diorama/      onglet Potager
+  src/lib/reglages/     réglages, export et import
+docs/                   specs, designs, prototypes
+Makefile                dev, build, test, check, fmt
+```
 
 ## Skills Claude
 
