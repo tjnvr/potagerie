@@ -7,100 +7,100 @@ import type { InvokeOptions } from "@tauri-apps/api/core";
 /** Commands */
 export const commands = {
 	/**  The crops of S02. */
-	catalogue: (options?: InvokeOptions) => __TAURI_INVOKE<CultureView[]>("catalogue", undefined, options),
-	/**  Opens a year (tabs Potager and Plan). */
-	vueAnnee: (annee: number, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("vue_annee", { annee }, options)),
-	/**  Creates the terrain, and with it the plan (E2, F-TER-1). */
-	creerTerrain: (annee: number, terrain: TerrainInput, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("creer_terrain", { annee, terrain }, options)),
+	catalogue: (options?: InvokeOptions) => __TAURI_INVOKE<CropView[]>("catalogue", undefined, options),
+	/**  Opens a year (tabs Garden and Plan). */
+	viewYear: (year: number, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("view_year", { year }, options)),
+	/**  Creates the plot, and with it the plan (E2, F-TER-1). */
+	createPlot: (year: number, plot: PlotInput, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("create_plot", { year, plot }, options)),
 	/**
-	 *  Changes the dimensions of the terrain and the allée width. The case size
+	 *  Changes the dimensions of the plot and the allée width. The case size
 	 *  is fixed at creation.
 	 */
-	modifierTerrain: (annee: number, terrain: TerrainEdit, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("modifier_terrain", { annee, terrain }, options)),
+	modifyPlot: (year: number, plot: PlotEdit, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("modify_plot", { year, plot }, options)),
 	/**
-	 *  Drops a new planche from the tray at `(x, y)`, at its default size (F-PLN-6).
-	 *  The default name ("Planche A") is chosen and translated by the interface.
+	 *  Drops a new bed from the tray at `(x, y)`, at its default size (F-PLN-6).
+	 *  The default name ("Bed A") is chosen and translated by the interface.
 	 */
-	creerPlanche: (annee: number, plancheType: TypePlanche, nom: string, x: number, y: number, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("creer_planche", { annee, plancheType, nom, x, y }, options)),
-	/**  Renames a planche and/or changes its layout from `annee` on (S03 §7). */
-	modifierPlanche: (annee: number, id: PlancheId, nom: string | null, geometrie: GeometryInput | null, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("modifier_planche", { annee, id, nom, geometrie }, options)),
-	/**  Moves a planche from `annee` on, keeping its size. */
-	deplacerPlanche: (annee: number, id: PlancheId, x: number, y: number, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("deplacer_planche", { annee, id, x, y }, options)),
+	createBed: (year: number, bedType: TypeBed, name: string, x: number, y: number, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("create_bed", { year, bedType, name, x, y }, options)),
+	/**  Renames a bed and/or changes its layout from `year` on (S03 §7). */
+	modifyBed: (year: number, id: BedId, name: string | null, geometry: GeometryInput | null, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("modify_bed", { year, id, name, geometry }, options)),
+	/**  Moves a bed from `year` on, keeping its size. */
+	moveBed: (year: number, id: BedId, x: number, y: number, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("move_bed", { year, id, x, y }, options)),
 	/**
-	 *  The series that would no longer fit if the planche were shortened to
-	 *  `longueur_cm` from `annee` on (S03 §4). Read-only: the interface warns
-	 *  before it calls `modifier_planche`.
+	 *  The plantings that would no longer fit if the bed were shortened to
+	 *  `length_cm` from `year` on (S03 §4). Read-only: the interface warns
+	 *  before it calls `modify_bed`.
 	 */
-	seriesDepassant: (annee: number, id: PlancheId, longueurCm: number, options?: InvokeOptions) => typedError<SerieId[], AppError>(__TAURI_INVOKE("series_depassant", { annee, id, longueurCm }, options)),
+	plantingsExceeding: (year: number, id: BedId, lengthCm: number, options?: InvokeOptions) => typedError<PlantingId[], AppError>(__TAURI_INVOKE("plantings_exceeding", { year, id, lengthCm }, options)),
 	/**
-	 *  Deletes a planche from `annee` on, with its series that touch `annee` or
-	 *  later (F-PLN-4). The interface confirms first, with `series_deleted_by`.
+	 *  Deletes a bed from `year` on, with its plantings that touch `year` or
+	 *  later (F-PLN-4). The interface confirms first, with `plantings_deleted_by`.
 	 */
-	supprimerPlanche: (annee: number, id: PlancheId, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("supprimer_planche", { annee, id }, options)),
+	deleteBed: (year: number, id: BedId, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("delete_bed", { year, id }, options)),
 	/**
-	 *  Adds a serie; the durations are copied from the catalogue (S03 §2, §5).
+	 *  Adds a planting; the durations are copied from the catalogue (S03 §2, §5).
 	 *  Refused, with the plan untouched, on a conflict, a zone outside the
-	 *  planche or a planche missing in a year the serie occupies.
+	 *  bed or a bed missing in a year the planting occupies.
 	 */
-	creerSerie: (annee: number, serie: SerieInput, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("creer_serie", { annee, serie }, options)),
+	createPlanting: (year: number, planting: PlantingInput, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("create_planting", { year, planting }, options)),
 	/**
-	 *  Changes a serie. Durations are copied again only if the crop or the mode
+	 *  Changes a planting. Durations are copied again only if the crop or the mode
 	 *  changes (S03 §2).
 	 */
-	modifierSerie: (annee: number, id: SerieId, serie: SerieInput, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("modifier_serie", { annee, id, serie }, options)),
-	supprimerSerie: (annee: number, id: SerieId, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("supprimer_serie", { annee, id }, options)),
+	modifyPlanting: (year: number, id: PlantingId, planting: PlantingInput, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("modify_planting", { year, id, planting }, options)),
+	deletePlanting: (year: number, id: PlantingId, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("delete_planting", { year, id }, options)),
 	/**
-	 *  Drags a bar by `jours` days (S03 §2, T12): the entered date and the manual
-	 *  end shift. Refused with `conflict` (or another code) if the shifted serie
+	 *  Drags a bar by `days` days (S03 §2, T12): the entered date and the manual
+	 *  end shift. Refused with `conflict` (or another code) if the shifted planting
 	 *  is not valid; nothing changes and the interface brings the bar back.
 	 */
-	decalerSerie: (annee: number, id: SerieId, jours: number, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("decaler_serie", { annee, id, jours }, options)),
+	shiftPlanting: (year: number, id: PlantingId, days: number, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("shift_planting", { year, id, days }, options)),
 	/**
-	 *  Checks a serie as the form of E07 fills in, without saving: its dates and
+	 *  Checks a planting as the form of E07 fills in, without saving: its dates and
 	 *  quantities, why it is not valid, and the zones of the shortcuts. `id` is
-	 *  the serie being edited, which is not compared with its previous self.
+	 *  the planting being edited, which is not compared with its previous self.
 	 */
-	apercuSerie: (id: SerieId | null, serie: SerieInput, options?: InvokeOptions) => typedError<SerieApercu, AppError>(__TAURI_INVOKE("apercu_serie", { id, serie }, options)),
+	previewPlanting: (id: PlantingId | null, planting: PlantingInput, options?: InvokeOptions) => typedError<PlantingPreview, AppError>(__TAURI_INVOKE("preview_planting", { id, planting }, options)),
 	/**
 	 *  The crops whose planting-out window contains `date` (S03 §10, F-CAT-3
-	 *  « de saison maintenant »).
+	 *  « of season now »).
 	 */
-	culturesDeSaison: (date: string, options?: InvokeOptions) => __TAURI_INVOKE<string[]>("cultures_de_saison", { date }, options),
+	cropsOfSeason: (date: string, options?: InvokeOptions) => __TAURI_INVOKE<string[]>("crops_of_season", { date }, options),
 	/**  Adds a note or a period (S01 F-VIS-5); the plan crate checks the rules. */
-	creerAnnotation: (annee: number, annotation: AnnotationInput, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("creer_annotation", { annee, annotation }, options)),
-	/**  Edits a note or a period; hiding it from the timeline is `masquee: true`. */
-	modifierAnnotation: (annee: number, id: AnnotationId, annotation: AnnotationInput, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("modifier_annotation", { annee, id, annotation }, options)),
-	supprimerAnnotation: (annee: number, id: AnnotationId, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("supprimer_annotation", { annee, id }, options)),
+	createAnnotation: (year: number, annotation: AnnotationInput, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("create_annotation", { year, annotation }, options)),
+	/**  Edits a note or a period; hiding it from the timeline is `hidden: true`. */
+	modifyAnnotation: (year: number, id: AnnotationId, annotation: AnnotationInput, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("modify_annotation", { year, id, annotation }, options)),
+	deleteAnnotation: (year: number, id: AnnotationId, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("delete_annotation", { year, id }, options)),
 	/**
 	 *  Converts the timeline SVG serialised by the interface and writes it at
-	 *  the path chosen in the "Enregistrer sous" dialog.
+	 *  the path chosen in the "Save under" dialog.
 	 */
-	exporterFrise: (svg: string, format: FriseFormat, chemin: string, options?: InvokeOptions) => typedError<null, AppError>(__TAURI_INVOKE("exporter_frise", { svg, format, chemin }, options)),
-	/**  Exports the whole potager in JSON (F-CPT-3). */
-	exporterPotager: (chemin: string, options?: InvokeOptions) => typedError<null, AppError>(__TAURI_INVOKE("exporter_potager", { chemin }, options)),
+	exportTimeline: (svg: string, format: TimelineExportFormat, path: string, options?: InvokeOptions) => typedError<null, AppError>(__TAURI_INVOKE("export_timeline", { svg, format, path }, options)),
+	/**  Exports the whole garden in JSON (F-CPT-3). */
+	exportGarden: (path: string, options?: InvokeOptions) => typedError<null, AppError>(__TAURI_INVOKE("export_garden", { path }, options)),
 	/**
 	 *  Reads an import file and compares it with the plan of the device, without
 	 *  replacing anything. A file that breaks the rules of the plan is accepted,
 	 *  with the list of what to resolve (S03 §13); a file that cannot be read or
-	 *  whose structure is broken is refused (`import_invalide`).
+	 *  whose structure is broken is refused (`import_invalid`).
 	 */
-	lireImport: (chemin: string, options?: InvokeOptions) => typedError<ImportSummaryView, AppError>(__TAURI_INVOKE("lire_import", { chemin }, options)),
+	readImport: (path: string, options?: InvokeOptions) => typedError<ImportSummaryView, AppError>(__TAURI_INVOKE("read_import", { path }, options)),
 	/**
 	 *  What breaks the rules of the plan in the data of the device, to resolve
 	 *  (S03 §13). Nothing is deleted or corrected: the list lasts, after an
 	 *  import, until each case is settled with the usual actions.
 	 */
 	incoherencesPlan: (options?: InvokeOptions) => typedError<IncoherenceView[], AppError>(__TAURI_INVOKE("incoherences_plan", undefined, options)),
-	/**  Replaces the potager by the file, after confirmation (F-CPT-3). */
-	importerPotager: (annee: number, chemin: string, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("importer_potager", { annee, chemin }, options)),
+	/**  Replaces the garden by the file, after confirmation (F-CPT-3). */
+	importGarden: (year: number, path: string, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("import_garden", { year, path }, options)),
 	/**
-	 *  Empties the plan from `annee` on (F-PLN-4): every planche of that year,
-	 *  with its series and notes from then on. The terrain, past years and the
-	 *  notes of the whole potager stay.
+	 *  Empties the plan from `year` on (F-PLN-4): every bed of that year,
+	 *  with its plantings and notes from then on. The plot, past years and the
+	 *  notes of the whole garden stay.
 	 */
-	viderPlan: (annee: number, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("vider_plan", { annee }, options)),
+	clearPlan: (year: number, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("clear_plan", { year }, options)),
 	/**  Deletes every data of the app, after double confirmation (F-CPT-4). */
-	effacerDonnees: (options?: InvokeOptions) => typedError<null, AppError>(__TAURI_INVOKE("effacer_donnees", undefined, options)),
+	eraseData: (options?: InvokeOptions) => typedError<null, AppError>(__TAURI_INVOKE("erase_data", undefined, options)),
 };
 
 /* Types */
@@ -109,21 +109,21 @@ export type AnnotationId = string;
 
 export type AnnotationInput = {
 	annotation_type: TypeAnnotation,
-	date_debut: string,
-	date_fin: string | null,
-	planche_id: PlancheId | null,
-	texte: string,
-	masquee: boolean,
+	date_start: string,
+	date_end: string | null,
+	bed_id: BedId | null,
+	text: string,
+	hidden: boolean,
 };
 
 export type AnnotationView = {
 	id: AnnotationId,
 	annotation_type: TypeAnnotation,
-	date_debut: string,
-	date_fin: string | null,
-	planche_id: PlancheId | null,
-	texte: string,
-	masquee: boolean,
+	date_start: string,
+	date_end: string | null,
+	bed_id: BedId | null,
+	text: string,
+	hidden: boolean,
 };
 
 /**  The error of every command. */
@@ -138,8 +138,8 @@ export type Appearance = { appearance: "nothing" } |
 { appearance: "label" } | { appearance: "plant"; stage: Stage };
 
 /**
- *  The day from which the display of a serie changes (S05 §4): the garden
- *  view and « Jouer la saison » read the stage at any date from these, with
+ *  The day from which the display of a planting changes (S05 §4): the garden
+ *  view and « Play la season » read the stage at any date from these, with
  *  no S03 calculation of their own.
  */
 export type AppearanceChange = {
@@ -148,46 +148,55 @@ export type AppearanceChange = {
 	appearance: Appearance,
 };
 
-export type ConflictView = {
-	a: SerieId,
-	b: SerieId,
-	troncon_debut: number,
-	troncon_fin: number,
-	start: string,
-	end: string,
+/**  Identifier of a bed; stable from one year to the next. */
+export type BedId = string;
+
+export type BedView = {
+	id: BedId,
+	name: string,
+	bed_type: TypeBed,
+	x: number,
+	y: number,
+	length_cm: number,
+	width_cm: number,
+	/**  `n = length ÷ case` (S03 §4). */
+	segments: number,
+	/**
+	 *  The plantings deleted with this bed if it is deleted from this year
+	 *  on (S03 §5): the interface warns before confirming.
+	 */
+	plantings_deleted: PlantingId[],
 };
 
-export type CreneauView = {
-	planche_id: PlancheId,
-	troncon_debut: number,
-	troncon_fin: number,
-	/**  First free day. */
+export type ConflictView = {
+	a: PlantingId,
+	b: PlantingId,
+	segment_start: number,
+	segment_end: number,
 	start: string,
-	/**  Last free day, included. */
 	end: string,
-	suggestions: SuggestionView[],
 };
 
 /**
  *  A crop of the catalogue (S02). The name is not sent: the interface
- *  translates `culture_<id>`.
+ *  translates `crop_<id>`.
  */
-export type CultureView = {
+export type CropView = {
 	id: string,
-	famille: string,
-	abri_jours: number,
-	recolte_apres_jours: number,
-	recolte_duree_jours: number,
+	family: string,
+	indoor_days: number,
+	harvest_after_days: number,
+	harvest_duration_days: number,
 	/**  `MM-JJ`. */
-	mise_en_place_debut: string,
+	planting_out_start: string,
 	/**  `MM-JJ`. */
-	mise_en_place_fin: string,
-	rang_cm: number,
-	pied_cm: number,
+	planting_out_end: string,
+	row_cm: number,
+	spacing_cm: number,
 };
 
-/**  The dates and quantities of a serie being entered (S03 §2, §6). */
-export type DatesApercu = {
+/**  The dates and quantities of a planting being entered (S03 §2, §6). */
+export type DatesPreview = {
 	/**
 	 *  The date Rust would store (the sowing date, even if a transplanting
 	 *  date was entered).
@@ -197,50 +206,48 @@ export type DatesApercu = {
 	planting_out: string,
 	harvest_start: string,
 	end: string,
-	/**  `end` without the manual end: « Recalculer ». */
+	/**  `end` without the manual end: « Recompute ». */
 	default_end: string,
 	manual_end: boolean,
 	pot_days: number,
-	rangs: number,
-	pieds_par_rang: number,
+	rows: number,
+	plants_by_row: number,
 };
 
 /**
  *  Stable error codes. The codes of [`PlanError`] are kept exactly as the
  *  `plan` crate names them (`PlanError::code`).
  */
-export type ErrorCode = "annee_passee" | "too_many_planches" | "planche_inconnue" | "serie_inconnue" | "planche_existante" | "serie_existante" | "culture_inconnue" | "zone_invalide" | "planche_absente" | "zone_hors_planche" | "conflict" | "pot_days_required" | "fin_manuelle_invalide" | "occupation_vide" | "longueur_invalide" | "terrain_invalide" | "allee_invalide" | "largeur_invalide" | "nom_invalide" | "planche_hors_terrain" | "planche_chevauche" | "allee_trop_etroite" | 
-/**  A command needs a terrain, and none was created yet (E2). */
-"terrain_absent" | "terrain_existant" | 
+export type ErrorCode = "year_past" | "too_many_beds" | "bed_unknown" | "planting_unknown" | "bed_existing" | "planting_existing" | "crop_unknown" | "zone_invalid" | "bed_absent" | "zone_outside_bed" | "conflict" | "pot_days_required" | "manual_end_invalid" | "occupation_empty" | "length_invalid" | "plot_invalid" | "aisle_invalid" | "width_invalid" | "name_invalid" | "bed_outside_plot" | "bed_overlaps" | "aisle_too_narrow" | 
+/**  A command needs a plot, and none was created yet (E2). */
+"plot_absent" | "plot_existing" | 
 /**  The case size must be 25, 50 or 100 cm. */
-"case_invalide" | "annotation_inconnue" | 
+"case_invalid" | "annotation_unknown" | 
 /**  A note or a period has 1 to 80 characters. */
-"texte_invalide" | 
+"text_invalid" | 
 /**  A period ends before it starts, or has no end. */
-"annotation_dates_invalides" | 
+"annotation_dates_invalid" | 
 /**  The database could not be read or written. */
-"enregistrement" | 
+"saving" | 
 /**  The plan changed since it was read; reload and retry. */
-"version_perimee" | 
+"version_stale" | 
 /**  The database was written by a newer version of the app. */
-"base_trop_recente" | "fichier" | "import_invalide" | "import_trop_recent" | "svg_invalide" | "rendu_impossible";
-
-export type FriseFormat = "png" | "pdf";
+"base_too_recent" | "file" | "import_invalid" | "import_too_recent" | "svg_invalid" | "rendering_impossible";
 
 export type GeometryInput = {
-	planche_type: TypePlanche,
+	bed_type: TypeBed,
 	x: number,
 	y: number,
-	longueur_cm: number,
-	largeur_cm: number,
+	length_cm: number,
+	width_cm: number,
 };
 
 /**  What an import file holds, before it replaces anything (F-CPT-3). */
 export type ImportSummaryView = {
 	updated_at: string,
 	version: number,
-	planche_count: number,
-	serie_count: number,
+	bed_count: number,
+	planting_count: number,
 	/**  The file is older than the plan of the device: warn before replacing. */
 	older: boolean,
 	/**  The device has a plan that the import would replace. */
@@ -250,128 +257,78 @@ export type ImportSummaryView = {
 };
 
 /**
- *  One incoherence of an imported plan. `code` is `trop_de_planches`,
- *  `serie_orpheline`, `chevauchement`, `zone_hors_planche`, `culture_inconnue`,
- *  `note_planche_inconnue`, `note_invalide`, or a placement code
- *  (`planche_hors_terrain`, `planche_chevauche`, `allee_trop_etroite`,
- *  `largeur_invalide`). Names come from the file, not from the interface.
+ *  One incoherence of an imported plan. `code` is `too_many_beds`,
+ *  `planting_orphan`, `overlap`, `zone_outside_bed`, `crop_unknown`,
+ *  `note_bed_unknown`, `note_invalid`, or a placement code
+ *  (`bed_outside_plot`, `bed_overlaps`, `aisle_too_narrow`,
+ *  `width_invalid`). Names come from the file, not from the interface.
  */
 export type IncoherenceView = {
 	code: string,
-	annee: number | null,
-	planche_nom: string | null,
-	autre_planche_nom: string | null,
-	culture_id: string | null,
-	autre_culture_id: string | null,
-	/**  Planches in a year, or troncons of the planche. */
-	nombre: number | null,
+	year: number | null,
+	bed_name: string | null,
+	other_bed_name: string | null,
+	crop_id: string | null,
+	other_crop_id: string | null,
+	/**  Beds in a year, or segments of the bed. */
+	count: number | null,
 };
 
-/**  How the serie starts (S01 F-PLA-1). */
+/**  How the planting starts (S01 F-PLA-1). */
 export type Mode = 
 /**  Sown in pots, then transplanted; `date` is the sowing date. */
-"abri" | 
+"indoor" | 
 /**  Bought plants; `date` is the planting date. */
 "plants" | 
-/**  Sown directly in the planche; `date` is the sowing date. */
-"pleine_terre";
+/**  Sown directly in the bed; `date` is the sowing date. */
+"open_ground";
 
-/**  Identifier of a planche; stable from one year to the next. */
-export type PlancheId = string;
+/**  Identifier of a planting. */
+export type PlantingId = string;
 
-export type PlancheView = {
-	id: PlancheId,
-	nom: string,
-	planche_type: TypePlanche,
-	x: number,
-	y: number,
-	longueur_cm: number,
-	largeur_cm: number,
-	/**  `n = longueur ÷ case` (S03 §4). */
-	troncons: number,
+export type PlantingInput = {
+	crop_id: string,
+	bed_id: BedId,
+	segment_start: number,
+	segment_end: number,
+	mode: Mode,
+	/**  Sowing (indoor, open ground) or planting (plants) date. */
+	date: string,
+	/**  Days in pots, only for the mode indoor of a crop without pots (S03 §2). */
+	indoor_days: number | null,
+	manual_end: string | null,
 	/**
-	 *  The series deleted with this planche if it is deleted from this year
-	 *  on (S03 §5): the interface warns before confirming.
+	 *  Mode indoor only: `date` is the transplanting date, not the sowing date.
+	 *  The planting stores the sowing date `s = x - A` (S03 §2).
 	 */
-	series_supprimees: SerieId[],
-};
-
-/**
- *  Why a serie is not valid (S03 §5): a code to translate, and what the
- *  interface needs to say where and when.
- */
-export type ProblemeView = {
-	code: ErrorCode,
-	/**  The other serie of a conflict. */
-	avec: SerieId | null,
-	/**  Troncons in common (conflict) or the zone that does not fit. */
-	zone: ZoneView | null,
-	/**  Period in common (conflict), `[start, end[`. */
-	start: string | null,
-	end: string | null,
-	/**  Year of a missing planche or of a zone that does not fit. */
-	annee: number | null,
-	/**  Troncons of the planche that year (zone that does not fit). */
-	troncons: number | null,
-};
-
-/**
- *  The zones of the shortcuts of F-PLA-1; `None` greys the shortcut out
- *  (S03 §4).
- */
-export type RaccourcisView = {
-	toute: ZoneView | null,
-	moitie: ZoneView | null,
-	tiers: ZoneView | null,
-	quart: ZoneView | null,
+	date_est_transplanting?: boolean,
 };
 
 /**
  *  What the form of E07 shows while the user types: computed by Rust, never by
  *  the interface.
  */
-export type SerieApercu = {
-	/**  `None` when the serie cannot be built (a required field is missing). */
-	dates: DatesApercu | null,
-	/**  Empty when the serie is valid. */
-	problemes: ProblemeView[],
-	raccourcis: RaccourcisView,
+export type PlantingPreview = {
+	/**  `None` when the planting cannot be built (a required field is missing). */
+	dates: DatesPreview | null,
+	/**  Empty when the planting is valid. */
+	problems: ProblemView[],
+	shortcuts: ShortcutsView,
 	/**
-	 *  The zones of other series of the planche that overlap the occupation in
-	 *  time: the troncons the strip of the form shows as taken.
+	 *  The zones of other plantings of the bed that overlap the occupation in
+	 *  time: the segments the strip of the form shows as taken.
 	 */
-	occupes: ZoneView[],
+	occupied: ZoneView[],
 };
 
-/**  Identifier of a serie. */
-export type SerieId = string;
-
-export type SerieInput = {
-	culture_id: string,
-	planche_id: PlancheId,
-	troncon_debut: number,
-	troncon_fin: number,
+export type PlantingView = {
+	id: PlantingId,
+	crop_id: string,
+	bed_id: BedId,
+	segment_start: number,
+	segment_end: number,
 	mode: Mode,
-	/**  Sowing (abri, pleine terre) or planting (plants) date. */
-	date: string,
-	/**  Days in pots, only for the mode abri of a crop without pots (S03 §2). */
-	abri_jours: number | null,
-	fin_manuelle: string | null,
-	/**
-	 *  Mode abri only: `date` is the transplanting date, not the sowing date.
-	 *  The serie stores the sowing date `s = x - A` (S03 §2).
-	 */
-	date_est_repiquage?: boolean,
-};
-
-export type SerieView = {
-	id: SerieId,
-	culture_id: string,
-	planche_id: PlancheId,
-	troncon_debut: number,
-	troncon_fin: number,
-	mode: Mode,
-	/**  Entered date: sowing (abri, pleine terre) or planting (plants). */
+	/**  Entered date: sowing (indoor, open ground) or planting (plants). */
 	date: string,
 	sowing: string | null,
 	/**  `m`. */
@@ -383,73 +340,116 @@ export type SerieView = {
 	/**  True when `end` was modified by hand. */
 	manual_end: boolean,
 	/**
-	 *  Days in pots (mode abri): from the catalogue, or entered for a crop
+	 *  Days in pots (mode indoor): from the catalogue, or entered for a crop
 	 *  without pots (S03 §2). The edit form shows it back.
 	 */
 	pot_days: number,
 	/**
-	 *  Rows × plants per row on the planche (S03 §6); 0 when the planche has
+	 *  Rows × plants per row on the bed (S03 §6); 0 when the bed has
 	 *  no layout to measure.
 	 */
-	rangs: number,
-	pieds_par_rang: number,
+	rows: number,
+	plants_by_row: number,
 	/**  What the garden view draws today (S03 §3). */
 	appearance_today: Appearance,
 	/**
-	 *  Every change of display over the life of the serie (S03 §3), so the
+	 *  Every change of display over the life of the planting (S03 §3), so the
 	 *  garden view can show any date, and play the season, without
 	 *  calculating a stage itself.
 	 */
 	appearance_changes: AppearanceChange[],
 };
 
+export type PlotEdit = {
+	length_cm: number,
+	width_cm: number,
+	aisle_cm: number,
+};
+
+export type PlotInput = {
+	length_cm: number,
+	width_cm: number,
+	/**  25, 50 or 100; fixed once the plot is created. */
+	cell_cm: number,
+	aisle_cm: number,
+};
+
+export type PlotView = {
+	length_cm: number,
+	width_cm: number,
+	cell_cm: number,
+	aisle_cm: number,
+};
+
+/**
+ *  Why a planting is not valid (S03 §5): a code to translate, and what the
+ *  interface needs to say where and when.
+ */
+export type ProblemView = {
+	code: ErrorCode,
+	/**  The other planting of a conflict. */
+	with: PlantingId | null,
+	/**  Segments in common (conflict) or the zone that does not fit. */
+	zone: ZoneView | null,
+	/**  Period in common (conflict), `[start, end[`. */
+	start: string | null,
+	end: string | null,
+	/**  Year of a missing bed or of a zone that does not fit. */
+	year: number | null,
+	/**  Segments of the bed that year (zone that does not fit). */
+	segments: number | null,
+};
+
+/**
+ *  The zones of the shortcuts of F-PLA-1; `None` greys the shortcut out
+ *  (S03 §4).
+ */
+export type ShortcutsView = {
+	all: ZoneView | null,
+	half: ZoneView | null,
+	third: ZoneView | null,
+	quarter: ZoneView | null,
+};
+
+export type SlotView = {
+	bed_id: BedId,
+	segment_start: number,
+	segment_end: number,
+	/**  First free day. */
+	start: string,
+	/**  Last free day, included. */
+	end: string,
+	suggestions: SuggestionView[],
+};
+
 export type Stage = "sowing" | "young_shoot" | "adult" | "harvest";
 
 export type SuggestionView = {
-	culture_id: string,
+	crop_id: string,
 	mode: Mode,
 	date: string,
 	planting_out: string,
 	harvest_start: string,
 	end: string,
-	fin_manuelle: string | null,
+	manual_end: string | null,
 	/**  Filling score rounded to a tenth, in tenths (0 to 10). */
-	score_dixiemes: number,
+	score_tenths: number,
 };
 
-export type TaskType = "semer-abri" | "repiquer" | "planter" | "semer-terre" | "recolter";
+export type TaskType = "sow-indoor" | "transplant" | "planter" | "sow-ground" | "harvest";
 
 export type TaskView = {
 	id: string,
-	serie_id: SerieId,
+	planting_id: PlantingId,
 	task_type: TaskType,
 	date: string,
 };
 
-export type TerrainEdit = {
-	longueur_cm: number,
-	largeur_cm: number,
-	allee_cm: number,
-};
-
-export type TerrainInput = {
-	longueur_cm: number,
-	largeur_cm: number,
-	/**  25, 50 or 100; fixed once the terrain is created. */
-	case_cm: number,
-	allee_cm: number,
-};
-
-export type TerrainView = {
-	longueur_cm: number,
-	largeur_cm: number,
-	case_cm: number,
-	allee_cm: number,
-};
+export type TimelineExportFormat = "png" | "pdf";
 
 export type TypeAnnotation = "note" | "period";
 
-export type TypePlanche = "planche" | "carre" | "butte" | "bac";
+export type TypeBed = "bed" | "square" | "mound" | "planter";
 
 /**  The year view. */
 export type YearView = {
@@ -457,34 +457,34 @@ export type YearView = {
 	today: string,
 	/**  Past years are read-only (S03 §7). */
 	read_only: boolean,
-	/**  `None` until the terrain is created (E2): there is no plan yet. */
-	terrain: TerrainView | null,
+	/**  `None` until the plot is created (E2): there is no plan yet. */
+	plot: PlotView | null,
 	/**  `version` of the plan, 0 when there is none. Exported as a JS number. */
 	version: number,
 	updated_at: string | null,
-	/**  The planches that exist in `year`, with their layout of that year. */
-	planches: PlancheView[],
-	/**  The series whose timeline (pots included) touches `year`. */
-	series: SerieView[],
-	/**  Conflicting pairs among `series` (S03 §5). */
+	/**  The beds that exist in `year`, with their layout of that year. */
+	beds: BedView[],
+	/**  The plantings whose timeline (pots included) touches `year`. */
+	plantings: PlantingView[],
+	/**  Conflicting pairs among `plantings` (S03 §5). */
 	conflicts: ConflictView[],
 	/**
-	 *  The series that ended on or before January 1st of `year`: the past
-	 *  seasons of the planche panel (S01 F-VIS-7), read-only.
+	 *  The plantings that ended on or before January 1st of `year`: the past
+	 *  seasons of the bed panel (S01 F-VIS-7), read-only.
 	 */
-	historique: SerieView[],
+	history: PlantingView[],
 	/**  Free slots of `year` and their suggestions (S03 §8, §9). */
-	creneaux: CreneauView[],
+	slots: SlotView[],
 	/**  Annotations that touch `year`. */
 	annotations: AnnotationView[],
 	/**  Tasks dated in `year` (S03 §11). */
 	tasks: TaskView[],
 };
 
-/**  A zone of troncons. */
+/**  A zone of segments. */
 export type ZoneView = {
-	troncon_debut: number,
-	troncon_fin: number,
+	segment_start: number,
+	segment_end: number,
 };
 
 /* Tauri Specta runtime */

@@ -1,0 +1,164 @@
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import {
+  ControllerDrag,
+  deposer,
+  pixelsVersCm,
+  positionSincePlanter,
+  positionDropped,
+  resize,
+  type Geo,
+} from "./drag";
+
+// A 1100 × 650 cm plot with a margin of 22 cm, drawn in 560 × 340 pixels
+// at (100, 50) on the screen.
+const box = { x: -22, y: -22, width: 1144, height: 694 };
+const rect = { left: 100, top: 50, width: 572, height: 347 };
+
+describe("pixelsVersCm", () => {
+  test("converts the corners and the centre", () => {
+    expect(pixelsVersCm({ x: 100, y: 50 }, rect, box)).toEqual({ x: -22, y: -22 });
+    expect(pixelsVersCm({ x: 672, y: 397 }, rect, box)).toEqual({ x: 1122, y: 672 });
+    const centre = pixelsVersCm({ x: 386, y: 223.5 }, rect, box);
+    expect(centre.x).toBeCloseTo(550);
+    expect(centre.y).toBeCloseTo(325);
+  });
+});
+
+describe("snapping to cases", () => {
+  test("a bed held by its offset lands on the grid", () => {
+    expect(positionDropped({ x: 480, y: 130 }, { x: 40, y: 20 }, 50)).toEqual({ x: 450, y: 100 });
+    expect(positionDropped({ x: 484, y: 135 }, { x: 40, y: 20 }, 25)).toEqual({ x: 450, y: 125 });
+  });
+
+  test("a bed from the tray is held by its centre", () => {
+    // 300 × 120: the pointer at (500, 200) puts the top left at (350, 140) → (350, 150).
+    expect(positionSincePlanter({ x: 500, y: 200 }, { length_cm: 300, width_cm: 120 }, 50)).toEqual({
+      x: 350,
+      y: 150,
+    });
+  });
+});
+
+describe("resize", () => {
+  const g: Geo = { x: 100, y: 100, length_cm: 300, width_cm: 120 };
+
+  test("the east handle moves the length case by case", () => {
+    expect(resize(g, "e", { x: 540, y: 160 }, 50)).toEqual({ ...g, length_cm: 450 });
+    expect(resize(g, "e", { x: 90, y: 160 }, 50).length_cm).toBe(50);
+  });
+
+  test("the west handle keeps the right edge", () => {
+    const r = resize(g, "w", { x: 40, y: 160 }, 50);
+    expect(r).toEqual({ ...g, x: 50, length_cm: 350 });
+  });
+
+  test("the width is free to the centimetre, with a minimum", () => {
+    expect(resize(g, "s", { x: 200, y: 233 }, 50).width_cm).toBe(133);
+    expect(resize(g, "s", { x: 200, y: 101 }, 50).width_cm).toBe(10);
+    const n = resize(g, "n", { x: 200, y: 77 }, 50);
+    expect(n).toEqual({ ...g, y: 77, width_cm: 143 });
+  });
+
+  test("a corner handle moves both sides", () => {
+    expect(resize(g, "se", { x: 490, y: 250 }, 50)).toEqual({
+      ...g,
+      length_cm: 400,
+      width_cm: 150,
+    });
+  });
+});
+
+describe("ControllerDrag", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  test("a mouse drags after a few pixels, a still press is a click", () => {
+    const c = new ControllerDrag();
+    c.press("mouse", { x: 10, y: 10 });
+    expect(c.move({ x: 12, y: 11 })).toBe("nothing");
+    expect(c.move({ x: 20, y: 10 })).toBe("start");
+    expect(c.move({ x: 30, y: 10 })).toBe("dragged");
+    expect(c.release()).toBe("end");
+    c.press("mouse", { x: 10, y: 10 });
+    expect(c.release()).toBe("click");
+  });
+
+  test("a finger needs a long press before the bed follows it", () => {
+    const armed = vi.fn();
+    const c = new ControllerDrag({ onArmed: armed });
+    c.press("touch", { x: 10, y: 10 });
+    vi.advanceTimersByTime(449);
+    expect(armed).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(armed).toHaveBeenCalledOnce();
+    expect(c.state).toBe("armed");
+    expect(c.move({ x: 11, y: 10 })).toBe("start");
+    expect(c.move({ x: 60, y: 10 })).toBe("dragged");
+    expect(c.release()).toBe("end");
+  });
+
+  test("a finger that moves before the long press is scrolling: dropped", () => {
+    const armed = vi.fn();
+    const c = new ControllerDrag({ onArmed: armed });
+    c.press("touch", { x: 10, y: 10 });
+    vi.advanceTimersByTime(200);
+    expect(c.move({ x: 10, y: 40 })).toBe("abandon");
+    vi.advanceTimersByTime(1000);
+    expect(armed).not.toHaveBeenCalled();
+    expect(c.state).toBe("rest");
+    expect(c.release()).toBe("nothing");
+  });
+
+  test("a finger may tremble a little during the long press", () => {
+    const c = new ControllerDrag();
+    c.press("touch", { x: 10, y: 10 });
+    expect(c.move({ x: 14, y: 13 })).toBe("nothing");
+    vi.advanceTimersByTime(450);
+    expect(c.state).toBe("armed");
+  });
+
+  test("a quick tap is a click and cancels the timer", () => {
+    const armed = vi.fn();
+    const c = new ControllerDrag({ onArmed: armed });
+    c.press("touch", { x: 10, y: 10 });
+    vi.advanceTimersByTime(100);
+    expect(c.release()).toBe("click");
+    vi.advanceTimersByTime(1000);
+    expect(armed).not.toHaveBeenCalled();
+  });
+});
+
+describe("deposer", () => {
+  const origin: Geo = { x: 50, y: 50, length_cm: 300, width_cm: 120 };
+
+  test("the bed stays where it is dropped when Rust accepts", async () => {
+    const envoyer = vi.fn().mockResolvedValue("ok");
+    const target = { ...origin, x: 400 };
+    expect(await deposer(origin, target, envoyer)).toEqual({ position: target, response: "ok" });
+    expect(envoyer).toHaveBeenCalledWith(target);
+  });
+
+  test("the bed goes back to its place when Rust refuses", async () => {
+    const envoyer = vi.fn().mockResolvedValue("refusal");
+    const issue = await deposer(origin, { ...origin, x: 100 }, envoyer);
+    expect(issue).toEqual({ position: origin, response: "refusal" });
+  });
+
+  test("a cancelled confirmation also brings it back", async () => {
+    const envoyer = vi.fn().mockResolvedValue("cancelled");
+    expect((await deposer(origin, { ...origin, length_cm: 100 }, envoyer)).position).toEqual(origin);
+  });
+
+  test("nothing is sent when it did not move", async () => {
+    const envoyer = vi.fn();
+    expect(await deposer(origin, { ...origin }, envoyer)).toEqual({ position: origin, response: "unchanged" });
+    expect(envoyer).not.toHaveBeenCalled();
+  });
+
+  test("a position before the plot is refused without a call", async () => {
+    const envoyer = vi.fn();
+    const issue = await deposer(origin, { ...origin, x: -50 }, envoyer);
+    expect(issue).toEqual({ position: origin, response: "before-plot" });
+    expect(envoyer).not.toHaveBeenCalled();
+  });
+});

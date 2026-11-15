@@ -47,7 +47,7 @@
   --good: #2f8a5f;
 
   --font: "Figtree", system-ui, sans-serif;
-  --font-titre: "Fredoka", "Figtree", sans-serif;
+  --font-title: "Fredoka", "Figtree", sans-serif;
   --pill: 99px;
 
   color-scheme: light;
@@ -71,7 +71,7 @@ body {
 h1,
 h2,
 h3 {
-  font-family: var(--font-titre);
+  font-family: var(--font-title);
   font-weight: 600;
   margin: 0;
 }
@@ -98,7 +98,7 @@ button:disabled {
 }
 
 /* Shared buttons (D01 / D02). */
-.bouton {
+.button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -113,23 +113,23 @@ button:disabled {
   white-space: nowrap;
 }
 
-.bouton.principal {
+.button.principal {
   border-color: transparent;
   background: var(--green);
   color: var(--white);
 }
 
-.bouton.danger {
+.button.danger {
   color: var(--crit);
 }
 
-.bouton.danger.plein {
+.button.danger.plein {
   border-color: transparent;
   background: var(--crit);
   color: var(--white);
 }
 
-.bouton.alerte {
+.button.alert {
   border-color: transparent;
   background: var(--warn);
   color: #3a2808;

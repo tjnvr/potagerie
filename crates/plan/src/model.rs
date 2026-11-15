@@ -5,14 +5,14 @@ use std::collections::BTreeMap;
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::ids::{AnnotationId, PlanId, PlancheId, SerieId};
-use crate::serie::Serie;
+use crate::ids::{AnnotationId, BedId, PlanId, PlantingId};
+use crate::planting::Planting;
 
-/// Maximum number of planches in a year (S01 F-PLN-1).
-pub const MAX_PLANCHES: usize = 10;
-/// Longest planche name, in characters (S01 F-PLN-1).
+/// Maximum number of beds in a year (S01 F-PLN-1).
+pub const MAX_BEDS: usize = 10;
+/// Longest bed name, in characters (S01 F-PLN-1).
 pub const MAX_NAME_CHARS: usize = 30;
-/// Narrowest planche, in cm (S03 §15).
+/// Narrowest bed, in cm (S03 §15).
 pub const MIN_WIDTH_CM: u32 = 10;
 
 /// The whole document of a user.
@@ -22,26 +22,26 @@ pub struct Plan {
     /// Bumped by each command that changes the plan (lots 1 and 2 only).
     pub version: u64,
     /// Technical timestamp, in UTC (S03 §1).
-    pub mis_a_jour_le: DateTime<Utc>,
-    pub terrain: Terrain,
+    pub updated_at: DateTime<Utc>,
+    pub plot: Plot,
     #[serde(default)]
-    pub planches: BTreeMap<PlancheId, Planche>,
+    pub beds: BTreeMap<BedId, Bed>,
     #[serde(default)]
-    pub series: BTreeMap<SerieId, Serie>,
+    pub plantings: BTreeMap<PlantingId, Planting>,
     #[serde(default)]
     pub annotations: BTreeMap<AnnotationId, Annotation>,
 }
 
-/// Size of a case, fixed when the terrain is created (S03 §4).
+/// Size of a case, fixed when the plot is created (S03 §4).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(try_from = "u32", into = "u32")]
-pub enum CaseCm {
+pub enum CellCm {
     C25,
     C50,
     C100,
 }
 
-impl CaseCm {
+impl CellCm {
     pub const fn cm(self) -> u32 {
         match self {
             Self::C25 => 25,
@@ -51,7 +51,7 @@ impl CaseCm {
     }
 }
 
-impl TryFrom<u32> for CaseCm {
+impl TryFrom<u32> for CellCm {
     type Error = String;
 
     fn try_from(cm: u32) -> Result<Self, Self::Error> {
@@ -64,69 +64,69 @@ impl TryFrom<u32> for CaseCm {
     }
 }
 
-impl From<CaseCm> for u32 {
-    fn from(case: CaseCm) -> Self {
+impl From<CellCm> for u32 {
+    fn from(case: CellCm) -> Self {
         case.cm()
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Terrain {
-    pub longueur_cm: u32,
-    pub largeur_cm: u32,
-    pub case_cm: CaseCm,
-    pub allee_cm: u32,
+pub struct Plot {
+    pub length_cm: u32,
+    pub width_cm: u32,
+    pub cell_cm: CellCm,
+    pub aisle_cm: u32,
 }
 
-/// A planche. Its layout lives in `dispositions`, only for the years where it
+/// A bed. Its layout lives in `layouts`, only for the years where it
 /// changes (S03 §7).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Planche {
-    pub nom: String,
+pub struct Bed {
+    pub name: String,
     #[serde(default)]
-    pub dispositions: BTreeMap<i32, Disposition>,
+    pub layouts: BTreeMap<i32, Layout>,
 }
 
-/// The layout of a planche for one year.
+/// The layout of a bed for one year.
 ///
-/// Serialised with an `etat` tag, as in S05 §5: `{"etat":"absente"}` for a deletion, or
-/// `{"etat":"presente","type":"planche","x":0,...}`.
+/// Serialised with an `state` tag, as in S05 §5: `{"state":"absent"}` for a deletion, or
+/// `{"state":"present","type":"bed","x":0,...}`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "etat", rename_all = "snake_case")]
-pub enum Disposition {
-    /// The planche no longer exists from this year on.
-    #[serde(rename = "absente")]
+#[serde(tag = "state", rename_all = "snake_case")]
+pub enum Layout {
+    /// The bed no longer exists from this year on.
+    #[serde(rename = "absent")]
     Absent,
-    #[serde(rename = "presente")]
+    #[serde(rename = "present")]
     Present(Geometry),
 }
 
 #[cfg_attr(feature = "specta", derive(specta::Type))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum TypePlanche {
-    Planche,
-    Carre,
-    Butte,
-    Bac,
+pub enum TypeBed {
+    Bed,
+    Square,
+    Mound,
+    Planter,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Geometry {
     #[serde(rename = "type")]
-    pub planche_type: TypePlanche,
+    pub bed_type: TypeBed,
     pub x: u32,
     pub y: u32,
     /// A whole number of cases.
-    pub longueur_cm: u32,
+    pub length_cm: u32,
     /// Free, to the centimetre.
-    pub largeur_cm: u32,
+    pub width_cm: u32,
 }
 
 impl Geometry {
-    /// Number of troncons `n = longueur ÷ case` (S03 §4).
-    pub fn troncons(&self, case: CaseCm) -> u32 {
-        self.longueur_cm / case.cm()
+    /// Number of segments `n = length ÷ case` (S03 §4).
+    pub fn segments(&self, case: CellCm) -> u32 {
+        self.length_cm / case.cm()
     }
 }
 
@@ -142,27 +142,27 @@ pub enum TypeAnnotation {
 pub struct Annotation {
     #[serde(rename = "type")]
     pub type_annotation: TypeAnnotation,
-    pub date_debut: NaiveDate,
+    pub date_start: NaiveDate,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub date_fin: Option<NaiveDate>,
-    /// Empty means the whole potager.
+    pub date_end: Option<NaiveDate>,
+    /// Empty means the whole garden.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub planche_id: Option<PlancheId>,
-    pub texte: String,
+    pub bed_id: Option<BedId>,
+    pub text: String,
     #[serde(default)]
-    pub masquee: bool,
+    pub hidden: bool,
 }
 
 impl Plan {
     /// An empty plan. The timestamp is a parameter: the crate never reads the clock.
-    pub fn new(id: PlanId, terrain: Terrain, now: DateTime<Utc>) -> Self {
+    pub fn new(id: PlanId, plot: Plot, now: DateTime<Utc>) -> Self {
         Self {
             id,
             version: 1,
-            mis_a_jour_le: now,
-            terrain,
-            planches: BTreeMap::new(),
-            series: BTreeMap::new(),
+            updated_at: now,
+            plot,
+            beds: BTreeMap::new(),
+            plantings: BTreeMap::new(),
             annotations: BTreeMap::new(),
         }
     }
@@ -171,6 +171,6 @@ impl Plan {
     /// it after each successful modification (S05 §7).
     pub fn touch(&mut self, now: DateTime<Utc>) {
         self.version += 1;
-        self.mis_a_jour_le = now;
+        self.updated_at = now;
     }
 }

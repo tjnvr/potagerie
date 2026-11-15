@@ -13,52 +13,52 @@ use store::StoreError;
 #[serde(rename_all = "snake_case")]
 pub enum ErrorCode {
     // From the plan (S03).
-    AnneePassee,
-    TooManyPlanches,
-    PlancheInconnue,
-    SerieInconnue,
-    PlancheExistante,
-    SerieExistante,
-    CultureInconnue,
-    ZoneInvalide,
-    PlancheAbsente,
-    ZoneHorsPlanche,
+    YearPast,
+    TooManyBeds,
+    BedUnknown,
+    PlantingUnknown,
+    BedExisting,
+    PlantingExisting,
+    CropUnknown,
+    ZoneInvalid,
+    BedAbsent,
+    ZoneOutsideBed,
     Conflict,
     PotDaysRequired,
-    FinManuelleInvalide,
-    OccupationVide,
-    LongueurInvalide,
-    TerrainInvalide,
-    AlleeInvalide,
-    LargeurInvalide,
-    NomInvalide,
-    PlancheHorsTerrain,
-    PlancheChevauche,
-    AlleeTropEtroite,
+    ManualEndInvalid,
+    OccupationEmpty,
+    LengthInvalid,
+    PlotInvalid,
+    AisleInvalid,
+    WidthInvalid,
+    NameInvalid,
+    BedOutsidePlot,
+    BedOverlaps,
+    AisleTooNarrow,
     // From the app.
-    /// A command needs a terrain, and none was created yet (E2).
-    TerrainAbsent,
-    TerrainExistant,
+    /// A command needs a plot, and none was created yet (E2).
+    PlotAbsent,
+    PlotExisting,
     /// The case size must be 25, 50 or 100 cm.
-    CaseInvalide,
-    AnnotationInconnue,
+    CaseInvalid,
+    AnnotationUnknown,
     /// A note or a period has 1 to 80 characters.
-    TexteInvalide,
+    TextInvalid,
     /// A period ends before it starts, or has no end.
-    AnnotationDatesInvalides,
+    AnnotationDatesInvalid,
     // From storage.
     /// The database could not be read or written.
-    Enregistrement,
+    Saving,
     /// The plan changed since it was read; reload and retry.
-    VersionPerimee,
+    VersionStale,
     /// The database was written by a newer version of the app.
-    BaseTropRecente,
+    BaseTooRecent,
     // From exports and imports.
-    Fichier,
-    ImportInvalide,
-    ImportTropRecent,
-    SvgInvalide,
-    RenduImpossible,
+    File,
+    ImportInvalid,
+    ImportTooRecent,
+    SvgInvalid,
+    RenderingImpossible,
 }
 
 /// The error of every command.
@@ -82,31 +82,31 @@ impl From<PlanError> for AppError {
     fn from(error: PlanError) -> Self {
         // Exhaustive on purpose: a new PlanError must get a code here.
         let code = match &error {
-            PlanError::PastYear { .. } => ErrorCode::AnneePassee,
-            PlanError::TooManyPlanches { .. } => ErrorCode::TooManyPlanches,
-            PlanError::UnknownPlanche(_) => ErrorCode::PlancheInconnue,
-            PlanError::UnknownSerie(_) => ErrorCode::SerieInconnue,
-            PlanError::UnknownAnnotation(_) => ErrorCode::AnnotationInconnue,
-            PlanError::InvalidAnnotationText => ErrorCode::TexteInvalide,
-            PlanError::InvalidAnnotationDates => ErrorCode::AnnotationDatesInvalides,
-            PlanError::PlancheExists(_) => ErrorCode::PlancheExistante,
-            PlanError::SerieExists(_) => ErrorCode::SerieExistante,
-            PlanError::UnknownCulture(_) => ErrorCode::CultureInconnue,
-            PlanError::InvalidZone { .. } => ErrorCode::ZoneInvalide,
-            PlanError::PlancheMissing { .. } => ErrorCode::PlancheAbsente,
-            PlanError::ZoneOutOfPlanche { .. } => ErrorCode::ZoneHorsPlanche,
+            PlanError::PastYear { .. } => ErrorCode::YearPast,
+            PlanError::TooManyBeds { .. } => ErrorCode::TooManyBeds,
+            PlanError::UnknownBed(_) => ErrorCode::BedUnknown,
+            PlanError::UnknownPlanting(_) => ErrorCode::PlantingUnknown,
+            PlanError::UnknownAnnotation(_) => ErrorCode::AnnotationUnknown,
+            PlanError::InvalidAnnotationText => ErrorCode::TextInvalid,
+            PlanError::InvalidAnnotationDates => ErrorCode::AnnotationDatesInvalid,
+            PlanError::BedExists(_) => ErrorCode::BedExisting,
+            PlanError::PlantingExists(_) => ErrorCode::PlantingExisting,
+            PlanError::UnknownCrop(_) => ErrorCode::CropUnknown,
+            PlanError::InvalidZone { .. } => ErrorCode::ZoneInvalid,
+            PlanError::BedMissing { .. } => ErrorCode::BedAbsent,
+            PlanError::ZoneOutOfBed { .. } => ErrorCode::ZoneOutsideBed,
             PlanError::Conflict { .. } => ErrorCode::Conflict,
             PlanError::PotDaysRequired => ErrorCode::PotDaysRequired,
-            PlanError::InvalidManualEnd { .. } => ErrorCode::FinManuelleInvalide,
-            PlanError::EmptyOccupation => ErrorCode::OccupationVide,
-            PlanError::InvalidLength { .. } => ErrorCode::LongueurInvalide,
-            PlanError::InvalidTerrain { .. } => ErrorCode::TerrainInvalide,
-            PlanError::InvalidAllee(_) => ErrorCode::AlleeInvalide,
-            PlanError::InvalidWidth(_) => ErrorCode::LargeurInvalide,
-            PlanError::InvalidName => ErrorCode::NomInvalide,
-            PlanError::OutsideTerrain { .. } => ErrorCode::PlancheHorsTerrain,
-            PlanError::PlanchesOverlap { .. } => ErrorCode::PlancheChevauche,
-            PlanError::AlleeTooNarrow { .. } => ErrorCode::AlleeTropEtroite,
+            PlanError::InvalidManualEnd { .. } => ErrorCode::ManualEndInvalid,
+            PlanError::EmptyOccupation => ErrorCode::OccupationEmpty,
+            PlanError::InvalidLength { .. } => ErrorCode::LengthInvalid,
+            PlanError::InvalidPlot { .. } => ErrorCode::PlotInvalid,
+            PlanError::InvalidAisle(_) => ErrorCode::AisleInvalid,
+            PlanError::InvalidWidth(_) => ErrorCode::WidthInvalid,
+            PlanError::InvalidName => ErrorCode::NameInvalid,
+            PlanError::OutsidePlot { .. } => ErrorCode::BedOutsidePlot,
+            PlanError::BedsOverlap { .. } => ErrorCode::BedOverlaps,
+            PlanError::AisleTooNarrow { .. } => ErrorCode::AisleTooNarrow,
         };
         Self::new(code, error.to_string())
     }
@@ -115,9 +115,9 @@ impl From<PlanError> for AppError {
 impl From<StoreError> for AppError {
     fn from(error: StoreError) -> Self {
         let code = match &error {
-            StoreError::Database(_) | StoreError::Document(_) => ErrorCode::Enregistrement,
-            StoreError::StaleVersion { .. } => ErrorCode::VersionPerimee,
-            StoreError::SchemaTooNew { .. } => ErrorCode::BaseTropRecente,
+            StoreError::Database(_) | StoreError::Document(_) => ErrorCode::Saving,
+            StoreError::StaleVersion { .. } => ErrorCode::VersionStale,
+            StoreError::SchemaTooNew { .. } => ErrorCode::BaseTooRecent,
         };
         Self::new(code, error.to_string())
     }
@@ -126,11 +126,11 @@ impl From<StoreError> for AppError {
 impl From<ExportError> for AppError {
     fn from(error: ExportError) -> Self {
         let code = match &error {
-            ExportError::Io(_) => ErrorCode::Fichier,
-            ExportError::InvalidImport(_) => ErrorCode::ImportInvalide,
-            ExportError::ImportTooNew { .. } => ErrorCode::ImportTropRecent,
-            ExportError::InvalidSvg(_) => ErrorCode::SvgInvalide,
-            ExportError::Render(_) => ErrorCode::RenduImpossible,
+            ExportError::Io(_) => ErrorCode::File,
+            ExportError::InvalidImport(_) => ErrorCode::ImportInvalid,
+            ExportError::ImportTooNew { .. } => ErrorCode::ImportTooRecent,
+            ExportError::InvalidSvg(_) => ErrorCode::SvgInvalid,
+            ExportError::Render(_) => ErrorCode::RenderingImpossible,
         };
         Self::new(code, error.to_string())
     }
@@ -147,10 +147,10 @@ mod tests {
             PlanError::PotDaysRequired,
             PlanError::EmptyOccupation,
             PlanError::InvalidLength {
-                longueur_cm: 30,
-                case_cm: 50,
+                length_cm: 30,
+                cell_cm: 50,
             },
-            PlanError::UnknownCulture("x".into()),
+            PlanError::UnknownCrop("x".into()),
         ];
         for error in errors {
             let expected = error.code();

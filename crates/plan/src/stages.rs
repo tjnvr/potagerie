@@ -3,7 +3,7 @@
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
-use crate::serie::{Mode, Serie};
+use crate::planting::{Mode, Planting};
 
 #[cfg_attr(feature = "specta", derive(specta::Type))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -26,8 +26,8 @@ pub enum Appearance {
     Plant(Stage),
 }
 
-/// The day from which the display of a serie changes (S05 §4): the garden
-/// view and « Jouer la saison » read the stage at any date from these, with
+/// The day from which the display of a planting changes (S05 §4): the garden
+/// view and « Play la season » read the stage at any date from these, with
 /// no S03 calculation of their own.
 #[cfg_attr(feature = "specta", derive(specta::Type))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -37,12 +37,12 @@ pub struct AppearanceChange {
     pub appearance: Appearance,
 }
 
-impl Serie {
-    /// Every change of display over the life of the serie, in date order.
+impl Planting {
+    /// Every change of display over the life of the planting, in date order.
     ///
     /// The display before the first entry is `Nothing`; the last entry is the
     /// return to `Nothing` at the end `f`. Each entry is found with
-    /// [`Serie::appearance_on`], so the two always agree.
+    /// [`Planting::appearance_on`], so the two always agree.
     pub fn appearance_changes(&self) -> Vec<AppearanceChange> {
         let dates = self.dates();
         let start = dates
@@ -74,7 +74,7 @@ impl Serie {
         let dates = self.dates();
         if d < dates.planting_out {
             return match (self.mode, dates.sowing) {
-                (Mode::Abri, Some(sowing)) if d >= sowing => Appearance::Label,
+                (Mode::Indoor, Some(sowing)) if d >= sowing => Appearance::Label,
                 _ => Appearance::Nothing,
             };
         }
@@ -107,7 +107,7 @@ mod tests {
     use catalogue::Catalogue;
 
     use super::*;
-    use crate::ids::PlancheId;
+    use crate::ids::BedId;
     use crate::zone::Zone;
 
     fn d(y: i32, m: u32, j: u32) -> NaiveDate {
@@ -115,11 +115,11 @@ mod tests {
     }
 
     /// Tomato sown under cover on 2027-03-10: m 05-05, r 07-19 (75 days), f 09-27.
-    fn tomate(mode: Mode, date: NaiveDate) -> Serie {
-        let culture = Catalogue::reference().culture("tomate").unwrap();
-        Serie::new(
-            culture,
-            PlancheId::generate(),
+    fn tomato(mode: Mode, date: NaiveDate) -> Planting {
+        let crop = Catalogue::reference().crop("tomato").unwrap();
+        Planting::new(
+            crop,
+            BedId::generate(),
             Zone::new(1, 1).unwrap(),
             mode,
             date,
@@ -131,7 +131,7 @@ mod tests {
 
     #[test]
     fn label_from_sowing_to_planting_out() {
-        let s = tomate(Mode::Abri, d(2027, 3, 10));
+        let s = tomato(Mode::Indoor, d(2027, 3, 10));
         assert_eq!(s.appearance_on(d(2027, 3, 9)), Appearance::Nothing);
         assert_eq!(s.appearance_on(d(2027, 3, 10)), Appearance::Label);
         assert_eq!(s.appearance_on(d(2027, 5, 4)), Appearance::Label);
@@ -143,7 +143,7 @@ mod tests {
 
     #[test]
     fn nothing_from_the_end() {
-        let s = tomate(Mode::Abri, d(2027, 3, 10));
+        let s = tomato(Mode::Indoor, d(2027, 3, 10));
         assert_eq!(
             s.appearance_on(d(2027, 9, 26)),
             Appearance::Plant(Stage::Harvest)
@@ -154,10 +154,10 @@ mod tests {
     #[test]
     fn stage_thresholds() {
         // 100 days from m to r: p = 0.15 at day 15, 0.50 at day 50, 1 at day 100.
-        let mut s = tomate(Mode::PleineTerre, d(2027, 5, 1));
-        s.abri_jours = 0;
-        s.apres_jours = 100;
-        s.duree_jours = 30;
+        let mut s = tomato(Mode::OpenGround, d(2027, 5, 1));
+        s.indoor_days = 0;
+        s.after_days = 100;
+        s.duration_days = 30;
         let m = d(2027, 5, 1);
         let day = |n: i64| m + chrono::Duration::days(n);
         assert_eq!(s.appearance_on(day(14)), Appearance::Plant(Stage::Sowing));
@@ -176,7 +176,7 @@ mod tests {
 
     #[test]
     fn bought_plants_never_below_young_shoot() {
-        let s = tomate(Mode::Plants, d(2027, 5, 5));
+        let s = tomato(Mode::Plants, d(2027, 5, 5));
         assert_eq!(
             s.appearance_on(d(2027, 5, 5)),
             Appearance::Plant(Stage::YoungShoot)
@@ -185,18 +185,18 @@ mod tests {
     }
 
     #[test]
-    fn pleine_terre_has_no_label() {
-        let s = tomate(Mode::PleineTerre, d(2027, 5, 5));
+    fn open_ground_has_no_label() {
+        let s = tomato(Mode::OpenGround, d(2027, 5, 5));
         assert_eq!(s.appearance_on(d(2027, 5, 4)), Appearance::Nothing);
     }
 
     #[test]
-    fn changes_of_an_abri_serie() {
+    fn changes_of_an_indoor_planting() {
         // m 05-05, r 07-19: 75 days, so young shoot from day 12 (11.25),
         // adult from day 38 (37.5), harvest from 07-19.
-        let s = tomate(Mode::Abri, d(2027, 3, 10));
+        let s = tomato(Mode::Indoor, d(2027, 3, 10));
         let changes = s.appearance_changes();
-        let attendu = [
+        let expected = [
             (d(2027, 3, 10), Appearance::Label),
             (d(2027, 5, 5), Appearance::Plant(Stage::Sowing)),
             (d(2027, 5, 17), Appearance::Plant(Stage::YoungShoot)),
@@ -204,14 +204,14 @@ mod tests {
             (d(2027, 7, 19), Appearance::Plant(Stage::Harvest)),
             (d(2027, 9, 27), Appearance::Nothing),
         ];
-        let obtenu: Vec<_> = changes.iter().map(|c| (c.from, c.appearance)).collect();
-        assert_eq!(obtenu, attendu);
+        let obtained: Vec<_> = changes.iter().map(|c| (c.from, c.appearance)).collect();
+        assert_eq!(obtained, expected);
     }
 
     #[test]
     fn changes_agree_with_appearance_on_every_day() {
-        for mode in [Mode::Abri, Mode::Plants, Mode::PleineTerre] {
-            let s = tomate(mode, d(2027, 3, 10));
+        for mode in [Mode::Indoor, Mode::Plants, Mode::OpenGround] {
+            let s = tomato(mode, d(2027, 3, 10));
             let changes = s.appearance_changes();
             let mut day = d(2027, 1, 1);
             while day < d(2028, 6, 1) {
@@ -228,7 +228,7 @@ mod tests {
 
     #[test]
     fn changes_of_bought_plants_start_at_young_shoot() {
-        let s = tomate(Mode::Plants, d(2027, 5, 5));
+        let s = tomato(Mode::Plants, d(2027, 5, 5));
         let first = s.appearance_changes()[0];
         assert_eq!(first.from, d(2027, 5, 5));
         assert_eq!(first.appearance, Appearance::Plant(Stage::YoungShoot));
@@ -236,8 +236,8 @@ mod tests {
 
     #[test]
     fn immediate_harvest_without_delay() {
-        let mut s = tomate(Mode::Plants, d(2027, 5, 5));
-        s.apres_jours = 0;
+        let mut s = tomato(Mode::Plants, d(2027, 5, 5));
+        s.after_days = 0;
         assert_eq!(
             s.appearance_on(d(2027, 5, 5)),
             Appearance::Plant(Stage::Harvest)

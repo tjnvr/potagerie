@@ -1,60 +1,60 @@
 <script lang="ts">
   // Host of the note form (F-VIS-5): a dialog over the screen that sends the
-  // input to `creer_annotation`, `modifier_annotation` or `supprimer_annotation`.
+  // input to `create_annotation`, `modify_annotation` or `delete_annotation`.
   // Rust checks the rules (S03 §16); a refusal stays in the dialog, worded.
   import { commands, type AnnotationInput } from "../bindings";
-  import { traduireErreur } from "../erreurs";
-  import { appli, type OuvertureNote } from "../etat.svelte";
+  import { translateError } from "../errors";
+  import { app, type OpeningNote } from "../state.svelte";
   import NoteForm from "./NoteForm.svelte";
 
-  let { ouverture }: { ouverture: OuvertureNote } = $props();
+  let { opening }: { opening: OpeningNote } = $props();
 
-  let raison = $state("");
-  let racine: HTMLElement;
+  let reason = $state("");
+  let root: HTMLElement;
 
   $effect(() => {
-    racine.focus();
+    root.focus();
   });
 
-  function fermer() {
-    appli.noteOuverte = null;
+  function close() {
+    app.noteOpen = null;
   }
 
-  async function enregistrer(entree: AnnotationInput) {
-    raison = "";
-    const ok = await appli.modifier((annee) =>
-      ouverture.type === "edition"
-        ? commands.modifierAnnotation(annee, ouverture.annotation.id, entree)
-        : commands.creerAnnotation(annee, entree),
+  async function save(entree: AnnotationInput) {
+    reason = "";
+    const ok = await app.modify((year) =>
+      opening.type === "edition"
+        ? commands.modifyAnnotation(year, opening.annotation.id, entree)
+        : commands.createAnnotation(year, entree),
     );
-    if (ok) fermer();
-    else raison = appli.dernierRefus ? traduireErreur(appli.dernierRefus) : "";
+    if (ok) close();
+    else reason = app.dernierRefusal ? translateError(app.dernierRefusal) : "";
   }
 
-  async function supprimer() {
-    if (ouverture.type !== "edition") return;
-    const id = ouverture.annotation.id;
-    raison = "";
-    if (await appli.modifier((annee) => commands.supprimerAnnotation(annee, id))) fermer();
-    else raison = appli.dernierRefus ? traduireErreur(appli.dernierRefus) : "";
+  async function remove() {
+    if (opening.type !== "edition") return;
+    const id = opening.annotation.id;
+    reason = "";
+    if (await app.modify((year) => commands.deleteAnnotation(year, id))) close();
+    else reason = app.dernierRefusal ? translateError(app.dernierRefusal) : "";
   }
 </script>
 
-<svelte:window onkeydown={(e) => e.key === "Escape" && fermer()} />
+<svelte:window onkeydown={(e) => e.key === "Escape" && close()} />
 
-<div class="voile" role="presentation" onpointerdown={(e) => e.target === e.currentTarget && fermer()}>
-  <div class="boite" role="dialog" aria-modal="true" aria-labelledby="note-titre" tabindex="-1" bind:this={racine}>
+<div class="voile" role="presentation" onpointerdown={(e) => e.target === e.currentTarget && close()}>
+  <div class="box" role="dialog" aria-modal="true" aria-labelledby="note-title" tabindex="-1" bind:this={root}>
     <NoteForm
-      planches={appli.vue?.planches ?? []}
-      annotation={ouverture.type === "edition" ? ouverture.annotation : null}
-      date={ouverture.type === "nouvelle" ? ouverture.date : ouverture.annotation.date_debut}
-      planche_id={ouverture.type === "nouvelle" ? ouverture.plancheId : null}
-      onenregistrer={enregistrer}
-      onannuler={fermer}
-      onsupprimer={ouverture.type === "edition" ? supprimer : undefined}
+      beds={app.view?.beds ?? []}
+      annotation={opening.type === "edition" ? opening.annotation : null}
+      date={opening.type === "new" ? opening.date : opening.annotation.date_start}
+      bed_id={opening.type === "new" ? opening.bedId : null}
+      onsave={save}
+      oncancel={close}
+      ondelete={opening.type === "edition" ? remove : undefined}
     />
-    {#if raison}
-      <p class="refus" role="alert">{raison}</p>
+    {#if reason}
+      <p class="refusal" role="alert">{reason}</p>
     {/if}
   </div>
 </div>
@@ -70,7 +70,7 @@
     background: rgb(31 58 46 / 0.35);
   }
 
-  .boite {
+  .box {
     width: min(480px, 100%);
     max-height: 100%;
     overflow-y: auto;
@@ -78,7 +78,7 @@
     outline: none;
   }
 
-  .refus {
+  .refusal {
     margin: 8px 20px 0;
     padding: 10px 14px;
     border-radius: 14px;

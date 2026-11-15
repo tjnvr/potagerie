@@ -1,54 +1,54 @@
 // Draft of a note or a period (S01 F-VIS-5), as the form edits it. The rules
 // are Rust's (`plan::annotations`): this only builds the command input and
-// decides when « Enregistrer » can be pressed, so a refusal from Rust stays
+// decides when « Save » can be pressed, so a refusal from Rust stays
 // the exception.
-import type { AnnotationInput, AnnotationView, PlancheId, TypeAnnotation } from "../bindings";
+import type { AnnotationInput, AnnotationView, BedId, TypeAnnotation } from "../bindings";
 
 /** Longest text, as in Rust (`MAX_ANNOTATION_CHARS`); only used for `maxlength`. */
-export const TEXTE_MAX = 80;
+export const TEXT_MAX = 80;
 
-export type Brouillon = {
+export type Draft = {
   type: TypeAnnotation;
-  texte: string;
-  debut: string;
+  text: string;
+  start: string;
   /** Only read for a period. */
-  fin: string;
-  /** `null`: the whole potager. */
-  planche_id: PlancheId | null;
-  masquee: boolean;
+  end: string;
+  /** `null`: the whole garden. */
+  bed_id: BedId | null;
+  hidden: boolean;
 };
 
-/** A new note on `date`, on a planche or on the whole potager. */
-export function brouillonVide(date: string, planche_id: PlancheId | null = null): Brouillon {
-  return { type: "note", texte: "", debut: date, fin: date, planche_id, masquee: false };
+/** A new note on `date`, on a bed or on the whole garden. */
+export function draftEmpty(date: string, bed_id: BedId | null = null): Draft {
+  return { type: "note", text: "", start: date, end: date, bed_id, hidden: false };
 }
 
 /** The draft of an existing annotation. */
-export function brouillonDe(a: AnnotationView): Brouillon {
+export function draftOf(a: AnnotationView): Draft {
   return {
     type: a.annotation_type,
-    texte: a.texte,
-    debut: a.date_debut,
-    fin: a.date_fin ?? a.date_debut,
-    planche_id: a.planche_id,
-    masquee: a.masquee,
+    text: a.text,
+    start: a.date_start,
+    end: a.date_end ?? a.date_start,
+    bed_id: a.bed_id,
+    hidden: a.hidden,
   };
 }
 
 /** Whether the draft can be sent: some text, a start, and an end for a period. */
-export function envoyable(b: Brouillon): boolean {
-  if (b.texte.trim() === "" || b.debut === "") return false;
-  return b.type === "note" || (b.fin !== "" && b.fin >= b.debut);
+export function sendable(b: Draft): boolean {
+  if (b.text.trim() === "" || b.start === "") return false;
+  return b.type === "note" || (b.end !== "" && b.end >= b.start);
 }
 
-/** The input of `creer_annotation` and `modifier_annotation`. */
-export function versEntree(b: Brouillon): AnnotationInput {
+/** The input of `create_annotation` and `modify_annotation`. */
+export function versEntree(b: Draft): AnnotationInput {
   return {
     annotation_type: b.type,
-    date_debut: b.debut,
-    date_fin: b.type === "period" ? b.fin : null,
-    planche_id: b.planche_id,
-    texte: b.texte.trim(),
-    masquee: b.masquee,
+    date_start: b.start,
+    date_end: b.type === "period" ? b.end : null,
+    bed_id: b.bed_id,
+    text: b.text.trim(),
+    hidden: b.hidden,
   };
 }

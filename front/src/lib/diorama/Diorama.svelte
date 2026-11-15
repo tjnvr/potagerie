@@ -1,264 +1,264 @@
 <script lang="ts">
   // The garden view of E05 (D01, S01 F-VIS-1 to F-VIS-4): the isometric
-  // diorama in SVG, the time cursor under it, « Jouer la saison », and the
-  // planche panel (E06) beside it. Stages and dates come from the Rust view;
+  // diorama in SVG, the time cursor under it, « Play la season », and the
+  // bed panel (E06) beside it. Stages and dates come from the Rust view;
   // the only calculation here is the animation (animation.ts).
   import { untrack } from "svelte";
   import type { YearView } from "../bindings";
-  import Icone from "../coquille/Icone.svelte";
+  import Icon from "../shell/Icon.svelte";
   import { m } from "../paraglide/messages.js";
-  import { nomDeType } from "../planches";
-  import { curseur, lectureEnCours } from "../temps";
-  import { apparenceAu, jourDeLecture, SYMBOLE_ETIQUETTE } from "./animation";
-  import CompteurImages from "./CompteurImages.svelte";
-  import Curseur from "./Curseur.svelte";
+  import { nameOfType } from "../beds";
+  import { cursor, playbackEnProgress } from "../temps";
+  import { apparenceTo, dayOfPlayback, SYMBOL_ETIQUETTE } from "./animation";
+  import CounterImages from "./CounterImages.svelte";
+  import Cursor from "./Cursor.svelte";
   import { ETIQUETTE_SVG } from "./etiquette";
-  import { bornesAnnee, dateEnToutesLettres, isoDepuis, jourDepuis } from "./jours";
-  import { imagesParSeconde, mesurer, type Mesure } from "./mesure";
-  import PanneauDiorama from "./PanneauDiorama.svelte";
-  import type { Quart } from "./projection";
-  import { RenduPlantes } from "./rendu";
-  import { PALETTES, saisonDe } from "./saison";
-  import { construireScene, type PlancheScene } from "./scene";
-  import { SYMBOLES, VIEWBOX_SYMBOLE } from "./symboles";
+  import { bornesYear, dateEnAllLetters, isoSince, daySince } from "./days";
+  import { imagesBySeconde, measure, type Measure } from "./measure";
+  import PanelDiorama from "./PanelDiorama.svelte";
+  import type { Quarter } from "./projection";
+  import { RenderingPlants } from "./rendering";
+  import { PALETTES, seasonOf } from "./season";
+  import { buildScene, type BedScene } from "./scene";
+  import { SYMBOLES, VIEWBOX_SYMBOL } from "./symboles";
 
-  let { vue }: { vue: YearView } = $props();
+  let { view }: { view: YearView } = $props();
 
-  /** Plants redrawn at most per frame while the season plays (see rendu.ts). */
-  const PLAFOND_PAR_IMAGE = 50;
+  /** Plants redrawn at most per frame while the season plays (see rendering.ts). */
+  const CEILING_BY_IMAGE = 50;
 
   // `?fps` in the address, in dev only: the frame counter of P01.
-  const mesureActive = import.meta.env.DEV && new URLSearchParams(location.search).has("fps");
+  const measureActive = import.meta.env.DEV && new URLSearchParams(location.search).has("fps");
 
-  const NOMS_SAISON = {
-    hiver: m.saison_hiver,
-    printemps: m.saison_printemps,
-    ete: m.saison_ete,
-    automne: m.saison_automne,
+  const NAMES_SEASON = {
+    winter: m.season_winter,
+    spring: m.season_spring,
+    summer: m.season_summer,
+    autumn: m.season_autumn,
   };
 
-  let quart = $state<Quart>(0);
+  let quarter = $state<Quarter>(0);
   let selectionId = $state<string | null>(null);
-  let vitesse = $state(1);
-  let lecture = $state(false);
-  let largeur = $state(900);
-  /** The day of the cursor, whole; the playback moves a fraction of it in `jourExact`. */
-  let jourEntier = $state(jourDepuis(untrack(() => $curseur)));
-  let jourExact = untrack(() => jourEntier);
+  let speed = $state(1);
+  let playback = $state(false);
+  let width = $state(900);
+  /** The day of the cursor, whole; the playback moves a fraction of it in `dayExact`. */
+  let dayWhole = $state(daySince(untrack(() => $cursor)));
+  let dayExact = untrack(() => dayWhole);
 
-  const reduitMq = window.matchMedia("(prefers-reduced-motion: reduce)");
-  let reduit = $state(reduitMq.matches);
+  const reducedMq = window.matchMedia("(prefers-reduced-motion: reduce)");
+  let reduced = $state(reducedMq.matches);
   $effect(() => {
-    const suivre = () => (reduit = reduitMq.matches);
-    reduitMq.addEventListener("change", suivre);
-    return () => reduitMq.removeEventListener("change", suivre);
+    const follow = () => (reduced = reducedMq.matches);
+    reducedMq.addEventListener("change", follow);
+    return () => reducedMq.removeEventListener("change", follow);
   });
 
-  const scene = $derived(construireScene(vue, quart));
-  const bornes = $derived(bornesAnnee(vue.year));
-  const compact = $derived(largeur < 560);
-  const palette = $derived(PALETTES[saisonDe(jourEntier)]);
-  const saison = $derived(saisonDe(jourEntier));
-  const selection = $derived(vue.planches.find((p) => p.id === selectionId) ?? null);
+  const scene = $derived(buildScene(view, quarter));
+  const bornes = $derived(bornesYear(view.year));
+  const compact = $derived(width < 560);
+  const palette = $derived(PALETTES[seasonOf(dayWhole)]);
+  const season = $derived(seasonOf(dayWhole));
+  const selection = $derived(view.beds.find((p) => p.id === selectionId) ?? null);
 
-  /** For each planche, how many series have a plant in the ground on the day. */
-  const enTerre = $derived.by(() => {
-    const parPlanche = new Map<string, number>();
-    for (const p of scene?.planches ?? []) {
+  /** For each bed, how many plantings have a plant in the ground on the day. */
+  const enGround = $derived.by(() => {
+    const byBed = new Map<string, number>();
+    for (const p of scene?.beds ?? []) {
       let n = 0;
-      for (const s of p.series) if (apparenceAu(s.chrono, jourEntier).appearance === "plant") n++;
-      parPlanche.set(p.id, n);
+      for (const s of p.plantings) if (apparenceTo(s.chrono, dayWhole).appearance === "plant") n++;
+      byBed.set(p.id, n);
     }
-    return parPlanche;
+    return byBed;
   });
-  const nombreEnTerre = $derived([...enTerre.values()].reduce((a, b) => a + b, 0));
-  const nombreLibres = $derived([...enTerre.values()].filter((n) => n === 0).length);
-  /** A serie with a label (sown under cover) is not a free planche for the sign either. */
-  const etiquetees = $derived.by(() => {
+  const countEnGround = $derived([...enGround.values()].reduce((a, b) => a + b, 0));
+  const countFree = $derived([...enGround.values()].filter((n) => n === 0).length);
+  /** A planting with a label (sown under cover) is not a free bed for the sign either. */
+  const labeled = $derived.by(() => {
     const ids = new Set<string>();
-    for (const p of scene?.planches ?? []) {
-      if (p.series.some((s) => apparenceAu(s.chrono, jourEntier).appearance === "label")) ids.add(p.id);
+    for (const p of scene?.beds ?? []) {
+      if (p.plantings.some((s) => apparenceTo(s.chrono, dayWhole).appearance === "label")) ids.add(p.id);
     }
     return ids;
   });
 
   // The cursor starts on today; on another year, on its first day.
   $effect(() => {
-    const annee = vue.year;
+    const year = view.year;
     untrack(() => {
-      const b = bornesAnnee(annee);
-      if (jourEntier < b.debut || jourEntier > b.fin) {
-        const aujourdhui = jourDepuis(vue.today);
-        choisir(aujourdhui >= b.debut && aujourdhui <= b.fin ? aujourdhui : b.debut);
+      const b = bornesYear(year);
+      if (dayWhole < b.start || dayWhole > b.end) {
+        const today = daySince(view.today);
+        choose(today >= b.start && today <= b.end ? today : b.start);
       }
     });
   });
 
   // A date set from outside (the timeline, the « Aujourd'hui » button).
   $effect(() => {
-    const j = jourDepuis($curseur);
+    const j = daySince($cursor);
     untrack(() => {
-      if (j === jourEntier) return;
-      if (lecture) arreter();
-      jourEntier = j;
-      jourExact = j;
+      if (j === dayWhole) return;
+      if (playback) stop();
+      dayWhole = j;
+      dayExact = j;
     });
   });
 
-  // Build the plants once the planches are in the DOM; show them on the date.
-  const rendu = new RenduPlantes();
+  // Build the plants once the beds are in the DOM; show them on the date.
+  const rendering = new RenderingPlants();
   let svgEl: SVGSVGElement | undefined = $state();
   $effect(() => {
-    const planches = scene?.planches;
-    if (!svgEl || !planches) return;
+    const beds = scene?.beds;
+    if (!svgEl || !beds) return;
     untrack(() => {
-      rendu.vider();
-      for (const p of planches) {
-        const couche = svgEl!.querySelector<SVGGElement>(`[data-couche="${CSS.escape(p.id)}"]`);
-        if (couche) rendu.construire(couche, p.series);
+      rendering.clear();
+      for (const p of beds) {
+        const layer = svgEl!.querySelector<SVGGElement>(`[data-layer="${CSS.escape(p.id)}"]`);
+        if (layer) rendering.build(layer, p.plantings);
       }
-      rendu.appliquer(jourExact, false);
+      rendering.apply(dayExact, false);
     });
   });
   $effect(() => {
-    const j = jourEntier;
+    const j = dayWhole;
     untrack(() => {
-      if (!lecture) rendu.appliquer(j, false);
+      if (!playback) rendering.apply(j, false);
     });
   });
 
-  function choisir(jour: number) {
-    if (lecture) arreter();
-    jourEntier = jour;
-    jourExact = jour;
-    $curseur = isoDepuis(jour);
+  function choose(day: number) {
+    if (playback) stop();
+    dayWhole = day;
+    dayExact = day;
+    $cursor = isoSince(day);
   }
 
-  // ---- « Jouer la saison » ----
+  // ---- « Play la season » ----
   let trame = 0;
   let depart = 0;
-  let origine: number | null = null;
-  let precedente: number | null = null;
-  let durees: number[] = [];
-  let recentes: number[] = [];
+  let origin: number | null = null;
+  let previous: number | null = null;
+  let durations: number[] = [];
+  let recent: number[] = [];
   let ips = $state(0);
-  let plantesMax = $state(0);
-  let dernierResultat = $state<(Mesure & { plantes: number }) | null>(null);
+  let plantsMax = $state(0);
+  let dernierResult = $state<(Measure & { plants: number }) | null>(null);
 
-  function jouer() {
-    if (lecture) {
-      arreter();
+  function play() {
+    if (playback) {
+      stop();
       return;
     }
-    if (jourExact >= bornes.fin) jourExact = bornes.debut;
-    depart = jourExact;
-    origine = null;
-    precedente = null;
-    durees = [];
-    recentes = [];
-    plantesMax = 0;
-    lecture = true;
-    $lectureEnCours = true;
-    trame = requestAnimationFrame(boucle);
+    if (dayExact >= bornes.end) dayExact = bornes.start;
+    depart = dayExact;
+    origin = null;
+    previous = null;
+    durations = [];
+    recent = [];
+    plantsMax = 0;
+    playback = true;
+    $playbackEnProgress = true;
+    trame = requestAnimationFrame(loop);
   }
 
-  function arreter(termine = false) {
+  function stop(termine = false) {
     cancelAnimationFrame(trame);
-    rendu.appliquer(jourExact, false);
-    lecture = false;
-    $lectureEnCours = false;
-    if (termine && mesureActive) conclure();
+    rendering.apply(dayExact, false);
+    playback = false;
+    $playbackEnProgress = false;
+    if (termine && measureActive) conclude();
   }
 
-  function conclure() {
-    const mesure = mesurer(durees);
-    if (!mesure) return;
-    dernierResultat = { ...mesure, plantes: plantesMax };
-    const fenetre = window as unknown as { __potagerieMesures?: unknown[] };
-    (fenetre.__potagerieMesures ??= []).push({ ...mesure, plantes: plantesMax });
+  function conclude() {
+    const result = measure(durations);
+    if (!result) return;
+    dernierResult = { ...result, plants: plantsMax };
+    const globalWindow = window as unknown as { __potagerieMeasures?: unknown[] };
+    (globalWindow.__potagerieMeasures ??= []).push({ ...result, plants: plantsMax });
   }
 
-  function boucle(t: number) {
-    if (!lecture) return;
-    origine ??= t;
-    if (mesureActive && precedente !== null) {
-      const dt = t - precedente;
-      durees.push(dt);
-      recentes.push(dt);
-      if (recentes.length > 60) recentes.shift();
-      ips = imagesParSeconde(recentes);
+  function loop(t: number) {
+    if (!playback) return;
+    origin ??= t;
+    if (measureActive && previous !== null) {
+      const dt = t - previous;
+      durations.push(dt);
+      recent.push(dt);
+      if (recent.length > 60) recent.shift();
+      ips = imagesBySeconde(recent);
     }
-    precedente = t;
-    const { jour, termine } = jourDeLecture({
-      debut: depart,
-      ecouleMs: t - origine,
-      vitesse,
-      fin: bornes.fin,
-      reduit,
+    previous = t;
+    const { day, termine } = dayOfPlayback({
+      start: depart,
+      elapsedMs: t - origin,
+      speed,
+      end: bornes.end,
+      reduced,
     });
-    jourExact = jour;
-    rendu.appliquer(jour, !reduit, PLAFOND_PAR_IMAGE);
-    if (mesureActive) plantesMax = Math.max(plantesMax, rendu.visibles);
-    const entier = Math.floor(jour);
-    if (entier !== jourEntier) {
-      jourEntier = entier;
-      $curseur = isoDepuis(entier);
+    dayExact = day;
+    rendering.apply(day, !reduced, CEILING_BY_IMAGE);
+    if (measureActive) plantsMax = Math.max(plantsMax, rendering.visible);
+    const whole = Math.floor(day);
+    if (whole !== dayWhole) {
+      dayWhole = whole;
+      $cursor = isoSince(whole);
     }
-    if (termine) arreter(true);
-    else trame = requestAnimationFrame(boucle);
+    if (termine) stop(true);
+    else trame = requestAnimationFrame(loop);
   }
 
-  function changerVitesse(v: number) {
-    vitesse = v;
-    if (lecture) {
+  function changerSpeed(v: number) {
+    speed = v;
+    if (playback) {
       // Carry on from here at the new speed.
-      depart = jourExact;
-      origine = null;
+      depart = dayExact;
+      origin = null;
     }
   }
 
   $effect(() => () => {
     cancelAnimationFrame(trame);
-    $lectureEnCours = false;
+    $playbackEnProgress = false;
   });
 
-  function ouvrir(p: PlancheScene) {
+  function open(p: BedScene) {
     selectionId = selectionId === p.id ? null : p.id;
   }
 
-  function touche(e: KeyboardEvent, p: PlancheScene) {
+  function key(e: KeyboardEvent, p: BedScene) {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      ouvrir(p);
+      open(p);
     }
   }
 
-  function tourner() {
-    quart = ((quart + 1) % 4) as Quart;
+  function rotate() {
+    quarter = ((quarter + 1) % 4) as Quarter;
   }
 
-  const [vx, vy, vl, vh] = VIEWBOX_SYMBOLE;
+  const [vx, vy, vl, vh] = VIEWBOX_SYMBOL;
 </script>
 
-<div class="ecran">
+<div class="screen">
   <section class="scene" style:background={palette.fond} aria-labelledby="diorama-date">
-    <div class="entete">
-      <div class="titre">
-        <h1 id="diorama-date">{dateEnToutesLettres(jourEntier)}</h1>
+    <div class="header">
+      <div class="title">
+        <h1 id="diorama-date">{dateEnAllLetters(dayWhole)}</h1>
         <div class="puces">
-          <span class="puce">{NOMS_SAISON[saison]()}</span>
-          <span class="puce">{m.diorama_series_en_terre({ nombre: nombreEnTerre })}</span>
-          {#if nombreLibres > 0}
-            <span class="puce libre">{m.diorama_planches_libres({ nombre: nombreLibres })}</span>
+          <span class="puce">{NAMES_SEASON[season]()}</span>
+          <span class="puce">{m.diorama_plantings_in_ground({ count: countEnGround })}</span>
+          {#if countFree > 0}
+            <span class="puce free">{m.diorama_beds_free({ count: countFree })}</span>
           {/if}
         </div>
       </div>
-      <button class="bouton tourner" type="button" onclick={tourner}>
-        <Icone nom="rotate" taille={17} />{m.diorama_tourner()}
+      <button class="button rotate" type="button" onclick={rotate}>
+        <Icon name="rotate" size={17} />{m.diorama_rotate()}
       </button>
     </div>
 
-    <div class="cadre" bind:clientWidth={largeur}>
+    <div class="cadre" bind:clientWidth={width}>
       {#if scene}
         <svg
           bind:this={svgEl}
@@ -266,119 +266,119 @@
           viewBox={scene.cadre.join(" ")}
           role="group"
           aria-label={m.diorama_aria({
-            date: dateEnToutesLettres(jourEntier),
-            planches: scene.planches.length,
-            series: nombreEnTerre,
+            date: dateEnAllLetters(dayWhole),
+            beds: scene.beds.length,
+            plantings: countEnGround,
           })}
-          style:--herbe={palette.herbe}
-          style:--herbe-g={palette.herbeGauche}
-          style:--herbe-d={palette.herbeDroite}
-          data-saison={saison}
+          style:--grass={palette.grass}
+          style:--grass-g={palette.grassGauche}
+          style:--grass-d={palette.grassRight}
+          data-season={season}
         >
           <defs>
-            {#each Object.entries(SYMBOLES) as [id, dessin] (id)}
-              <symbol id="plante-{id}" viewBox="{vx} {vy} {vl} {vh}" overflow="visible">{@html dessin}</symbol>
+            {#each Object.entries(SYMBOLES) as [id, drawing] (id)}
+              <symbol id="plant-{id}" viewBox="{vx} {vy} {vl} {vh}" overflow="visible">{@html drawing}</symbol>
             {/each}
-            <symbol id={SYMBOLE_ETIQUETTE} viewBox="{vx} {vy} {vl} {vh}" overflow="visible">{@html ETIQUETTE_SVG}</symbol>
+            <symbol id={SYMBOL_ETIQUETTE} viewBox="{vx} {vy} {vl} {vh}" overflow="visible">{@html ETIQUETTE_SVG}</symbol>
           </defs>
 
           <g class="socle" aria-hidden="true">
             {#each scene.socle as f, i (i)}
-              <polygon class={f.classe} points={f.points} />
+              <polygon class={f.class} points={f.points} />
             {/each}
-            {#each scene.touffes as t, i (i)}
-              {#if t.fleur}
-                <circle class="fleur teinte{t.teinte}" cx={t.x} cy={t.y - 2} r="2" />
+            {#each scene.tufts as t, i (i)}
+              {#if t.flower}
+                <circle class="flower tint{t.tint}" cx={t.x} cy={t.y - 2} r="2" />
               {:else}
-                <polygon class="touffe" points="{t.x - 3},{t.y} {t.x - 1},{t.y - 6} {t.x},{t.y}" />
-                <polygon class="touffe sombre" points="{t.x},{t.y} {t.x + 1.5},{t.y - 7} {t.x + 3},{t.y}" />
+                <polygon class="tuft" points="{t.x - 3},{t.y} {t.x - 1},{t.y - 6} {t.x},{t.y}" />
+                <polygon class="tuft sombre" points="{t.x},{t.y} {t.x + 1.5},{t.y - 7} {t.x + 3},{t.y}" />
               {/if}
             {/each}
           </g>
 
-          {#each scene.planches as p (p.id)}
+          {#each scene.beds as p (p.id)}
             <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
             <g
-              class="planche"
-              class:choisie={selectionId === p.id}
+              class="bed"
+              class:chosen={selectionId === p.id}
               role="button"
               tabindex="0"
               aria-pressed={selectionId === p.id}
-              aria-label={m.diorama_planche_aria({
-                nom: p.nom,
-                type: nomDeType(p.type),
-                nombre: enTerre.get(p.id) ?? 0,
+              aria-label={m.diorama_bed_aria({
+                name: p.name,
+                type: nameOfType(p.type),
+                count: enGround.get(p.id) ?? 0,
               })}
-              onclick={() => ouvrir(p)}
-              onkeydown={(e) => touche(e, p)}
+              onclick={() => open(p)}
+              onkeydown={(e) => key(e, p)}
             >
               {#each p.faces as f, i (i)}
-                <polygon class={f.classe} points={f.points} />
+                <polygon class={f.class} points={f.points} />
               {/each}
               {#each p.sillons as s, i (i)}
                 <line class="sillon" x1={s.a[0]} y1={s.a[1]} x2={s.b[0]} y2={s.b[1]} />
               {/each}
-              <g data-couche={p.id}></g>
-              {#if (enTerre.get(p.id) ?? 0) === 0 && !etiquetees.has(p.id)}
-                <g class="signe-libre" aria-hidden="true">
+              <g data-layer={p.id}></g>
+              {#if (enGround.get(p.id) ?? 0) === 0 && !labeled.has(p.id)}
+                <g class="sign-free" aria-hidden="true">
                   <line x1={p.centre[0]} y1={p.centre[1]} x2={p.centre[0]} y2={p.centre[1] - 30} />
                   <rect x={p.centre[0] - 34} y={p.centre[1] - 52} width="68" height="24" rx="8" />
-                  <text x={p.centre[0]} y={p.centre[1] - 36} text-anchor="middle">{m.diorama_libre()}</text>
+                  <text x={p.centre[0]} y={p.centre[1] - 36} text-anchor="middle">{m.diorama_free()}</text>
                 </g>
               {/if}
               <polygon class="contour" points={p.contour} />
             </g>
           {/each}
-          <g class="noms" aria-hidden="true">
-            {#each scene.planches as p (p.id)}
+          <g class="names" aria-hidden="true">
+            {#each scene.beds as p (p.id)}
             {#if !compact || selectionId === p.id}
-              {@const largeurNom = p.nom.length * 6.6 + 20}
-              <g class="nom" aria-hidden="true">
+              {@const widthName = p.name.length * 6.6 + 20}
+              <g class="name" aria-hidden="true">
                 <rect
-                  x={p.coinNom[0] - largeurNom + 6}
-                  y={p.coinNom[1] - 17}
-                  width={largeurNom}
+                  x={p.coinName[0] - widthName + 6}
+                  y={p.coinName[1] - 17}
+                  width={widthName}
                   height="22"
                   rx="11"
                   class:accent={selectionId === p.id}
                 />
-                <text x={p.coinNom[0] - largeurNom / 2 + 6} y={p.coinNom[1] - 2} text-anchor="middle">{p.nom}</text>
+                <text x={p.coinName[0] - widthName / 2 + 6} y={p.coinName[1] - 2} text-anchor="middle">{p.name}</text>
               </g>
             {/if}
             {/each}
           </g>
         </svg>
       {/if}
-      {#if vue.planches.length === 0}
-        <p class="vide">{m.diorama_vide()}</p>
+      {#if view.beds.length === 0}
+        <p class="empty">{m.diorama_empty()}</p>
       {/if}
-      {#if mesureActive}
-        <CompteurImages direct={ips} plantes={plantesMax} dernier={dernierResultat} />
+      {#if measureActive}
+        <CounterImages direct={ips} plants={plantsMax} dernier={dernierResult} />
       {/if}
     </div>
 
-    {#if reduit}
-      <p class="aide-reduite">{m.diorama_lecture_reduite()}</p>
+    {#if reduced}
+      <p class="help-reduced">{m.diorama_playback_reduced()}</p>
     {/if}
 
-    <Curseur
-      annee={vue.year}
-      jour={jourEntier}
-      {lecture}
-      {vitesse}
+    <Cursor
+      year={view.year}
+      day={dayWhole}
+      {playback}
+      {speed}
       {compact}
-      onchoisir={choisir}
-      onjouer={jouer}
-      onvitesse={changerVitesse}
+      onchoose={choose}
+      onplay={play}
+      onspeed={changerSpeed}
     />
   </section>
 
   <aside class="lateral" aria-live="polite">
     {#if selection}
-      <PanneauDiorama {vue} planche={selection} onfermer={() => (selectionId = null)} />
+      <PanelDiorama {view} bed={selection} onclose={() => (selectionId = null)} />
     {:else}
       <div class="invite">
-        <h2>{m.diorama_invite_titre()}</h2>
+        <h2>{m.diorama_invite_title()}</h2>
         <p>{m.diorama_invite()}</p>
       </div>
     {/if}
@@ -386,7 +386,7 @@
 </div>
 
 <style>
-  .ecran {
+  .screen {
     display: flex;
     flex-wrap: wrap;
     gap: 24px;
@@ -404,7 +404,7 @@
     transition: background-color 0.8s ease;
   }
 
-  .entete {
+  .header {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
@@ -412,7 +412,7 @@
     gap: 12px;
   }
 
-  .titre {
+  .title {
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -436,12 +436,12 @@
     font-weight: 600;
   }
 
-  .puce.libre {
+  .puce.free {
     background: #fff3e4;
     color: var(--accent-ink);
   }
 
-  .tourner {
+  .rotate {
     box-shadow: 0 2px 6px rgba(31, 58, 46, 0.08);
     border: 0;
   }
@@ -465,7 +465,7 @@
     touch-action: manipulation;
   }
 
-  .vide {
+  .empty {
     position: absolute;
     inset: 0;
     display: grid;
@@ -475,7 +475,7 @@
     text-align: center;
   }
 
-  .aide-reduite {
+  .help-reduced {
     margin: 0;
     font-size: 13px;
     color: var(--muted);
@@ -483,48 +483,48 @@
 
   /* The ground: its colours follow the season, with a slow transition. */
   .socle polygon,
-  .planche polygon {
+  .bed polygon {
     transition: fill 0.8s ease;
   }
-  .terre-gauche {
+  .ground-gauche {
     fill: #8a5e3c;
   }
-  .terre-droite {
+  .ground-right {
     fill: #74492d;
   }
-  .herbe-haut {
-    fill: var(--herbe);
+  .grass-top {
+    fill: var(--grass);
   }
-  .herbe-gauche {
-    fill: var(--herbe-g);
+  .grass-gauche {
+    fill: var(--grass-g);
   }
-  .herbe-droite {
-    fill: var(--herbe-d);
+  .grass-right {
+    fill: var(--grass-d);
   }
-  .touffe {
+  .tuft {
     fill: #86bc72;
   }
-  .touffe.sombre {
+  .tuft.sombre {
     fill: #74aa63;
   }
-  [data-saison="hiver"] .touffe {
+  [data-season="winter"] .tuft {
     fill: #dbe8ea;
   }
-  [data-saison="hiver"] .touffe.sombre {
+  [data-season="winter"] .tuft.sombre {
     fill: #c3d6da;
   }
-  [data-saison="automne"] .touffe {
+  [data-season="autumn"] .tuft {
     fill: #c9b45f;
   }
-  [data-saison="automne"] .touffe.sombre {
+  [data-season="autumn"] .tuft.sombre {
     fill: #b39c4b;
   }
-  .fleur {
+  .flower {
     opacity: 0;
     transition: opacity 0.8s ease;
   }
-  [data-saison="printemps"] .fleur,
-  [data-saison="ete"] .fleur {
+  [data-season="spring"] .flower,
+  [data-season="summer"] .flower {
     opacity: 1;
   }
   .teinte0 {
@@ -537,22 +537,22 @@
     fill: #ffffff;
   }
 
-  .lit-haut {
+  .lit-top {
     fill: #a0704a;
   }
   .lit-gauche {
     fill: #7e5236;
   }
-  .lit-droite {
+  .lit-right {
     fill: #6b432b;
   }
-  .bois-haut {
+  .bois-top {
     fill: #d9a86e;
   }
   .bois-gauche {
     fill: #c08a53;
   }
-  .bois-droite {
+  .bois-right {
     fill: #a87442;
   }
   .sillon {
@@ -561,7 +561,7 @@
     stroke-linecap: round;
   }
 
-  .planche {
+  .bed {
     cursor: pointer;
     outline: none;
     -webkit-tap-highlight-color: transparent;
@@ -578,48 +578,48 @@
   }
 
   @media (hover: hover) {
-    .planche:hover .contour {
+    .bed:hover .contour {
       opacity: 0.75;
     }
   }
 
-  .planche:focus-visible .contour,
-  .planche.choisie .contour {
+  .bed:focus-visible .contour,
+  .bed.chosen .contour {
     opacity: 1;
   }
 
-  .planche:focus-visible .contour {
+  .bed:focus-visible .contour {
     stroke-width: 4.5;
   }
 
-  .nom {
+  .name {
     pointer-events: none;
   }
-  .nom rect {
+  .name rect {
     fill: #ffffff;
   }
-  .nom rect.accent {
+  .name rect.accent {
     fill: var(--accent);
   }
-  .nom text {
-    font-family: var(--font-titre);
+  .name text {
+    font-family: var(--font-title);
     font-weight: 600;
     font-size: 12px;
     fill: var(--ink);
   }
 
-  .signe-libre {
+  .sign-free {
     pointer-events: none;
   }
-  .signe-libre line {
+  .sign-free line {
     stroke: #8a5a36;
     stroke-width: 2.4;
     stroke-linecap: round;
   }
-  .signe-libre rect {
+  .sign-free rect {
     fill: #ffffff;
   }
-  .signe-libre text {
+  .sign-free text {
     font-family: var(--font);
     font-weight: 700;
     font-size: 11px;
@@ -664,7 +664,7 @@
   }
 
   @media (max-width: 720px) {
-    .ecran {
+    .screen {
       gap: 16px;
     }
     .scene {
@@ -679,7 +679,7 @@
       flex-basis: 100%;
       max-width: none;
     }
-    .tourner {
+    .rotate {
       min-height: 40px;
       padding: 0 14px;
     }

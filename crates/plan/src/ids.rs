@@ -53,12 +53,12 @@ id_type! {
     PlanId
 }
 id_type! {
-    /// Identifier of a planche; stable from one year to the next.
-    PlancheId
+    /// Identifier of a bed; stable from one year to the next.
+    BedId
 }
 id_type! {
-    /// Identifier of a serie.
-    SerieId
+    /// Identifier of a planting.
+    PlantingId
 }
 id_type! {
     /// Identifier of an annotation.

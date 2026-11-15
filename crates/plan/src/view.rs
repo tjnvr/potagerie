@@ -8,9 +8,9 @@ use catalogue::Catalogue;
 use chrono::{DateTime, Datelike, NaiveDate, Utc};
 use serde::Serialize;
 
-use crate::ids::{AnnotationId, PlancheId, SerieId};
-use crate::model::{Plan, TypeAnnotation, TypePlanche};
-use crate::serie::Mode;
+use crate::ids::{AnnotationId, BedId, PlantingId};
+use crate::model::{Plan, TypeAnnotation, TypeBed};
+use crate::planting::Mode;
 use crate::stages::{Appearance, AppearanceChange};
 use crate::tasks::TaskType;
 use crate::zone::Occupation;
@@ -23,22 +23,22 @@ pub struct YearView {
     pub today: NaiveDate,
     /// Past years are read-only (S03 §7).
     pub read_only: bool,
-    /// `None` until the terrain is created (E2): there is no plan yet.
-    pub terrain: Option<TerrainView>,
+    /// `None` until the plot is created (E2): there is no plan yet.
+    pub plot: Option<PlotView>,
     /// `version` of the plan, 0 when there is none. Exported as a JS number.
     pub version: u32,
     pub updated_at: Option<DateTime<Utc>>,
-    /// The planches that exist in `year`, with their layout of that year.
-    pub planches: Vec<PlancheView>,
-    /// The series whose timeline (pots included) touches `year`.
-    pub series: Vec<SerieView>,
-    /// Conflicting pairs among `series` (S03 §5).
+    /// The beds that exist in `year`, with their layout of that year.
+    pub beds: Vec<BedView>,
+    /// The plantings whose timeline (pots included) touches `year`.
+    pub plantings: Vec<PlantingView>,
+    /// Conflicting pairs among `plantings` (S03 §5).
     pub conflicts: Vec<ConflictView>,
-    /// The series that ended on or before January 1st of `year`: the past
-    /// seasons of the planche panel (S01 F-VIS-7), read-only.
-    pub historique: Vec<SerieView>,
+    /// The plantings that ended on or before January 1st of `year`: the past
+    /// seasons of the bed panel (S01 F-VIS-7), read-only.
+    pub history: Vec<PlantingView>,
     /// Free slots of `year` and their suggestions (S03 §8, §9).
-    pub creneaux: Vec<CreneauView>,
+    pub slots: Vec<SlotView>,
     /// Annotations that touch `year`.
     pub annotations: Vec<AnnotationView>,
     /// Tasks dated in `year` (S03 §11).
@@ -47,40 +47,40 @@ pub struct YearView {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
-pub struct TerrainView {
-    pub longueur_cm: u32,
-    pub largeur_cm: u32,
-    pub case_cm: u32,
-    pub allee_cm: u32,
+pub struct PlotView {
+    pub length_cm: u32,
+    pub width_cm: u32,
+    pub cell_cm: u32,
+    pub aisle_cm: u32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
-pub struct PlancheView {
-    pub id: PlancheId,
-    pub nom: String,
-    pub planche_type: TypePlanche,
+pub struct BedView {
+    pub id: BedId,
+    pub name: String,
+    pub bed_type: TypeBed,
     pub x: u32,
     pub y: u32,
-    pub longueur_cm: u32,
-    pub largeur_cm: u32,
-    /// `n = longueur ÷ case` (S03 §4).
-    pub troncons: u32,
-    /// The series deleted with this planche if it is deleted from this year
+    pub length_cm: u32,
+    pub width_cm: u32,
+    /// `n = length ÷ case` (S03 §4).
+    pub segments: u32,
+    /// The plantings deleted with this bed if it is deleted from this year
     /// on (S03 §5): the interface warns before confirming.
-    pub series_supprimees: Vec<SerieId>,
+    pub plantings_deleted: Vec<PlantingId>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
-pub struct SerieView {
-    pub id: SerieId,
-    pub culture_id: String,
-    pub planche_id: PlancheId,
-    pub troncon_debut: u32,
-    pub troncon_fin: u32,
+pub struct PlantingView {
+    pub id: PlantingId,
+    pub crop_id: String,
+    pub bed_id: BedId,
+    pub segment_start: u32,
+    pub segment_end: u32,
     pub mode: Mode,
-    /// Entered date: sowing (abri, pleine terre) or planting (plants).
+    /// Entered date: sowing (indoor, open ground) or planting (plants).
     pub date: NaiveDate,
     pub sowing: Option<NaiveDate>,
     /// `m`.
@@ -91,16 +91,16 @@ pub struct SerieView {
     pub end: NaiveDate,
     /// True when `end` was modified by hand.
     pub manual_end: bool,
-    /// Days in pots (mode abri): from the catalogue, or entered for a crop
+    /// Days in pots (mode indoor): from the catalogue, or entered for a crop
     /// without pots (S03 §2). The edit form shows it back.
     pub pot_days: u32,
-    /// Rows × plants per row on the planche (S03 §6); 0 when the planche has
+    /// Rows × plants per row on the bed (S03 §6); 0 when the bed has
     /// no layout to measure.
-    pub rangs: u32,
-    pub pieds_par_rang: u32,
+    pub rows: u32,
+    pub plants_by_row: u32,
     /// What the garden view draws today (S03 §3).
     pub appearance_today: Appearance,
-    /// Every change of display over the life of the serie (S03 §3), so the
+    /// Every change of display over the life of the planting (S03 §3), so the
     /// garden view can show any date, and play the season, without
     /// calculating a stage itself.
     pub appearance_changes: Vec<AppearanceChange>,
@@ -109,20 +109,20 @@ pub struct SerieView {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
 pub struct ConflictView {
-    pub a: SerieId,
-    pub b: SerieId,
-    pub troncon_debut: u32,
-    pub troncon_fin: u32,
+    pub a: PlantingId,
+    pub b: PlantingId,
+    pub segment_start: u32,
+    pub segment_end: u32,
     pub start: NaiveDate,
     pub end: NaiveDate,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
-pub struct CreneauView {
-    pub planche_id: PlancheId,
-    pub troncon_debut: u32,
-    pub troncon_fin: u32,
+pub struct SlotView {
+    pub bed_id: BedId,
+    pub segment_start: u32,
+    pub segment_end: u32,
     /// First free day.
     pub start: NaiveDate,
     /// Last free day, included.
@@ -133,15 +133,15 @@ pub struct CreneauView {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
 pub struct SuggestionView {
-    pub culture_id: String,
+    pub crop_id: String,
     pub mode: Mode,
     pub date: NaiveDate,
     pub planting_out: NaiveDate,
     pub harvest_start: NaiveDate,
     pub end: NaiveDate,
-    pub fin_manuelle: Option<NaiveDate>,
+    pub manual_end: Option<NaiveDate>,
     /// Filling score rounded to a tenth, in tenths (0 to 10).
-    pub score_dixiemes: u32,
+    pub score_tenths: u32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -149,76 +149,76 @@ pub struct SuggestionView {
 pub struct AnnotationView {
     pub id: AnnotationId,
     pub annotation_type: TypeAnnotation,
-    pub date_debut: NaiveDate,
-    pub date_fin: Option<NaiveDate>,
-    pub planche_id: Option<PlancheId>,
-    pub texte: String,
-    pub masquee: bool,
+    pub date_start: NaiveDate,
+    pub date_end: Option<NaiveDate>,
+    pub bed_id: Option<BedId>,
+    pub text: String,
+    pub hidden: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
 pub struct TaskView {
     pub id: String,
-    pub serie_id: SerieId,
+    pub planting_id: PlantingId,
     pub task_type: TaskType,
     pub date: NaiveDate,
 }
 
-/// The view of one serie, with its quantities on the planche of the year it
+/// The view of one planting, with its quantities on the bed of the year it
 /// starts in (S03 §6).
-fn serie_view(
+fn planting_view(
     plan: &Plan,
-    id: SerieId,
-    s: &crate::serie::Serie,
+    id: PlantingId,
+    s: &crate::planting::Planting,
     today: NaiveDate,
     catalogue: &Catalogue,
-) -> SerieView {
+) -> PlantingView {
     let dates = s.dates();
     let start = dates
         .sowing
         .unwrap_or(dates.planting_out)
         .min(dates.planting_out);
-    let largeur = plan
-        .planches
-        .get(&s.planche_id)
-        .and_then(|p| p.disposition_in(start.year()))
-        .map(|g| g.largeur_cm);
-    let (rangs, pieds_par_rang) = match (largeur, catalogue.culture(&s.culture_id)) {
-        (Some(largeur), Some(culture)) => {
+    let width = plan
+        .beds
+        .get(&s.bed_id)
+        .and_then(|p| p.layout_in(start.year()))
+        .map(|g| g.width_cm);
+    let (rows, plants_by_row) = match (width, catalogue.crop(&s.crop_id)) {
+        (Some(width), Some(crop)) => {
             let q = crate::quantities::quantity(
-                largeur,
-                s.troncon_fin - s.troncon_debut + 1,
-                plan.terrain.case_cm,
-                culture,
+                width,
+                s.segment_end - s.segment_start + 1,
+                plan.plot.cell_cm,
+                crop,
             );
             (q.rows, q.plants_per_row)
         }
         _ => (0, 0),
     };
-    SerieView {
+    PlantingView {
         id,
-        culture_id: s.culture_id.clone(),
-        planche_id: s.planche_id,
-        troncon_debut: s.troncon_debut,
-        troncon_fin: s.troncon_fin,
+        crop_id: s.crop_id.clone(),
+        bed_id: s.bed_id,
+        segment_start: s.segment_start,
+        segment_end: s.segment_end,
         mode: s.mode,
         date: s.date,
         sowing: dates.sowing,
         planting_out: dates.planting_out,
         harvest_start: dates.harvest_start,
         end: dates.end,
-        manual_end: s.fin_manuelle.is_some(),
-        pot_days: s.abri_jours,
-        rangs,
-        pieds_par_rang,
+        manual_end: s.manual_end.is_some(),
+        pot_days: s.indoor_days,
+        rows,
+        plants_by_row,
         appearance_today: s.appearance_on(today),
         appearance_changes: s.appearance_changes(),
     }
 }
 
 impl YearView {
-    /// The view of `year`. `plan` is `None` before the terrain is created.
+    /// The view of `year`. `plan` is `None` before the plot is created.
     pub fn build(plan: Option<&Plan>, year: i32, today: NaiveDate, catalogue: &Catalogue) -> Self {
         let read_only = year < today.year();
         let Some(plan) = plan else {
@@ -226,37 +226,37 @@ impl YearView {
                 year,
                 today,
                 read_only,
-                terrain: None,
+                plot: None,
                 version: 0,
                 updated_at: None,
-                planches: Vec::new(),
-                series: Vec::new(),
-                historique: Vec::new(),
+                beds: Vec::new(),
+                plantings: Vec::new(),
+                history: Vec::new(),
                 conflicts: Vec::new(),
-                creneaux: Vec::new(),
+                slots: Vec::new(),
                 annotations: Vec::new(),
                 tasks: Vec::new(),
             };
         };
 
-        let planches = plan
-            .planches_in(year)
+        let beds = plan
+            .beds_in(year)
             .into_iter()
-            .map(|(id, planche, geometry)| PlancheView {
+            .map(|(id, bed, geometry)| BedView {
                 id,
-                nom: planche.nom.clone(),
-                planche_type: geometry.planche_type,
+                name: bed.name.clone(),
+                bed_type: geometry.bed_type,
                 x: geometry.x,
                 y: geometry.y,
-                longueur_cm: geometry.longueur_cm,
-                largeur_cm: geometry.largeur_cm,
-                troncons: geometry.troncons(plan.terrain.case_cm),
-                series_supprimees: plan.series_deleted_by(id, year),
+                length_cm: geometry.length_cm,
+                width_cm: geometry.width_cm,
+                segments: geometry.segments(plan.plot.cell_cm),
+                plantings_deleted: plan.plantings_deleted_by(id, year),
             })
             .collect();
 
-        let series: Vec<SerieView> = plan
-            .series
+        let plantings: Vec<PlantingView> = plan
+            .plantings
             .iter()
             .filter(|(_, s)| {
                 let dates = s.dates();
@@ -269,18 +269,18 @@ impl YearView {
                 }
                 .touches_year(year)
             })
-            .map(|(id, s)| serie_view(plan, *id, s, today, catalogue))
+            .map(|(id, s)| planting_view(plan, *id, s, today, catalogue))
             .collect();
 
         let january_first = crate::days::january_first(year);
-        let historique = plan
-            .series
+        let history = plan
+            .plantings
             .iter()
             .filter(|(_, s)| s.dates().end <= january_first)
-            .map(|(id, s)| serie_view(plan, *id, s, today, catalogue))
+            .map(|(id, s)| planting_view(plan, *id, s, today, catalogue))
             .collect();
 
-        let shown = |id: &SerieId| series.iter().any(|s| s.id == *id);
+        let shown = |id: &PlantingId| plantings.iter().any(|s| s.id == *id);
         let conflicts = plan
             .conflicts()
             .into_iter()
@@ -288,34 +288,34 @@ impl YearView {
             .map(|(a, b, detail)| ConflictView {
                 a,
                 b,
-                troncon_debut: detail.troncons.t1,
-                troncon_fin: detail.troncons.t2,
+                segment_start: detail.segments.t1,
+                segment_end: detail.segments.t2,
                 start: detail.period.start,
                 end: detail.period.end,
             })
             .collect();
 
-        let creneaux = plan
-            .creneaux(year)
+        let slots = plan
+            .slots(year)
             .iter()
-            .map(|creneau| CreneauView {
-                planche_id: creneau.planche_id,
-                troncon_debut: creneau.zone.t1,
-                troncon_fin: creneau.zone.t2,
-                start: creneau.start,
-                end: creneau.end,
+            .map(|slot| SlotView {
+                bed_id: slot.bed_id,
+                segment_start: slot.zone.t1,
+                segment_end: slot.zone.t2,
+                start: slot.start,
+                end: slot.end,
                 suggestions: plan
-                    .suggestions(creneau, catalogue, today)
+                    .suggestions(slot, catalogue, today)
                     .into_iter()
                     .map(|s| SuggestionView {
-                        score_dixiemes: u32::try_from(s.score_dixiemes()).unwrap_or(0),
-                        culture_id: s.culture_id,
+                        score_tenths: u32::try_from(s.score_tenths()).unwrap_or(0),
+                        crop_id: s.crop_id,
                         mode: s.mode,
                         date: s.date,
                         planting_out: s.planting_out,
                         harvest_start: s.harvest_start,
                         end: s.end,
-                        fin_manuelle: s.fin_manuelle,
+                        manual_end: s.manual_end,
                     })
                     .collect(),
             })
@@ -325,17 +325,17 @@ impl YearView {
             .annotations
             .iter()
             .filter(|(_, a)| {
-                let end = a.date_fin.unwrap_or(a.date_debut);
-                (a.date_debut.year()..=end.year()).contains(&year)
+                let end = a.date_end.unwrap_or(a.date_start);
+                (a.date_start.year()..=end.year()).contains(&year)
             })
             .map(|(id, a)| AnnotationView {
                 id: *id,
                 annotation_type: a.type_annotation,
-                date_debut: a.date_debut,
-                date_fin: a.date_fin,
-                planche_id: a.planche_id,
-                texte: a.texte.clone(),
-                masquee: a.masquee,
+                date_start: a.date_start,
+                date_end: a.date_end,
+                bed_id: a.bed_id,
+                text: a.text.clone(),
+                hidden: a.hidden,
             })
             .collect();
 
@@ -345,7 +345,7 @@ impl YearView {
             .filter(|t| t.date.year() == year)
             .map(|t| TaskView {
                 id: t.id,
-                serie_id: t.serie_id,
+                planting_id: t.planting_id,
                 task_type: t.task_type,
                 date: t.date,
             })
@@ -355,19 +355,19 @@ impl YearView {
             year,
             today,
             read_only,
-            terrain: Some(TerrainView {
-                longueur_cm: plan.terrain.longueur_cm,
-                largeur_cm: plan.terrain.largeur_cm,
-                case_cm: plan.terrain.case_cm.cm(),
-                allee_cm: plan.terrain.allee_cm,
+            plot: Some(PlotView {
+                length_cm: plan.plot.length_cm,
+                width_cm: plan.plot.width_cm,
+                cell_cm: plan.plot.cell_cm.cm(),
+                aisle_cm: plan.plot.aisle_cm,
             }),
             version: u32::try_from(plan.version).unwrap_or(u32::MAX),
-            updated_at: Some(plan.mis_a_jour_le),
-            planches,
-            series,
-            historique,
+            updated_at: Some(plan.updated_at),
+            beds,
+            plantings,
+            history,
             conflicts,
-            creneaux,
+            slots,
             annotations,
             tasks,
         }
@@ -380,37 +380,37 @@ mod tests {
 
     use super::*;
     use crate::ids::PlanId;
-    use crate::model::{CaseCm, Geometry, Terrain};
-    use crate::serie::Serie;
+    use crate::model::{CellCm, Geometry, Plot};
+    use crate::planting::Planting;
     use crate::zone::Zone;
 
     fn day(y: i32, m: u32, d: u32) -> NaiveDate {
         NaiveDate::from_ymd_opt(y, m, d).unwrap()
     }
 
-    fn plan_with_one_planche() -> (Plan, PlancheId) {
+    fn plan_with_one_bed() -> (Plan, BedId) {
         let now = Utc.with_ymd_and_hms(2027, 1, 10, 8, 0, 0).unwrap();
         let mut plan = Plan::new(
             PlanId::generate(),
-            Terrain {
-                longueur_cm: 1100,
-                largeur_cm: 650,
-                case_cm: CaseCm::C50,
-                allee_cm: 50,
+            Plot {
+                length_cm: 1100,
+                width_cm: 650,
+                cell_cm: CellCm::C50,
+                aisle_cm: 50,
             },
             now,
         );
-        let id = PlancheId::generate();
-        plan.add_planche(
+        let id = BedId::generate();
+        plan.add_bed(
             id,
-            "Planche A".into(),
+            "Bed A".into(),
             2027,
             Geometry {
-                planche_type: TypePlanche::Planche,
+                bed_type: TypeBed::Bed,
                 x: 50,
                 y: 50,
-                longueur_cm: 300,
-                largeur_cm: 120,
+                length_cm: 300,
+                width_cm: 120,
             },
             day(2027, 1, 10),
         )
@@ -421,8 +421,8 @@ mod tests {
     #[test]
     fn no_plan_gives_an_empty_view() {
         let view = YearView::build(None, 2027, day(2027, 6, 20), Catalogue::reference());
-        assert_eq!(view.terrain, None);
-        assert!(view.planches.is_empty());
+        assert_eq!(view.plot, None);
+        assert!(view.beds.is_empty());
         assert!(!view.read_only);
         assert_eq!(view.version, 0);
     }
@@ -434,76 +434,77 @@ mod tests {
     }
 
     #[test]
-    fn planches_follow_their_dispositions() {
-        let (plan, id) = plan_with_one_planche();
+    fn beds_follow_their_layouts() {
+        let (plan, id) = plan_with_one_bed();
         let today = day(2027, 1, 10);
         let view = YearView::build(Some(&plan), 2027, today, Catalogue::reference());
-        assert_eq!(view.planches.len(), 1);
-        assert_eq!(view.planches[0].id, id);
-        assert_eq!(view.planches[0].troncons, 6);
+        assert_eq!(view.beds.len(), 1);
+        assert_eq!(view.beds[0].id, id);
+        assert_eq!(view.beds[0].segments, 6);
         let before = YearView::build(Some(&plan), 2026, today, Catalogue::reference());
-        assert!(before.planches.is_empty());
+        assert!(before.beds.is_empty());
         let after = YearView::build(Some(&plan), 2028, today, Catalogue::reference());
-        assert_eq!(after.planches.len(), 1);
+        assert_eq!(after.beds.len(), 1);
     }
 
     #[test]
-    fn series_carry_their_calculated_dates() {
-        let (mut plan, planche_id) = plan_with_one_planche();
-        let tomate = Catalogue::reference().culture("tomate").unwrap();
-        let serie = Serie::new(
-            tomate,
-            planche_id,
+    fn plantings_carry_their_calculated_dates() {
+        let (mut plan, bed_id) = plan_with_one_bed();
+        let tomato = Catalogue::reference().crop("tomato").unwrap();
+        let planting = Planting::new(
+            tomato,
+            bed_id,
             Zone::new(1, 3).unwrap(),
-            Mode::Abri,
+            Mode::Indoor,
             day(2027, 3, 10),
             None,
             None,
         )
         .unwrap();
-        let expected = serie.dates();
-        plan.add_serie(SerieId::generate(), serie).unwrap();
+        let expected = planting.dates();
+        plan.add_planting(PlantingId::generate(), planting).unwrap();
 
         let view = YearView::build(Some(&plan), 2027, day(2027, 6, 20), Catalogue::reference());
-        assert_eq!(view.series.len(), 1);
-        assert_eq!(view.series[0].planting_out, expected.planting_out);
-        assert_eq!(view.series[0].end, expected.end);
+        assert_eq!(view.plantings.len(), 1);
+        assert_eq!(view.plantings[0].planting_out, expected.planting_out);
+        assert_eq!(view.plantings[0].end, expected.end);
         assert_eq!(view.tasks.len(), 3);
         assert!(view.conflicts.is_empty());
         let other_year =
             YearView::build(Some(&plan), 2029, day(2027, 6, 20), Catalogue::reference());
-        assert!(other_year.series.is_empty());
+        assert!(other_year.plantings.is_empty());
     }
 
     #[test]
     fn deletion_warning_quantities_and_history() {
-        let (mut plan, planche_id) = plan_with_one_planche();
-        let carotte = Catalogue::reference().culture("carotte").unwrap();
-        let serie = |date| {
-            Serie::new(
-                carotte,
-                planche_id,
+        let (mut plan, bed_id) = plan_with_one_bed();
+        let carrot = Catalogue::reference().crop("carrot").unwrap();
+        let planting = |date| {
+            Planting::new(
+                carrot,
+                bed_id,
                 Zone::new(1, 2).unwrap(),
-                Mode::PleineTerre,
+                Mode::OpenGround,
                 date,
                 None,
                 None,
             )
             .unwrap()
         };
-        let in_2027 = SerieId::generate();
-        plan.add_serie(in_2027, serie(day(2027, 3, 15))).unwrap();
+        let in_2027 = PlantingId::generate();
+        plan.add_planting(in_2027, planting(day(2027, 3, 15)))
+            .unwrap();
         let view = YearView::build(Some(&plan), 2027, day(2027, 1, 10), Catalogue::reference());
-        assert_eq!(view.planches[0].series_supprimees, vec![in_2027]);
-        // 2 troncons of 50 cm on 1.2 m: 4 rows (30 cm) of 100 / 4 cm plants (S03 T4).
+        assert_eq!(view.beds[0].plantings_deleted, vec![in_2027]);
+        // 2 segments of 50 cm on 1.2 m: 4 rows (30 cm) of 100 / 4 cm plants (S03 T4).
         assert_eq!(
-            (view.series[0].rangs, view.series[0].pieds_par_rang),
+            (view.plantings[0].rows, view.plantings[0].plants_by_row),
             (4, 25)
         );
-        assert!(view.historique.is_empty());
-        // The 2027 serie is history in 2028 and is no longer deleted by a 2028 deletion.
+        assert!(view.history.is_empty());
+        // The 2027 planting is history in 2028 and is no longer deleted by a 2028 deletion.
         let next = YearView::build(Some(&plan), 2028, day(2027, 1, 10), Catalogue::reference());
-        assert_eq!(next.historique.len(), 1);
-        assert!(next.planches[0].series_supprimees.is_empty());
+        assert_eq!(next.history.len(), 1);
+        assert!(next.beds[0].plantings_deleted.is_empty());
     }
 }

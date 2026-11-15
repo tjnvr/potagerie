@@ -5,7 +5,7 @@
   "type": "module",
   "packageManager": "pnpm@12.18.0",
   "scripts": {
-    "messages": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide --strategy baseLocale --silent",
+    "messages": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide --strategy localStorage preferredLanguage baseLocale --silent",
     "dev": "pnpm messages && vite",
     "build": "pnpm messages && vite build",
     "preview": "vite preview",

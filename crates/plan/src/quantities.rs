@@ -1,8 +1,8 @@
 //! Quantities (S03 §6).
 
-use catalogue::Culture;
+use catalogue::Crop;
 
-use crate::model::CaseCm;
+use crate::model::CellCm;
 
 /// Rows × plants per row.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -18,21 +18,21 @@ impl Quantity {
     }
 }
 
-/// For a planche of width `largeur_cm`, a zone of `troncon_count` troncons and a
+/// For a bed of width `width_cm`, a zone of `segment_count` segments and a
 /// case size `case`:
 ///
 /// ```text
-/// rows          = max(1, ⌊L ÷ rang_cm⌋)
-/// pieds par rang = max(1, ⌊(k × c) ÷ pied_cm⌋)
+/// rows          = max(1, ⌊L ÷ row_cm⌋)
+/// plants by row = max(1, ⌊(k × c) ÷ spacing_cm⌋)
 /// ```
 ///
 /// A spacing of 0 in the catalogue counts as "no room for more than one".
-pub fn quantity(largeur_cm: u32, troncon_count: u32, case: CaseCm, culture: &Culture) -> Quantity {
-    let zone_length_cm = troncon_count.saturating_mul(case.cm());
+pub fn quantity(width_cm: u32, segment_count: u32, case: CellCm, crop: &Crop) -> Quantity {
+    let zone_length_cm = segment_count.saturating_mul(case.cm());
     Quantity {
-        rows: largeur_cm.checked_div(culture.rang_cm).unwrap_or(0).max(1),
+        rows: width_cm.checked_div(crop.row_cm).unwrap_or(0).max(1),
         plants_per_row: zone_length_cm
-            .checked_div(culture.pied_cm)
+            .checked_div(crop.spacing_cm)
             .unwrap_or(0)
             .max(1),
     }
@@ -48,15 +48,15 @@ mod tests {
         quantity(
             width,
             k,
-            CaseCm::C50,
-            Catalogue::reference().culture(id).unwrap(),
+            CellCm::C50,
+            Catalogue::reference().crop(id).unwrap(),
         )
     }
 
     #[test]
     fn at_least_one_row_and_one_plant() {
-        // Courgette: 100 × 100 cm; a 60 cm wide planche and a single 50 cm case.
-        let quantity = q("courgette", 60, 1);
+        // Zucchini: 100 × 100 cm; a 60 cm wide bed and a single 50 cm case.
+        let quantity = q("zucchini", 60, 1);
         assert_eq!((quantity.rows, quantity.plants_per_row), (1, 1));
         assert_eq!(quantity.total(), 1);
     }
@@ -64,17 +64,17 @@ mod tests {
     #[test]
     fn rounds_down() {
         // Tomato on 120 cm: ⌊120 ÷ 80⌋ = 1 row; 3 cases = 150 cm: ⌊150 ÷ 60⌋ = 2.
-        assert_eq!(q("tomate", 120, 3).total(), 2);
+        assert_eq!(q("tomato", 120, 3).total(), 2);
         // Lettuce 30 × 30: 4 rows, ⌊(2 × 50) ÷ 30⌋ = 3 plants per row.
-        let laitue = q("laitue", 120, 2);
-        assert_eq!((laitue.rows, laitue.plants_per_row), (4, 3));
+        let lettuce = q("lettuce", 120, 2);
+        assert_eq!((lettuce.rows, lettuce.plants_per_row), (4, 3));
     }
 
     #[test]
     fn zero_spacing_does_not_panic() {
-        let mut culture = Catalogue::reference().culture("tomate").unwrap().clone();
-        culture.rang_cm = 0;
-        culture.pied_cm = 0;
-        assert_eq!(quantity(120, 3, CaseCm::C50, &culture).total(), 1);
+        let mut crop = Catalogue::reference().crop("tomato").unwrap().clone();
+        crop.row_cm = 0;
+        crop.spacing_cm = 0;
+        assert_eq!(quantity(120, 3, CellCm::C50, &crop).total(), 1);
     }
 }

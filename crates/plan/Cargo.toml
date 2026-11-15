@@ -11,6 +11,7 @@ publish.workspace = true
 catalogue.workspace = true
 chrono.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 thiserror.workspace = true
 uuid.workspace = true
 specta = { workspace = true, optional = true }
@@ -18,9 +19,6 @@ specta = { workspace = true, optional = true }
 [features]
 # Derives `specta::Type` on the year view, for the TypeScript bindings of the app.
 specta = ["dep:specta"]
-
-[dev-dependencies]
-serde_json.workspace = true
 
 [lints]
 workspace = true

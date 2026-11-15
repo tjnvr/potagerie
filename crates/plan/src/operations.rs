@@ -5,87 +5,85 @@ use chrono::{Datelike, NaiveDate};
 
 use crate::days::january_first;
 use crate::error::PlanError;
-use crate::ids::{PlancheId, SerieId};
-use crate::model::{Disposition, Geometry, MAX_PLANCHES, Plan, Planche};
-use crate::serie::Serie;
+use crate::ids::{BedId, PlantingId};
+use crate::model::{Bed, Geometry, Layout, MAX_BEDS, Plan};
+use crate::planting::Planting;
 
 impl Plan {
-    /// Adds a planche, with its first layout recorded in `year`.
-    pub fn add_planche(
+    /// Adds a bed, with its first layout recorded in `year`.
+    pub fn add_bed(
         &mut self,
-        id: PlancheId,
-        nom: String,
+        id: BedId,
+        name: String,
         year: i32,
         geometry: Geometry,
         today: NaiveDate,
     ) -> Result<(), PlanError> {
-        if self.planches.contains_key(&id) {
-            return Err(PlanError::PlancheExists(id));
+        if self.beds.contains_key(&id) {
+            return Err(PlanError::BedExists(id));
         }
-        self.planches.insert(
+        self.beds.insert(
             id,
-            Planche {
-                nom,
-                dispositions: Default::default(),
+            Bed {
+                name,
+                layouts: Default::default(),
             },
         );
-        let result = self.set_disposition(id, year, Disposition::Present(geometry), today);
+        let result = self.set_layout(id, year, Layout::Present(geometry), today);
         if result.is_err() {
-            self.planches.remove(&id);
+            self.beds.remove(&id);
         }
         result
     }
 
-    /// Records the layout of a planche in `year`, replacing the one recorded
+    /// Records the layout of a bed in `year`, replacing the one recorded
     /// for that year. It holds for the following years until the next layout
-    /// recorded for this same planche (S03 §7).
+    /// recorded for this same bed (S03 §7).
     ///
-    /// Series that no longer fit are not refused: ask
-    /// [`Plan::series_overflowing_if_shortened`] before and warn the user.
-    pub fn set_disposition(
+    /// Plantings that no longer fit are not refused: ask
+    /// [`Plan::plantings_overflowing_if_shortened`] before and warn the user.
+    pub fn set_layout(
         &mut self,
-        planche_id: PlancheId,
+        bed_id: BedId,
         year: i32,
-        disposition: Disposition,
+        layout: Layout,
         today: NaiveDate,
     ) -> Result<(), PlanError> {
         if year < today.year() {
             return Err(PlanError::PastYear { year, today });
         }
-        if !self.planches.contains_key(&planche_id) {
-            return Err(PlanError::UnknownPlanche(planche_id));
+        if !self.beds.contains_key(&bed_id) {
+            return Err(PlanError::UnknownBed(bed_id));
         }
-        if let Disposition::Present(geometry) = &disposition {
-            let case_cm = self.terrain.case_cm.cm();
-            if geometry.longueur_cm == 0 || geometry.longueur_cm % case_cm != 0 {
+        if let Layout::Present(geometry) = &layout {
+            let cell_cm = self.plot.cell_cm.cm();
+            if geometry.length_cm == 0 || geometry.length_cm % cell_cm != 0 {
                 return Err(PlanError::InvalidLength {
-                    longueur_cm: geometry.longueur_cm,
-                    case_cm,
+                    length_cm: geometry.length_cm,
+                    cell_cm,
                 });
             }
         }
 
         let mut after = self.clone();
-        if let Some(planche) = after.planches.get_mut(&planche_id) {
-            planche.dispositions.insert(year, disposition);
+        if let Some(bed) = after.beds.get_mut(&bed_id) {
+            bed.layouts.insert(year, layout);
         }
-        // Years from `year` to the last recorded layout may gain a planche.
+        // Years from `year` to the last recorded layout may gain a bed.
         let last = self
-            .planches
+            .beds
             .values()
-            .flat_map(|p| p.dispositions.keys().copied())
+            .flat_map(|p| p.layouts.keys().copied())
             .max()
             .unwrap_or(year)
             .max(year);
         for y in year..=last {
-            let existed =
-                self.planche_count_in(y, Some(planche_id)) != self.planche_count_in(y, None);
-            let exists =
-                after.planche_count_in(y, Some(planche_id)) != after.planche_count_in(y, None);
-            if exists && !existed && after.planche_count_in(y, None) > MAX_PLANCHES {
-                return Err(PlanError::TooManyPlanches {
+            let existed = self.bed_count_in(y, Some(bed_id)) != self.bed_count_in(y, None);
+            let exists = after.bed_count_in(y, Some(bed_id)) != after.bed_count_in(y, None);
+            if exists && !existed && after.bed_count_in(y, None) > MAX_BEDS {
+                return Err(PlanError::TooManyBeds {
                     year: y,
-                    max: MAX_PLANCHES,
+                    max: MAX_BEDS,
                 });
             }
         }
@@ -93,85 +91,91 @@ impl Plan {
         Ok(())
     }
 
-    /// Number of planches in `year`, leaving one out if asked.
-    fn planche_count_in(&self, year: i32, sauf: Option<PlancheId>) -> usize {
-        self.planches
+    /// Number of beds in `year`, leaving one out if asked.
+    fn bed_count_in(&self, year: i32, sauf: Option<BedId>) -> usize {
+        self.beds
             .iter()
             .filter(|(id, _)| Some(**id) != sauf)
-            .filter(|(_, p)| p.disposition_in(year).is_some())
+            .filter(|(_, p)| p.layout_in(year).is_some())
             .count()
     }
 
-    /// The series deleted with the planche from `year` on: those whose end `f`
+    /// The plantings deleted with the bed from `year` on: those whose end `f`
     /// is after January 1st of `year`, including those that began earlier
-    /// (S03 §5). Series ending on or before that day are kept.
-    pub fn series_deleted_by(&self, planche_id: PlancheId, year: i32) -> Vec<SerieId> {
+    /// (S03 §5). Plantings ending on or before that day are kept.
+    pub fn plantings_deleted_by(&self, bed_id: BedId, year: i32) -> Vec<PlantingId> {
         let limit = january_first(year);
-        self.series
+        self.plantings
             .iter()
-            .filter(|(_, s)| s.planche_id == planche_id && s.dates().end > limit)
+            .filter(|(_, s)| s.bed_id == bed_id && s.dates().end > limit)
             .map(|(id, _)| *id)
             .collect()
     }
 
-    /// Deletes a planche from `year` on, with its series that touch `year` or
-    /// later. Returns the deleted series. Layouts recorded after `year` are dropped.
-    pub fn delete_planche(
+    /// Deletes a bed from `year` on, with its plantings that touch `year` or
+    /// later. Returns the deleted plantings. Layouts recorded after `year` are dropped.
+    pub fn delete_bed(
         &mut self,
-        planche_id: PlancheId,
+        bed_id: BedId,
         year: i32,
         today: NaiveDate,
-    ) -> Result<Vec<SerieId>, PlanError> {
+    ) -> Result<Vec<PlantingId>, PlanError> {
         if year < today.year() {
             return Err(PlanError::PastYear { year, today });
         }
-        let planche = self
-            .planches
-            .get_mut(&planche_id)
-            .ok_or(PlanError::UnknownPlanche(planche_id))?;
-        planche.dispositions.retain(|y, _| *y < year);
-        planche.dispositions.insert(year, Disposition::Absent);
-        let deleted = self.series_deleted_by(planche_id, year);
+        let bed = self
+            .beds
+            .get_mut(&bed_id)
+            .ok_or(PlanError::UnknownBed(bed_id))?;
+        bed.layouts.retain(|y, _| *y < year);
+        bed.layouts.insert(year, Layout::Absent);
+        let deleted = self.plantings_deleted_by(bed_id, year);
         for id in &deleted {
-            self.series.remove(id);
+            self.plantings.remove(id);
         }
         Ok(deleted)
     }
 
-    /// Adds a valid serie (S03 §5).
-    pub fn add_serie(&mut self, id: SerieId, serie: Serie) -> Result<(), PlanError> {
-        if self.series.contains_key(&id) {
-            return Err(PlanError::SerieExists(id));
+    /// Adds a valid planting (S03 §5).
+    pub fn add_planting(&mut self, id: PlantingId, planting: Planting) -> Result<(), PlanError> {
+        if self.plantings.contains_key(&id) {
+            return Err(PlanError::PlantingExists(id));
         }
-        self.validate_serie(None, &serie)?;
-        self.series.insert(id, serie);
+        self.validate_planting(None, &planting)?;
+        self.plantings.insert(id, planting);
         Ok(())
     }
 
-    /// Replaces a serie by a modified one, if the result is valid.
-    pub fn replace_serie(&mut self, id: SerieId, serie: Serie) -> Result<(), PlanError> {
-        if !self.series.contains_key(&id) {
-            return Err(PlanError::UnknownSerie(id));
+    /// Replaces a planting by a modified one, if the result is valid.
+    pub fn replace_planting(
+        &mut self,
+        id: PlantingId,
+        planting: Planting,
+    ) -> Result<(), PlanError> {
+        if !self.plantings.contains_key(&id) {
+            return Err(PlanError::UnknownPlanting(id));
         }
-        self.validate_serie(Some(id), &serie)?;
-        self.series.insert(id, serie);
+        self.validate_planting(Some(id), &planting)?;
+        self.plantings.insert(id, planting);
         Ok(())
     }
 
     /// Drags a bar by `days` days: the entered date and the manual end shift.
-    /// Refused, with the plan untouched, if the moved serie is no longer valid
+    /// Refused, with the plan untouched, if the moved planting is no longer valid
     /// (S03 §2).
-    pub fn shift_serie(&mut self, id: SerieId, days: i64) -> Result<(), PlanError> {
+    pub fn shift_planting(&mut self, id: PlantingId, days: i64) -> Result<(), PlanError> {
         let shifted = self
-            .series
+            .plantings
             .get(&id)
-            .ok_or(PlanError::UnknownSerie(id))?
+            .ok_or(PlanError::UnknownPlanting(id))?
             .shifted(days);
-        self.replace_serie(id, shifted)
+        self.replace_planting(id, shifted)
     }
 
-    /// Deletes a serie.
-    pub fn delete_serie(&mut self, id: SerieId) -> Result<Serie, PlanError> {
-        self.series.remove(&id).ok_or(PlanError::UnknownSerie(id))
+    /// Deletes a planting.
+    pub fn delete_planting(&mut self, id: PlantingId) -> Result<Planting, PlanError> {
+        self.plantings
+            .remove(&id)
+            .ok_or(PlanError::UnknownPlanting(id))
     }
 }

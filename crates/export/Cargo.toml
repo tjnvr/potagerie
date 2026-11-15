@@ -1,7 +1,7 @@
 [package]
 name = "export"
 version = "0.1.0"
-description = "Potagerie exports: timeline PNG and PDF (resvg, svg2pdf), potager JSON (S05 §4, §7)"
+description = "Potagerie exports: timeline PNG and PDF (resvg, svg2pdf), garden JSON (S05 §4, §7)"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

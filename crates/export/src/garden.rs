@@ -1,4 +1,4 @@
-//! JSON export and import of the potager (F-CPT-3, S05 §6).
+//! JSON export and import of the garden (F-CPT-3, S05 §6).
 
 use std::fs;
 use std::path::Path;
@@ -34,8 +34,8 @@ struct EnvelopeIn {
 pub struct ImportSummary {
     pub updated_at: DateTime<Utc>,
     pub version: u64,
-    pub planche_count: usize,
-    pub serie_count: usize,
+    pub bed_count: usize,
+    pub planting_count: usize,
     /// True when the file was last modified before the plan of the device.
     pub older: bool,
     /// True when the device already has a plan, which the import would replace.
@@ -76,7 +76,7 @@ pub fn read_garden(path: &Path) -> Result<Plan, ExportError> {
             supported: FORMAT_VERSION,
         });
     }
-    let plan: Plan = serde_json::from_value(envelope.plan)
+    let plan: Plan = serde_json::from_value(plan::upgrade_legacy_json(envelope.plan))
         .map_err(|e| ExportError::InvalidImport(e.to_string()))?;
     // A plan the calculations cannot run on is refused; the other
     // incoherences are listed by `read_import` (S03 §13).
@@ -86,9 +86,9 @@ pub fn read_garden(path: &Path) -> Result<Plan, ExportError> {
 }
 
 /// Reads an export file and compares it with the plan of the device, without
-/// replacing anything (`lire_import`, S05 §7).
+/// replacing anything (`read_import`, S05 §7).
 ///
-/// "Older" compares the `mis_a_jour_le` timestamps: versions are counted per
+/// "Older" compares the `updated_at` timestamps: versions are counted per
 /// device and cannot be compared across devices.
 pub fn read_import(path: &Path, local: Option<&Plan>) -> Result<ImportSummary, ExportError> {
     Ok(summarise(&read_garden(path)?, local))
@@ -97,11 +97,11 @@ pub fn read_import(path: &Path, local: Option<&Plan>) -> Result<ImportSummary, E
 /// The summary of a plan received, compared with the plan of the device.
 pub fn summarise(plan: &Plan, local: Option<&Plan>) -> ImportSummary {
     ImportSummary {
-        updated_at: plan.mis_a_jour_le,
+        updated_at: plan.updated_at,
         version: plan.version,
-        planche_count: plan.planches.len(),
-        serie_count: plan.series.len(),
-        older: local.is_some_and(|l| plan.mis_a_jour_le < l.mis_a_jour_le),
+        bed_count: plan.beds.len(),
+        planting_count: plan.plantings.len(),
+        older: local.is_some_and(|l| plan.updated_at < l.updated_at),
         replaces: local.is_some(),
         incoherences: plan.incoherences(),
     }
@@ -110,18 +110,18 @@ pub fn summarise(plan: &Plan, local: Option<&Plan>) -> ImportSummary {
 #[cfg(test)]
 mod tests {
     use chrono::TimeZone;
-    use plan::{CaseCm, PlanId, Terrain};
+    use plan::{CellCm, PlanId, Plot};
 
     use super::*;
 
     fn plan_at(hour: u32) -> Plan {
         Plan::new(
             PlanId::generate(),
-            Terrain {
-                longueur_cm: 1100,
-                largeur_cm: 650,
-                case_cm: CaseCm::C50,
-                allee_cm: 50,
+            Plot {
+                length_cm: 1100,
+                width_cm: 650,
+                cell_cm: CellCm::C50,
+                aisle_cm: 50,
             },
             Utc.with_ymd_and_hms(2027, 3, 1, hour, 0, 0).unwrap(),
         )
@@ -130,7 +130,7 @@ mod tests {
     #[test]
     fn export_then_read_gives_the_same_plan() {
         let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("potager.json");
+        let path = dir.path().join("garden.json");
         let plan = plan_at(9);
         export_garden(&plan, &path).unwrap();
         assert_eq!(read_garden(&path).unwrap(), plan);
@@ -141,7 +141,7 @@ mod tests {
     #[test]
     fn summary_warns_when_the_file_is_older() {
         let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("potager.json");
+        let path = dir.path().join("garden.json");
         export_garden(&plan_at(9), &path).unwrap();
 
         let newer_local = plan_at(10);
@@ -205,15 +205,15 @@ mod tests {
         )
         .unwrap();
         assert!(refused(&path));
-        // Unknown case size, invalid allée, broken layout, broken serie.
-        write_plan_json(&path, |p| p["terrain"]["case_cm"] = 40.into());
+        // Unknown case size, invalid allée, broken layout, broken planting.
+        write_plan_json(&path, |p| p["plot"]["cell_cm"] = 40.into());
         assert!(refused(&path));
-        write_plan_json(&path, |p| p["terrain"]["allee_cm"] = 7.into());
+        write_plan_json(&path, |p| p["plot"]["aisle_cm"] = 7.into());
         assert!(refused(&path));
         write_plan_json(&path, |p| {
-            p["planches"] = serde_json::json!({"0190c5a0-0000-7000-8000-000000000001": {
-                "nom": "A",
-                "dispositions": {"2027": {"etat":"presente","type":"planche","x":0,"y":0,"longueur_cm":30,"largeur_cm":100}}
+            p["beds"] = serde_json::json!({"0190c5a0-0000-7000-8000-000000000001": {
+                "name": "A",
+                "layouts": {"2027": {"state":"present","type":"bed","x":0,"y":0,"length_cm":30,"width_cm":100}}
             }});
         });
         assert!(refused(&path));
@@ -229,16 +229,16 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("incoherent.json");
         write_plan_json(&path, |p| {
-            p["series"] = serde_json::json!({"0190c5a0-0000-7000-8000-000000000002": {
-                "culture_id": "tomate",
-                "planche_id": "0190c5a0-0000-7000-8000-000000000003",
-                "troncon_debut": 1, "troncon_fin": 2, "mode": "plants",
-                "date": "2027-05-20", "abri_jours": 0, "apres_jours": 60, "duree_jours": 40
+            p["plantings"] = serde_json::json!({"0190c5a0-0000-7000-8000-000000000002": {
+                "crop_id": "tomato",
+                "bed_id": "0190c5a0-0000-7000-8000-000000000003",
+                "segment_start": 1, "segment_end": 2, "mode": "plants",
+                "date": "2027-05-20", "indoor_days": 0, "after_days": 60, "duration_days": 40
             }});
         });
         let summary = read_import(&path, None).unwrap();
-        assert_eq!(summary.serie_count, 1);
+        assert_eq!(summary.planting_count, 1);
         assert_eq!(summary.incoherences.len(), 1);
-        assert_eq!(summary.incoherences[0].code(), "serie_orpheline");
+        assert_eq!(summary.incoherences[0].code(), "planting_orphan");
     }
 }

@@ -1,4 +1,4 @@
-//! Zones (intervals of troncons) and half-open occupations (S03 §1, §4).
+//! Zones (intervals of segments) and half-open occupations (S03 §1, §4).
 
 use std::fmt;
 use std::ops::RangeInclusive;
@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use crate::days::{january_first, plus_days};
 use crate::error::PlanError;
 
-/// An interval `[t1, t2]` of troncons, numbered from 1 (S03 §4).
+/// An interval `[t1, t2]` of segments, numbered from 1 (S03 §4).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct Zone {
     pub t1: u32,
@@ -17,7 +17,7 @@ pub struct Zone {
 }
 
 impl Zone {
-    /// A zone with `1 ≤ t1 ≤ t2`. The upper bound depends on the planche
+    /// A zone with `1 ≤ t1 ≤ t2`. The upper bound depends on the bed
     /// and is checked by the plan.
     pub fn new(t1: u32, t2: u32) -> Result<Self, PlanError> {
         if t1 >= 1 && t1 <= t2 {
@@ -27,17 +27,17 @@ impl Zone {
         }
     }
 
-    /// Number of troncons in the zone.
-    pub fn troncon_count(&self) -> u32 {
+    /// Number of segments in the zone.
+    pub fn segment_count(&self) -> u32 {
         self.t2.saturating_sub(self.t1) + 1
     }
 
-    /// True when the zones share at least one troncon (S03 §5).
+    /// True when the zones share at least one segment (S03 §5).
     pub fn overlaps(&self, other: &Zone) -> bool {
         self.t1 <= other.t2 && other.t1 <= self.t2
     }
 
-    /// The troncons the two zones have in common.
+    /// The segments the two zones have in common.
     pub fn intersection(&self, other: &Zone) -> Option<Zone> {
         let t1 = self.t1.max(other.t1);
         let t2 = self.t2.min(other.t2);
@@ -87,7 +87,7 @@ impl Occupation {
         self.start <= day && day < self.end
     }
 
-    /// The calendar years the occupation touches. A series ending on
+    /// The calendar years the occupation touches. A plantings ending on
     /// January 1st does not touch the new year.
     pub fn years(&self) -> RangeInclusive<i32> {
         let last = if self.is_empty() {
@@ -124,7 +124,7 @@ mod tests {
     fn zone_rejects_invalid_bounds() {
         assert!(Zone::new(0, 3).is_err());
         assert!(Zone::new(4, 3).is_err());
-        assert_eq!(Zone::new(2, 2).unwrap().troncon_count(), 1);
+        assert_eq!(Zone::new(2, 2).unwrap().segment_count(), 1);
     }
 
     #[test]

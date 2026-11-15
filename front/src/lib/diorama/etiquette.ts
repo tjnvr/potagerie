@@ -1,4 +1,4 @@
-// The small label planted on the zone of a serie sown under cover and not yet
+// The small label planted on the zone of a planting sown under cover and not yet
 // transplanted (S01 F-VIS-1). Not a vegetable: D01 has no drawing for it, so
 // it is a plain stake in the palette of the other symbols, centred on its foot.
 export const ETIQUETTE_SVG =

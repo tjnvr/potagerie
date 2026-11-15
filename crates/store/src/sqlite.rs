@@ -19,6 +19,9 @@ const MIGRATIONS: &[&str] = &[
         mis_a_jour_le TEXT NOT NULL,
         document TEXT NOT NULL
     ) STRICT;",
+    // 2: the column is named in English. The documents of version 1 keep the
+    // French field names until they are next saved; `load` upgrades them.
+    "ALTER TABLE plan RENAME COLUMN mis_a_jour_le TO updated_at;",
 ];
 
 /// Schema version this build of the app writes.
@@ -68,14 +71,14 @@ impl SqliteStore {
     fn write(&self, plan: &Plan) -> Result<(), StoreError> {
         let document = serde_json::to_string(plan)?;
         self.conn.execute(
-            "INSERT INTO plan (id, version, mis_a_jour_le, document) VALUES (1, ?1, ?2, ?3)
+            "INSERT INTO plan (id, version, updated_at, document) VALUES (1, ?1, ?2, ?3)
              ON CONFLICT (id) DO UPDATE SET
                 version = excluded.version,
-                mis_a_jour_le = excluded.mis_a_jour_le,
+                updated_at = excluded.updated_at,
                 document = excluded.document",
             params![
                 i64::try_from(plan.version).unwrap_or(i64::MAX),
-                plan.mis_a_jour_le.to_rfc3339(),
+                plan.updated_at.to_rfc3339(),
                 document
             ],
         )?;
@@ -108,9 +111,12 @@ impl Store for SqliteStore {
                 row.get(0)
             })
             .optional()?;
-        Ok(document
-            .map(|json| serde_json::from_str(&json))
-            .transpose()?)
+        document
+            .map(|json| {
+                let value: serde_json::Value = serde_json::from_str(&json)?;
+                Ok(serde_json::from_value(plan::upgrade_legacy_json(value))?)
+            })
+            .transpose()
     }
 
     fn save(&mut self, plan: &mut Plan, now: DateTime<Utc>) -> Result<(), StoreError> {
@@ -143,7 +149,7 @@ impl Store for SqliteStore {
 #[cfg(test)]
 mod tests {
     use chrono::{NaiveDate, TimeZone};
-    use plan::{CaseCm, Geometry, PlanId, PlancheId, Terrain, TypePlanche};
+    use plan::{BedId, CellCm, Geometry, PlanId, Plot, TypeBed};
 
     use super::*;
 
@@ -154,27 +160,27 @@ mod tests {
     fn new_plan() -> Plan {
         Plan::new(
             PlanId::generate(),
-            Terrain {
-                longueur_cm: 1100,
-                largeur_cm: 650,
-                case_cm: CaseCm::C50,
-                allee_cm: 50,
+            Plot {
+                length_cm: 1100,
+                width_cm: 650,
+                cell_cm: CellCm::C50,
+                aisle_cm: 50,
             },
             at(8),
         )
     }
 
-    fn add_planche(plan: &mut Plan) {
-        plan.add_planche(
-            PlancheId::generate(),
-            "Planche A".into(),
+    fn add_bed(plan: &mut Plan) {
+        plan.add_bed(
+            BedId::generate(),
+            "Bed A".into(),
             2027,
             Geometry {
-                planche_type: TypePlanche::Planche,
+                bed_type: TypeBed::Bed,
                 x: 50,
                 y: 50,
-                longueur_cm: 300,
-                largeur_cm: 120,
+                length_cm: 300,
+                width_cm: 120,
             },
             NaiveDate::from_ymd_opt(2027, 3, 1).unwrap(),
         )
@@ -196,10 +202,10 @@ mod tests {
         assert_eq!(plan.version, 1);
         assert_eq!(store.load().unwrap().unwrap(), plan);
 
-        add_planche(&mut plan);
+        add_bed(&mut plan);
         store.save(&mut plan, at(10)).unwrap();
         assert_eq!(plan.version, 2);
-        assert_eq!(plan.mis_a_jour_le, at(10));
+        assert_eq!(plan.updated_at, at(10));
         assert_eq!(store.load().unwrap().unwrap(), plan);
     }
 
@@ -211,7 +217,7 @@ mod tests {
         let mut stale = plan.clone();
         store.save(&mut plan, at(10)).unwrap();
 
-        add_planche(&mut stale);
+        add_bed(&mut stale);
         let err = store.save(&mut stale, at(11)).unwrap_err();
         assert!(matches!(
             err,
@@ -228,7 +234,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("potagerie.db");
         let mut plan = new_plan();
-        add_planche(&mut plan);
+        add_bed(&mut plan);
         {
             let mut store = SqliteStore::open(&path).unwrap();
             store.save(&mut plan, at(9)).unwrap();
@@ -264,5 +270,38 @@ mod tests {
         }
         let err = SqliteStore::open(&path).unwrap_err();
         assert!(matches!(err, StoreError::SchemaTooNew { .. }));
+    }
+
+    /// A database written by app version 0.2 (schema 1, French column and
+    /// field names) opens, reads and is saved again in the current format.
+    #[test]
+    fn a_database_of_version_0_2_is_upgraded() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("potagerie.db");
+        let former = r#"{
+            "id": "0192d5e0-0000-7000-8000-000000000001", "version": 4,
+            "mis_a_jour_le": "2027-06-01T10:00:00Z",
+            "terrain": {"longueur_cm": 900, "largeur_cm": 650, "case_cm": 50, "allee_cm": 50},
+            "planches": {"0192d5e0-0000-7000-8000-0000000000a1": {"nom": "A",
+              "dispositions": {"2027": {"etat": "presente", "type": "planche", "x": 50, "y": 50, "longueur_cm": 300, "largeur_cm": 120}}}},
+            "series": {}, "annotations": {}
+        }"#;
+        {
+            let conn = Connection::open(&path).unwrap();
+            conn.execute_batch(MIGRATIONS[0]).unwrap();
+            conn.pragma_update(None, "user_version", 1).unwrap();
+            conn.execute(
+                "INSERT INTO plan (id, version, mis_a_jour_le, document) VALUES (1, 4, '2027-06-01T10:00:00Z', ?1)",
+                [former],
+            )
+            .unwrap();
+        }
+        let mut store = SqliteStore::open(&path).unwrap();
+        assert_eq!(store.schema_version().unwrap(), SCHEMA_VERSION);
+        let mut plan = store.load().unwrap().unwrap();
+        assert_eq!(plan.version, 4);
+        assert_eq!(plan.beds.len(), 1);
+        store.save(&mut plan, at(10)).unwrap();
+        assert_eq!(store.load().unwrap().unwrap().version, 5);
     }
 }

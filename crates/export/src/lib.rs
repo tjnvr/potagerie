@@ -1,6 +1,6 @@
 //! Potagerie exports (S05 §4, §7).
 //!
-//! - [`export_garden`] and [`read_import`]: the whole potager in a JSON file,
+//! - [`export_garden`] and [`read_import`]: the whole garden in a JSON file,
 //!   as a backup and to move it from one device to another (F-CPT-3).
 //! - [`export_timeline`]: the SVG of the timeline, serialised by the
 //!   interface, converted to PNG (resvg) or PDF (svg2pdf) with the fonts

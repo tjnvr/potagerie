@@ -14,10 +14,10 @@ use thiserror::Error;
 
 /// Loads and saves the plan of the device.
 pub trait Store {
-    /// The stored plan, or `None` before the terrain is created.
+    /// The stored plan, or `None` before the plot is created.
     fn load(&self) -> Result<Option<Plan>, StoreError>;
 
-    /// Saves a modified plan: bumps `version` and sets `mis_a_jour_le` to
+    /// Saves a modified plan: bumps `version` and sets `updated_at` to
     /// `now`, then writes it (S05 §7).
     ///
     /// The first save inserts the plan as it is. Later saves are refused with
@@ -28,7 +28,7 @@ pub trait Store {
     /// Replaces the stored plan by `plan`, as it is (import, F-CPT-3).
     fn replace(&mut self, plan: &Plan) -> Result<(), StoreError>;
 
-    /// Deletes every data of the potager (F-CPT-4).
+    /// Deletes every data of the garden (F-CPT-4).
     fn clear(&mut self) -> Result<(), StoreError>;
 }
 

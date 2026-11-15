@@ -95,7 +95,7 @@ mod tests {
     const SVG: &str = r##"<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60">
         <rect x="0" y="0" width="200" height="60" fill="#EEF2E6"/>
         <rect x="10" y="20" width="120" height="26" rx="9" fill="#E5533D"/>
-        <text x="16" y="38" font-family="Figtree" font-weight="600" font-size="12" fill="#1F3A2E">Tomate</text>
+        <text x="16" y="38" font-family="Figtree" font-weight="600" font-size="12" fill="#1F3A2E">Tomato</text>
         <text x="140" y="38" font-family="Fredoka" font-weight="600" font-size="14" fill="#1F3A2E">2027</text>
     </svg>"##;
 
@@ -137,7 +137,7 @@ mod tests {
     #[test]
     fn pdf_is_written() {
         let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("frise.pdf");
+        let path = dir.path().join("timeline.pdf");
         export_timeline(SVG, TimelineFormat::Pdf, &path).unwrap();
         let bytes = fs::read(&path).unwrap();
         assert!(bytes.starts_with(b"%PDF-"));

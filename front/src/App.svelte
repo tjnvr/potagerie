@@ -1,80 +1,80 @@
 <script lang="ts">
   // The shell: header, the two tabs without a router (S05 §4), settings and
   // the message line.
-  import Atelier from "./lib/atelier/Atelier.svelte";
-  import Entete from "./lib/coquille/Entete.svelte";
-  import Icone from "./lib/coquille/Icone.svelte";
-  import Potager from "./lib/diorama/Potager.svelte";
-  import { appli } from "./lib/etat.svelte";
+  import Editor from "./lib/editor/Editor.svelte";
+  import Header from "./lib/shell/Header.svelte";
+  import Icon from "./lib/shell/Icon.svelte";
+  import Garden from "./lib/diorama/Garden.svelte";
+  import { app } from "./lib/state.svelte";
   import { m } from "./lib/paraglide/messages.js";
-  import Reglages from "./lib/reglages/Reglages.svelte";
-  import { catalogue } from "./lib/serie/cultures.svelte";
-  import Catalogue from "./lib/serie/Catalogue.svelte";
-  import ExportFrise from "./lib/frise/ExportFrise.svelte";
-  import AResoudre from "./lib/reglages/AResoudre.svelte";
+  import Settings from "./lib/settings/Settings.svelte";
+  import { catalogue } from "./lib/planting/crops.svelte";
+  import Catalogue from "./lib/planting/Catalogue.svelte";
+  import ExportTimeline from "./lib/timeline/ExportTimeline.svelte";
+  import ToResolve from "./lib/settings/ToResolve.svelte";
   import NoteEdition from "./lib/notes/NoteEdition.svelte";
-  import SerieEdition from "./lib/serie/SerieEdition.svelte";
+  import PlantingEdition from "./lib/planting/PlantingEdition.svelte";
 
   $effect(() => {
-    appli.charger();
+    app.charger();
     catalogue.charger();
   });
 
   $effect(() => {
-    if (!appli.message) return;
-    const delai = setTimeout(() => (appli.message = null), 6000);
-    return () => clearTimeout(delai);
+    if (!app.message) return;
+    const delay = setTimeout(() => (app.message = null), 6000);
+    return () => clearTimeout(delay);
   });
 </script>
 
-<Entete />
+<Header />
 
 <main class="page">
-  {#if appli.aResoudre.length > 0}
-    <AResoudre />
+  {#if app.toResolve.length > 0}
+    <ToResolve />
   {/if}
-  {#if !appli.vue}
-    <p class="chargement">{m.chargement()}</p>
-  {:else if appli.onglet === "plan"}
-    <Atelier vue={appli.vue} />
+  {#if !app.view}
+    <p class="loading">{m.loading()}</p>
+  {:else if app.tab === "plan"}
+    <Editor view={app.view} />
   {:else}
-    <Potager vue={appli.vue} />
+    <Garden view={app.view} />
   {/if}
 </main>
 
-{#if appli.reglagesOuverts}
-  <Reglages />
+{#if app.settingsOpen}
+  <Settings />
 {/if}
 
-{#if appli.vue && appli.serieOuverte}
-  <SerieEdition ouverture={appli.serieOuverte} />
+{#if app.view && app.plantingOpen}
+  <PlantingEdition opening={app.plantingOpen} />
 {/if}
 
-{#if appli.vue && appli.noteOuverte}
-  <NoteEdition ouverture={appli.noteOuverte} />
+{#if app.view && app.noteOpen}
+  <NoteEdition opening={app.noteOpen} />
 {/if}
 
-{#if appli.vue && appli.exportOuvert}
-  <ExportFrise />
+{#if app.view && app.exportOpen}
+  <ExportTimeline />
 {/if}
 
-{#if appli.catalogueOuvert}
+{#if app.catalogueOpen}
   <Catalogue />
 {/if}
 
-{#if appli.enregistrement === "erreur"}
-  <div class="echec" role="alert">
-    <span class="pastille"><Icone nom="alert" taille={16} />{m.etat_erreur()}</span>
-    <p>{m.erreur_enregistrement_texte()}</p>
-    <button class="bouton" onclick={() => appli.reessayer()}><Icone nom="retry" taille={16} />{m.reessayer()}</button>
+{#if app.saving === "error"}
+  <div class="failure" role="alert">
+    <span class="pastille"><Icon name="alert" size={16} />{m.state_error()}</span>
+    <p>{m.error_saving_text()}</p>
+    <button class="button" onclick={() => app.retry()}><Icon name="retry" size={16} />{m.retry()}</button>
   </div>
 {/if}
 
-{#if appli.message}
-  <div class="annonce" class:erreur={appli.message.ton === "erreur"} role="alert">
-    {#if appli.message.ton === "erreur"}<Icone nom="alert" />{/if}
-    <span>{appli.message.texte}</span>
-    <button aria-label={m.fermer()} onclick={() => (appli.message = null)}><Icone nom="close" taille={14} /></button>
+{#if app.message}
+  <div class="announce" class:error={app.message.ton === "error"} role="alert">
+    {#if app.message.ton === "error"}<Icon name="alert" />{/if}
+    <span>{app.message.text}</span>
+    <button aria-label={m.close()} onclick={() => (app.message = null)}><Icon name="close" size={14} /></button>
   </div>
 {/if}
 
@@ -84,12 +84,12 @@
     max-width: 1440px;
   }
 
-  .chargement {
+  .loading {
     color: var(--muted);
   }
 
   /* ET01, state 4: the write failed, the change stays on screen. */
-  .echec {
+  .failure {
     position: fixed;
     left: 50%;
     bottom: 80px;
@@ -109,11 +109,11 @@
     color: var(--muted);
   }
 
-  .echec p {
+  .failure p {
     margin: 0;
   }
 
-  .echec .pastille {
+  .failure .pastille {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -124,7 +124,7 @@
     font-weight: 700;
   }
 
-  .annonce {
+  .announce {
     position: fixed;
     left: 50%;
     bottom: 24px;
@@ -143,12 +143,12 @@
     box-shadow: 0 8px 20px rgba(31, 58, 46, 0.25);
   }
 
-  .annonce.erreur {
+  .announce.error {
     background: var(--crit-bg);
     color: #5a1e1a;
   }
 
-  .annonce button {
+  .announce button {
     display: grid;
     place-items: center;
     width: 28px;

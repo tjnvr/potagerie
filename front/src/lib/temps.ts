@@ -3,40 +3,40 @@
 // `YYYY-MM-DD`. Whoever moves the cursor writes it; the others follow it.
 // The timeline scrolls to keep it visible; the diorama draws that date.
 //
-//   import { curseur, allerA } from "../temps";
-//   $curseur            // read, in a component
+//   import { cursor, allerA } from "../temps";
+//   $cursor            // read, in a component
 //   allerA("2027-06-20") // move it (playback: call it on each step)
 import { get, writable } from "svelte/store";
-import { aujourdhuiLocal, decalerDate } from "./dates";
+import { todayLocal, shiftDate } from "./dates";
 
 /** The date of the cursor. At startup, today (S01 F-VIS-3). */
-export const curseur = writable<string>(aujourdhuiLocal());
+export const cursor = writable<string>(todayLocal());
 
 /** Counts the requests to bring the cursor back to the middle of the timeline
  *  (« Aujourd'hui », even when the cursor already is on that date). */
-export const recentrage = writable(0);
+export const recentering = writable(0);
 
 /** Puts the cursor on a date. */
 export function allerA(date: string): void {
-  curseur.set(date);
+  cursor.set(date);
 }
 
 /** « Aujourd'hui » (S01 F-VIS-3): the cursor on today, and the timeline
  *  scrolled back to it. */
-export function allerAujourdhui(): void {
-  curseur.set(aujourdhuiLocal());
-  recentrage.update((n) => n + 1);
+export function allerToday(): void {
+  cursor.set(todayLocal());
+  recentering.update((n) => n + 1);
 }
 
 /** The buttons ‹ and › : a week back or ahead (S01 F-VIS-3). */
-export function avancerSemaines(semaines: number): void {
-  curseur.set(decalerDate(get(curseur), 7 * semaines));
+export function avancerWeeks(weeks: number): void {
+  cursor.set(shiftDate(get(cursor), 7 * weeks));
 }
 
 /** The days the timeline shows now, after zoom and scroll: the first day
  *  (days since 1970, may be fractional) and how many. `null` before the
  *  timeline is drawn. The export (E11) starts from it (S01 F-EXP-1). */
-export const fenetreFrise = writable<{ debutJour: number; jours: number } | null>(null);
+export const viewportTimeline = writable<{ startDay: number; days: number } | null>(null);
 
-/** True while « Jouer la saison » runs (S01 F-VIS-4). */
-export const lectureEnCours = writable<boolean>(false);
+/** True while « Play la season » runs (S01 F-VIS-4). */
+export const playbackEnProgress = writable<boolean>(false);

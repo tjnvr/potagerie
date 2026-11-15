@@ -3,7 +3,7 @@
 //!
 //! - a past year is read-only (S03 §7): neither the displayed year nor the
 //!   annotation itself may lie entirely before the year of today;
-//! - the planche, if any, must exist;
+//! - the bed, if any, must exist;
 //! - a period ends on or after its start, and has an end; a note has none;
 //! - the text is 1 to [`MAX_ANNOTATION_CHARS`] characters once trimmed.
 
@@ -21,30 +21,30 @@ impl Annotation {
     /// for a note.
     pub fn last_day(&self) -> NaiveDate {
         match self.type_annotation {
-            TypeAnnotation::Note => self.date_debut,
-            TypeAnnotation::Period => self.date_fin.unwrap_or(self.date_debut),
+            TypeAnnotation::Note => self.date_start,
+            TypeAnnotation::Period => self.date_end.unwrap_or(self.date_start),
         }
     }
 
     /// The annotation as the plan stores it: trimmed text, and no end date
     /// on a note. Call [`Plan::check_annotation`] first.
     fn normalised(mut self) -> Self {
-        self.texte = self.texte.trim().to_owned();
+        self.text = self.text.trim().to_owned();
         if self.type_annotation == TypeAnnotation::Note {
-            self.date_fin = None;
+            self.date_end = None;
         }
         self
     }
 
     /// What the annotation alone can say: text and dates.
     pub fn check(&self) -> Result<(), PlanError> {
-        let chars = self.texte.trim().chars().count();
+        let chars = self.text.trim().chars().count();
         if chars == 0 || chars > MAX_ANNOTATION_CHARS {
             return Err(PlanError::InvalidAnnotationText);
         }
         if self.type_annotation == TypeAnnotation::Period {
-            match self.date_fin {
-                Some(end) if end >= self.date_debut => {}
+            match self.date_end {
+                Some(end) if end >= self.date_start => {}
                 _ => return Err(PlanError::InvalidAnnotationDates),
             }
         }
@@ -70,9 +70,9 @@ impl Plan {
         check_not_past(year, today)?;
         annotation.check()?;
         check_not_past(annotation.last_day().year(), today)?;
-        if let Some(planche_id) = annotation.planche_id {
-            if !self.planches.contains_key(&planche_id) {
-                return Err(PlanError::UnknownPlanche(planche_id));
+        if let Some(bed_id) = annotation.bed_id {
+            if !self.beds.contains_key(&bed_id) {
+                return Err(PlanError::UnknownBed(bed_id));
             }
         }
         Ok(())
@@ -92,7 +92,7 @@ impl Plan {
     }
 
     /// Replaces an annotation; hiding it from the timeline is such a change
-    /// (`masquee`). The stored annotation must not be past either.
+    /// (`hidden`). The stored annotation must not be past either.
     pub fn replace_annotation(
         &mut self,
         id: AnnotationId,
