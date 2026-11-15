@@ -9,8 +9,8 @@ use catalogue::Catalogue;
 use chrono::{DateTime, Local, NaiveDate, Utc};
 use export::TimelineFormat;
 use plan::{
-    Annotation, AnnotationId, CaseCm, Disposition, Geometry, Mode, Plan, PlanId, PlancheId, Serie,
-    SerieId, Terrain, TypeAnnotation, TypePlanche, YearView, Zone,
+    Annotation, AnnotationId, CaseCm, Disposition, Geometry, Incoherence, Mode, Plan, PlanId,
+    PlancheId, Serie, SerieId, Terrain, TypeAnnotation, TypePlanche, YearView, Zone,
 };
 use serde::{Deserialize, Serialize};
 use specta::Type;
@@ -280,6 +280,93 @@ pub struct ImportSummaryView {
     pub older: bool,
     /// The device has a plan that the import would replace.
     pub replaces: bool,
+    /// What breaks the rules of the plan: kept, to resolve (S03 §13).
+    pub incoherences: Vec<IncoherenceView>,
+}
+
+/// One incoherence of an imported plan. `code` is `trop_de_planches`,
+/// `serie_orpheline`, `chevauchement`, `zone_hors_planche`, `culture_inconnue`,
+/// `note_planche_inconnue`, `note_invalide`, or a placement code
+/// (`planche_hors_terrain`, `planche_chevauche`, `allee_trop_etroite`,
+/// `largeur_invalide`). Names come from the file, not from the interface.
+#[derive(Debug, Clone, Serialize, Type)]
+pub struct IncoherenceView {
+    pub code: String,
+    pub annee: Option<i32>,
+    pub planche_nom: Option<String>,
+    pub autre_planche_nom: Option<String>,
+    pub culture_id: Option<String>,
+    pub autre_culture_id: Option<String>,
+    /// Planches in a year, or troncons of the planche.
+    pub nombre: Option<u32>,
+}
+
+fn incoherence_view(plan: &Plan, incoherence: &Incoherence) -> IncoherenceView {
+    let nom = |id: &PlancheId| plan.planches.get(id).map(|p| p.nom.clone());
+    let culture = |id: &SerieId| plan.series.get(id).map(|s| s.culture_id.clone());
+    let mut v = IncoherenceView {
+        code: incoherence.code().to_owned(),
+        annee: None,
+        planche_nom: None,
+        autre_planche_nom: None,
+        culture_id: None,
+        autre_culture_id: None,
+        nombre: None,
+    };
+    match incoherence {
+        Incoherence::TooManyPlanches { year, count } => {
+            v.annee = Some(*year);
+            v.nombre = u32::try_from(*count).ok();
+        }
+        Incoherence::OrphanSerie {
+            serie_id,
+            planche_id,
+            year,
+        } => {
+            v.annee = *year;
+            v.planche_nom = nom(planche_id);
+            v.culture_id = culture(serie_id);
+        }
+        Incoherence::ZoneOutOfPlanche {
+            serie_id,
+            planche_id,
+            year,
+            troncons,
+            ..
+        } => {
+            v.annee = Some(*year);
+            v.nombre = Some(*troncons);
+            v.planche_nom = nom(planche_id);
+            v.culture_id = culture(serie_id);
+        }
+        Incoherence::Conflict { a, b } => {
+            v.culture_id = culture(a);
+            v.autre_culture_id = culture(b);
+            v.planche_nom = plan.series.get(a).and_then(|s| nom(&s.planche_id));
+        }
+        Incoherence::Placement(error) => match error {
+            plan::PlanError::OutsideTerrain { planche_id, year } => {
+                v.annee = Some(*year);
+                v.planche_nom = nom(planche_id);
+            }
+            plan::PlanError::PlanchesOverlap { a, b, year }
+            | plan::PlanError::AlleeTooNarrow { a, b, year, .. } => {
+                v.annee = Some(*year);
+                v.planche_nom = nom(a);
+                v.autre_planche_nom = nom(b);
+            }
+            _ => {}
+        },
+        Incoherence::UnknownCulture {
+            serie_id,
+            culture_id,
+        } => {
+            v.culture_id = Some(culture_id.clone());
+            v.planche_nom = plan.series.get(serie_id).and_then(|s| nom(&s.planche_id));
+        }
+        Incoherence::AnnotationUnknownPlanche { .. } | Incoherence::AnnotationInvalid { .. } => {}
+    }
+    v
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, Type)]
@@ -746,9 +833,7 @@ pub fn cultures_de_saison(date: NaiveDate) -> Vec<String> {
         .collect()
 }
 
-// TODO(plan): annotations have no rule in the plan crate yet (past years,
-// unknown planche, end before start). They are stored without validation.
-
+/// Adds a note or a period (S01 F-VIS-5); the plan crate checks the rules.
 #[tauri::command]
 #[specta::specta]
 pub fn creer_annotation(
@@ -756,13 +841,13 @@ pub fn creer_annotation(
     annee: i32,
     annotation: AnnotationInput,
 ) -> Result<YearView, AppError> {
-    change(&state, annee, |plan, _| {
-        plan.annotations
-            .insert(AnnotationId::generate(), annotation.into());
+    change(&state, annee, |plan, today| {
+        plan.add_annotation(AnnotationId::generate(), annee, annotation.into(), today)?;
         Ok(())
     })
 }
 
+/// Edits a note or a period; hiding it from the timeline is `masquee: true`.
 #[tauri::command]
 #[specta::specta]
 pub fn modifier_annotation(
@@ -771,12 +856,8 @@ pub fn modifier_annotation(
     id: AnnotationId,
     annotation: AnnotationInput,
 ) -> Result<YearView, AppError> {
-    change(&state, annee, |plan, _| {
-        let slot = plan
-            .annotations
-            .get_mut(&id)
-            .ok_or_else(|| AppError::new(ErrorCode::AnnotationInconnue, id.to_string()))?;
-        *slot = annotation.into();
+    change(&state, annee, |plan, today| {
+        plan.replace_annotation(id, annee, annotation.into(), today)?;
         Ok(())
     })
 }
@@ -788,10 +869,8 @@ pub fn supprimer_annotation(
     annee: i32,
     id: AnnotationId,
 ) -> Result<YearView, AppError> {
-    change(&state, annee, |plan, _| {
-        plan.annotations
-            .remove(&id)
-            .ok_or_else(|| AppError::new(ErrorCode::AnnotationInconnue, id.to_string()))?;
+    change(&state, annee, |plan, today| {
+        plan.delete_annotation(id, annee, today)?;
         Ok(())
     })
 }
@@ -826,7 +905,9 @@ pub fn exporter_potager(state: State<'_, AppState>, chemin: PathBuf) -> Result<(
 }
 
 /// Reads an import file and compares it with the plan of the device, without
-/// replacing anything.
+/// replacing anything. A file that breaks the rules of the plan is accepted,
+/// with the list of what to resolve (S03 §13); a file that cannot be read or
+/// whose structure is broken is refused (`import_invalide`).
 #[tauri::command]
 #[specta::specta]
 pub fn lire_import(
@@ -834,7 +915,8 @@ pub fn lire_import(
     chemin: PathBuf,
 ) -> Result<ImportSummaryView, AppError> {
     let local = state.store().load()?;
-    let summary = export::read_import(&chemin, local.as_ref())?;
+    let plan = export::read_garden(&chemin)?;
+    let summary = export::summarise(&plan, local.as_ref());
     Ok(ImportSummaryView {
         updated_at: summary.updated_at,
         version: u32::try_from(summary.version).unwrap_or(u32::MAX),
@@ -842,6 +924,11 @@ pub fn lire_import(
         serie_count: u32::try_from(summary.serie_count).unwrap_or(u32::MAX),
         older: summary.older,
         replaces: summary.replaces,
+        incoherences: summary
+            .incoherences
+            .iter()
+            .map(|i| incoherence_view(&plan, i))
+            .collect(),
     })
 }
 
@@ -854,9 +941,22 @@ pub fn importer_potager(
     chemin: PathBuf,
 ) -> Result<YearView, AppError> {
     let plan = export::read_garden(&chemin)?;
-    // TODO(plan): validate the imported plan (S03 §13) before replacing.
+    // `read_garden` refused a broken structure; the other incoherences are
+    // kept as they are (S03 §13) and were listed by `lire_import`.
     state.store().replace(&plan)?;
     Ok(view(Some(&plan), annee))
+}
+
+/// Empties the plan from `annee` on (F-PLN-4): every planche of that year,
+/// with its series and notes from then on. The terrain, past years and the
+/// notes of the whole potager stay.
+#[tauri::command]
+#[specta::specta]
+pub fn vider_plan(state: State<'_, AppState>, annee: i32) -> Result<YearView, AppError> {
+    change(&state, annee, |plan, today| {
+        plan.clear_from(annee, today)?;
+        Ok(())
+    })
 }
 
 /// Deletes every data of the app, after double confirmation (F-CPT-4).

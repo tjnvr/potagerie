@@ -24,5 +24,6 @@ pub const COMMANDS: &[&str] = &[
     "exporter_potager",
     "lire_import",
     "importer_potager",
+    "vider_plan",
     "effacer_donnees",
 ];

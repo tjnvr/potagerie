@@ -42,6 +42,10 @@ pub enum ErrorCode {
     /// The case size must be 25, 50 or 100 cm.
     CaseInvalide,
     AnnotationInconnue,
+    /// A note or a period has 1 to 80 characters.
+    TexteInvalide,
+    /// A period ends before it starts, or has no end.
+    AnnotationDatesInvalides,
     // From storage.
     /// The database could not be read or written.
     Enregistrement,
@@ -82,6 +86,9 @@ impl From<PlanError> for AppError {
             PlanError::TooManyPlanches { .. } => ErrorCode::TooManyPlanches,
             PlanError::UnknownPlanche(_) => ErrorCode::PlancheInconnue,
             PlanError::UnknownSerie(_) => ErrorCode::SerieInconnue,
+            PlanError::UnknownAnnotation(_) => ErrorCode::AnnotationInconnue,
+            PlanError::InvalidAnnotationText => ErrorCode::TexteInvalide,
+            PlanError::InvalidAnnotationDates => ErrorCode::AnnotationDatesInvalides,
             PlanError::PlancheExists(_) => ErrorCode::PlancheExistante,
             PlanError::SerieExists(_) => ErrorCode::SerieExistante,
             PlanError::UnknownCulture(_) => ErrorCode::CultureInconnue,

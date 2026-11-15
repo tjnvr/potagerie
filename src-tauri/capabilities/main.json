@@ -26,6 +26,7 @@
     "allow-exporter-potager",
     "allow-lire-import",
     "allow-importer-potager",
+    "allow-vider-plan",
     "allow-effacer-donnees",
     "dialog:allow-open",
     "dialog:allow-save"

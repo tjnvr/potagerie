@@ -66,7 +66,9 @@ export const commands = {
 	 *  « de saison maintenant »).
 	 */
 	culturesDeSaison: (date: string, options?: InvokeOptions) => __TAURI_INVOKE<string[]>("cultures_de_saison", { date }, options),
+	/**  Adds a note or a period (S01 F-VIS-5); the plan crate checks the rules. */
 	creerAnnotation: (annee: number, annotation: AnnotationInput, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("creer_annotation", { annee, annotation }, options)),
+	/**  Edits a note or a period; hiding it from the timeline is `masquee: true`. */
 	modifierAnnotation: (annee: number, id: AnnotationId, annotation: AnnotationInput, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("modifier_annotation", { annee, id, annotation }, options)),
 	supprimerAnnotation: (annee: number, id: AnnotationId, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("supprimer_annotation", { annee, id }, options)),
 	/**
@@ -78,11 +80,19 @@ export const commands = {
 	exporterPotager: (chemin: string, options?: InvokeOptions) => typedError<null, AppError>(__TAURI_INVOKE("exporter_potager", { chemin }, options)),
 	/**
 	 *  Reads an import file and compares it with the plan of the device, without
-	 *  replacing anything.
+	 *  replacing anything. A file that breaks the rules of the plan is accepted,
+	 *  with the list of what to resolve (S03 §13); a file that cannot be read or
+	 *  whose structure is broken is refused (`import_invalide`).
 	 */
 	lireImport: (chemin: string, options?: InvokeOptions) => typedError<ImportSummaryView, AppError>(__TAURI_INVOKE("lire_import", { chemin }, options)),
 	/**  Replaces the potager by the file, after confirmation (F-CPT-3). */
 	importerPotager: (annee: number, chemin: string, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("importer_potager", { annee, chemin }, options)),
+	/**
+	 *  Empties the plan from `annee` on (F-PLN-4): every planche of that year,
+	 *  with its series and notes from then on. The terrain, past years and the
+	 *  notes of the whole potager stay.
+	 */
+	viderPlan: (annee: number, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("vider_plan", { annee }, options)),
 	/**  Deletes every data of the app, after double confirmation (F-CPT-4). */
 	effacerDonnees: (options?: InvokeOptions) => typedError<null, AppError>(__TAURI_INVOKE("effacer_donnees", undefined, options)),
 };
@@ -198,6 +208,10 @@ export type ErrorCode = "annee_passee" | "too_many_planches" | "planche_inconnue
 "terrain_absent" | "terrain_existant" | 
 /**  The case size must be 25, 50 or 100 cm. */
 "case_invalide" | "annotation_inconnue" | 
+/**  A note or a period has 1 to 80 characters. */
+"texte_invalide" | 
+/**  A period ends before it starts, or has no end. */
+"annotation_dates_invalides" | 
 /**  The database could not be read or written. */
 "enregistrement" | 
 /**  The plan changed since it was read; reload and retry. */
@@ -225,6 +239,26 @@ export type ImportSummaryView = {
 	older: boolean,
 	/**  The device has a plan that the import would replace. */
 	replaces: boolean,
+	/**  What breaks the rules of the plan: kept, to resolve (S03 §13). */
+	incoherences: IncoherenceView[],
+};
+
+/**
+ *  One incoherence of an imported plan. `code` is `trop_de_planches`,
+ *  `serie_orpheline`, `chevauchement`, `zone_hors_planche`, `culture_inconnue`,
+ *  `note_planche_inconnue`, `note_invalide`, or a placement code
+ *  (`planche_hors_terrain`, `planche_chevauche`, `allee_trop_etroite`,
+ *  `largeur_invalide`). Names come from the file, not from the interface.
+ */
+export type IncoherenceView = {
+	code: string,
+	annee: number | null,
+	planche_nom: string | null,
+	autre_planche_nom: string | null,
+	culture_id: string | null,
+	autre_culture_id: string | null,
+	/**  Planches in a year, or troncons of the planche. */
+	nombre: number | null,
 };
 
 /**  How the serie starts (S01 F-PLA-1). */

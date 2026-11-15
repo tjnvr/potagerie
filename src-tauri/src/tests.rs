@@ -641,3 +641,261 @@ fn crops_in_season_follow_the_planting_window() {
     .unwrap();
     assert_eq!(in_january.as_array().unwrap().len(), 0);
 }
+
+fn start_with_a_planche(window: &WebviewWindow<MockRuntime>) -> String {
+    invoke(window, "creer_terrain", terrain_args()).unwrap();
+    let view = place(window, "planche", "Planche A", 50, 50).unwrap();
+    view["planches"][0]["id"].as_str().unwrap().to_string()
+}
+
+fn annotation(kind: &str, debut: &str, fin: Value, planche: Value, texte: &str) -> Value {
+    json!({
+        "annotation_type": kind, "date_debut": debut, "date_fin": fin,
+        "planche_id": planche, "texte": texte, "masquee": false
+    })
+}
+
+#[test]
+fn annotations_are_created_edited_hidden_and_deleted() {
+    let dir = tempfile::tempdir().unwrap();
+    let (_app, window) = app(&dir.path().join(DB_FILE));
+    let planche = start_with_a_planche(&window);
+    let day = format!("{}-12-01", year());
+
+    let view = invoke(
+        &window,
+        "creer_annotation",
+        json!({ "annee": year(), "annotation":
+            annotation("note", &day, Value::Null, json!(planche), "Pailler") }),
+    )
+    .unwrap();
+    let note = &view["annotations"][0];
+    assert_eq!(note["texte"], "Pailler");
+    let id = note["id"].as_str().unwrap().to_string();
+
+    let mut hidden = annotation("note", &day, Value::Null, json!(planche), "Pailler");
+    hidden["masquee"] = json!(true);
+    let view = invoke(
+        &window,
+        "modifier_annotation",
+        json!({ "annee": year(), "id": id, "annotation": hidden }),
+    )
+    .unwrap();
+    assert_eq!(view["annotations"][0]["masquee"], true);
+
+    let view = invoke(
+        &window,
+        "supprimer_annotation",
+        json!({ "annee": year(), "id": id }),
+    )
+    .unwrap();
+    assert!(view["annotations"].as_array().unwrap().is_empty());
+    let err = invoke(
+        &window,
+        "supprimer_annotation",
+        json!({ "annee": year(), "id": id }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "annotation_inconnue");
+}
+
+#[test]
+fn annotation_refusals_carry_a_code_and_change_nothing() {
+    let dir = tempfile::tempdir().unwrap();
+    let (_app, window) = app(&dir.path().join(DB_FILE));
+    let planche = start_with_a_planche(&window);
+    let before =
+        invoke(&window, "vue_annee", json!({ "annee": year() })).unwrap()["version"].clone();
+    let y = year();
+    let ghost = "0190c5a0-0000-7000-8000-000000000009";
+    let june = format!("{y}-06-01");
+    let june2 = format!("{y}-06-02");
+    let last_year = format!("{}-06-01", y - 1);
+    let long = "a".repeat(81);
+    let cases = [
+        (
+            y,
+            annotation("note", &last_year, Value::Null, Value::Null, "x"),
+            "annee_passee",
+        ),
+        (
+            y - 1,
+            annotation("note", &june, Value::Null, Value::Null, "x"),
+            "annee_passee",
+        ),
+        (
+            y,
+            annotation("note", &june, Value::Null, json!(ghost), "x"),
+            "planche_inconnue",
+        ),
+        (
+            y,
+            annotation("period", &june2, json!(june), json!(planche), "x"),
+            "annotation_dates_invalides",
+        ),
+        (
+            y,
+            annotation("period", &june2, Value::Null, Value::Null, "x"),
+            "annotation_dates_invalides",
+        ),
+        (
+            y,
+            annotation("note", &june, Value::Null, Value::Null, "  "),
+            "texte_invalide",
+        ),
+        (
+            y,
+            annotation("note", &june, Value::Null, Value::Null, &long),
+            "texte_invalide",
+        ),
+    ];
+    for (annee, a, code) in cases {
+        let err = invoke(
+            &window,
+            "creer_annotation",
+            json!({ "annee": annee, "annotation": a }),
+        )
+        .unwrap_err();
+        assert_eq!(err["code"], code);
+    }
+    let view = invoke(&window, "vue_annee", json!({ "annee": y })).unwrap();
+    assert_eq!(view["version"], before);
+    assert!(view["annotations"].as_array().unwrap().is_empty());
+}
+
+#[test]
+fn vider_plan_empties_the_year_and_the_following_ones() {
+    let dir = tempfile::tempdir().unwrap();
+    let (_app, window) = app(&dir.path().join(DB_FILE));
+    let planche = start_with_a_planche(&window);
+    place(&window, "carre", "Carré B", 600, 50).unwrap();
+    let dec1 = format!("{}-12-01", year());
+    let dec2 = format!("{}-12-02", year());
+    for (day, target, texte) in [
+        (&dec1, json!(planche), "Sur la planche"),
+        (&dec2, Value::Null, "Partout"),
+    ] {
+        invoke(
+            &window,
+            "creer_annotation",
+            json!({ "annee": year(), "annotation": annotation("note", day, Value::Null, target, texte) }),
+        )
+        .unwrap();
+    }
+
+    let err = invoke(&window, "vider_plan", json!({ "annee": year() - 1 })).unwrap_err();
+    assert_eq!(err["code"], "annee_passee");
+    let view = invoke(&window, "vider_plan", json!({ "annee": year() })).unwrap();
+    assert!(view["planches"].as_array().unwrap().is_empty());
+    assert_eq!(view["terrain"]["longueur_cm"], 1100);
+    assert_eq!(view["annotations"].as_array().unwrap().len(), 1);
+    assert_eq!(view["annotations"][0]["texte"], "Partout");
+    // Next year is empty too, and an empty plan can be emptied again.
+    let next = invoke(&window, "vue_annee", json!({ "annee": year() + 1 })).unwrap();
+    assert!(next["planches"].as_array().unwrap().is_empty());
+    invoke(&window, "vider_plan", json!({ "annee": year() })).unwrap();
+}
+
+fn plan_json(planches: Value, series: Value) -> Value {
+    json!({
+        "id": "0190c5a0-0000-7000-8000-000000000001", "version": 3,
+        "mis_a_jour_le": "2027-01-01T00:00:00Z",
+        "terrain": { "longueur_cm": 2000, "largeur_cm": 1000, "case_cm": 50, "allee_cm": 50 },
+        "planches": planches, "series": series, "annotations": {}
+    })
+}
+
+fn envelope(plan: Value) -> String {
+    json!({ "format": "potagerie", "format_version": 1, "plan": plan }).to_string()
+}
+
+#[test]
+fn invalid_imports_are_refused_and_the_plan_is_kept() {
+    let dir = tempfile::tempdir().unwrap();
+    let (_app, window) = app(&dir.path().join(DB_FILE));
+    start_with_a_planche(&window);
+    let file = dir.path().join("bad.json");
+    let y = year();
+    let short_layout = json!({"0190c5a0-0000-7000-8000-0000000000a1": {"nom":"A","dispositions":
+        {y.to_string(): {"etat":"presente","type":"planche","x":0,"y":0,"longueur_cm":30,"largeur_cm":100}}}});
+    let cases: Vec<(String, &str)> = vec![
+        ("pas du json".into(), "import_invalide"),
+        (r#"{"hello":1}"#.into(), "import_invalide"),
+        (
+            r#"{"format":"potagerie","format_version":9,"plan":{}}"#.into(),
+            "import_trop_recent",
+        ),
+        (envelope(json!({ "id": "x" })), "import_invalide"),
+        // A layout whose length is not a whole number of cases.
+        (
+            envelope(plan_json(short_layout, json!({}))),
+            "import_invalide",
+        ),
+    ];
+    for (text, code) in cases {
+        std::fs::write(&file, text).unwrap();
+        for cmd in ["lire_import", "importer_potager"] {
+            let err = invoke(&window, cmd, json!({ "annee": y, "chemin": file })).unwrap_err();
+            assert_eq!(err["code"], code, "{cmd}");
+        }
+    }
+    let missing = dir.path().join("nope.json");
+    let err = invoke(&window, "lire_import", json!({ "chemin": missing })).unwrap_err();
+    assert_eq!(err["code"], "fichier");
+    let view = invoke(&window, "vue_annee", json!({ "annee": y })).unwrap();
+    assert_eq!(view["planches"][0]["nom"], "Planche A");
+}
+
+#[test]
+fn incoherent_imports_are_accepted_with_a_list_and_nothing_is_deleted() {
+    let dir = tempfile::tempdir().unwrap();
+    let (_app, window) = app(&dir.path().join(DB_FILE));
+    let file = dir.path().join("incoherent.json");
+    let y = year();
+    let p = |n: u32| format!("0190c5a0-0000-7000-8000-0000000000{n:02}");
+    let planche = |nom: &str, x: u32| {
+        json!({"nom": nom, "dispositions": {y.to_string(): {"etat":"presente","type":"planche",
+            "x": x, "y": 0, "longueur_cm": 300, "largeur_cm": 100}}})
+    };
+    let serie = |planche_id: &str, t1: u32, t2: u32| {
+        json!({"culture_id":"tomate","planche_id":planche_id,"troncon_debut":t1,"troncon_fin":t2,
+            "mode":"plants","date":format!("{y}-05-20"),"abri_jours":0,"apres_jours":60,"duree_jours":40})
+    };
+    // 11 planches, the first two touch each other; two series overlap on
+    // planche 1; one serie points to a planche that does not exist.
+    let mut planches = serde_json::Map::new();
+    planches.insert(p(1), planche("A", 0));
+    planches.insert(p(2), planche("B", 300));
+    for n in 3..=11u32 {
+        planches.insert(p(n), planche(&format!("P{n}"), 600 + (n - 3) * 100));
+    }
+    let series =
+        json!({ p(20): serie(&p(1), 1, 3), p(21): serie(&p(1), 2, 4), p(22): serie(&p(99), 1, 1) });
+    std::fs::write(&file, envelope(plan_json(Value::Object(planches), series))).unwrap();
+
+    let summary = invoke(&window, "lire_import", json!({ "chemin": file })).unwrap();
+    let codes: Vec<&str> = summary["incoherences"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|i| i["code"].as_str().unwrap())
+        .collect();
+    for expected in [
+        "trop_de_planches",
+        "chevauchement",
+        "serie_orpheline",
+        "allee_trop_etroite",
+    ] {
+        assert!(codes.contains(&expected), "{expected} in {codes:?}");
+    }
+    let view = invoke(
+        &window,
+        "importer_potager",
+        json!({ "annee": y, "chemin": file }),
+    )
+    .unwrap();
+    assert_eq!(view["planches"].as_array().unwrap().len(), 11);
+    // The serie of the unknown planche is kept, not shown.
+    let again = invoke(&window, "lire_import", json!({ "chemin": file })).unwrap();
+    assert_eq!(again["serie_count"], 3);
+}
