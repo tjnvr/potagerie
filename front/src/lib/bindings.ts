@@ -218,7 +218,7 @@ export type DatesPreview = {
  *  Stable error codes. The codes of [`PlanError`] are kept exactly as the
  *  `plan` crate names them (`PlanError::code`).
  */
-export type ErrorCode = "year_past" | "too_many_beds" | "bed_unknown" | "planting_unknown" | "bed_existing" | "planting_existing" | "crop_unknown" | "zone_invalid" | "bed_absent" | "zone_outside_bed" | "conflict" | "pot_days_required" | "manual_end_invalid" | "occupation_empty" | "length_invalid" | "plot_invalid" | "aisle_invalid" | "width_invalid" | "name_invalid" | "bed_outside_plot" | "bed_overlaps" | "aisle_too_narrow" | 
+export type ErrorCode = "year_past" | "too_many_beds" | "bed_unknown" | "planting_unknown" | "bed_existing" | "planting_existing" | "crop_unknown" | "zone_invalid" | "bed_absent" | "zone_outside_bed" | "conflict" | "pot_days_required" | "out_of_range" | "manual_end_invalid" | "occupation_empty" | "length_invalid" | "plot_invalid" | "aisle_invalid" | "width_invalid" | "name_invalid" | "bed_outside_plot" | "bed_overlaps" | "aisle_too_narrow" | 
 /**  A command needs a plot, and none was created yet (E2). */
 "plot_absent" | "plot_existing" | 
 /**  The case size must be 25, 50 or 100 cm. */
@@ -436,7 +436,7 @@ export type SuggestionView = {
 	score_tenths: number,
 };
 
-export type TaskType = "sow-indoor" | "transplant" | "planter" | "sow-ground" | "harvest";
+export type TaskType = "sow-indoor" | "transplant" | "plant" | "sow-ground" | "harvest";
 
 export type TaskView = {
 	id: string,

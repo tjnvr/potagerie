@@ -78,7 +78,8 @@ impl Plan {
         self.plot.validate()?;
         let cell_cm = self.plot.cell_cm.cm();
         for bed in self.beds.values() {
-            for layout in bed.layouts.values() {
+            for (year, layout) in &bed.layouts {
+                crate::range::check_year("layout year", *year)?;
                 if let Layout::Present(g) = layout {
                     if g.length_cm == 0 || g.length_cm % cell_cm != 0 {
                         return Err(PlanError::InvalidLength {

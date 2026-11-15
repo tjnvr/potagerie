@@ -199,6 +199,7 @@
   "error_zone_outside_bed": "The zone goes beyond the bed.",
   "error_conflict": "Another planting already takes these segments on these dates.",
   "error_pot_days_required": "Enter at least one day in pots.",
+  "error_out_of_range": "A value is out of range: years from 1900 to 2200, durations up to 3,650 days.",
   "error_manual_end_invalid": "The end must come after the start of the harvest.",
   "error_occupation_empty": "The planting does not take any day.",
   "error_length_invalid": "The length must be a whole number of cells.",

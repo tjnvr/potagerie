@@ -199,6 +199,7 @@
   "error_zone_outside_bed": "La zone dépasse de la planche.",
   "error_conflict": "Une autre série occupe déjà ces tronçons à ces dates.",
   "error_pot_days_required": "Indique au moins un jour en godets.",
+  "error_out_of_range": "Une valeur est hors limites : années de 1900 à 2200, durées jusqu’à 3 650 jours.",
   "error_manual_end_invalid": "La fin doit venir après le début de la récolte.",
   "error_occupation_empty": "La série n’occupe aucun jour.",
   "error_length_invalid": "La longueur doit être un nombre entier de cases.",

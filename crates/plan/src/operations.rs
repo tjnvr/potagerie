@@ -52,6 +52,7 @@ impl Plan {
         if year < today.year() {
             return Err(PlanError::PastYear { year, today });
         }
+        crate::range::check_year("year", year)?;
         if !self.beds.contains_key(&bed_id) {
             return Err(PlanError::UnknownBed(bed_id));
         }

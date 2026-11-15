@@ -18,7 +18,7 @@ pub enum TaskType {
     SowUnderCover,
     #[serde(rename = "transplant")]
     Transplant,
-    #[serde(rename = "planter")]
+    #[serde(rename = "plant")]
     Plant,
     #[serde(rename = "sow-ground")]
     SowInGround,
@@ -32,7 +32,7 @@ impl TaskType {
         match self {
             Self::SowUnderCover => "sow-indoor",
             Self::Transplant => "transplant",
-            Self::Plant => "planter",
+            Self::Plant => "plant",
             Self::SowInGround => "sow-ground",
             Self::Harvest => "harvest",
         }

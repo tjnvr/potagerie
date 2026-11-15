@@ -16,6 +16,7 @@ const messages: Record<ErrorCode, () => string> = {
   zone_outside_bed: m.error_zone_outside_bed,
   conflict: m.error_conflict,
   pot_days_required: m.error_pot_days_required,
+  out_of_range: m.error_out_of_range,
   manual_end_invalid: m.error_manual_end_invalid,
   occupation_empty: m.error_occupation_empty,
   length_invalid: m.error_length_invalid,

@@ -215,6 +215,13 @@ impl Planting {
     /// Checks what the planting alone can say: zone, pots, end, occupation.
     pub fn check(&self) -> Result<(), PlanError> {
         Zone::new(self.segment_start, self.segment_end)?;
+        crate::range::check_date("planting date", self.date)?;
+        if let Some(end) = self.manual_end {
+            crate::range::check_date("manual end", end)?;
+        }
+        crate::range::check_days("days in pots", self.indoor_days)?;
+        crate::range::check_days("days to harvest", self.after_days)?;
+        crate::range::check_days("harvest length", self.duration_days)?;
         if self.mode == Mode::Indoor && self.indoor_days == 0 {
             return Err(PlanError::PotDaysRequired);
         }

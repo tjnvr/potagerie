@@ -54,6 +54,10 @@ pub enum PlanError {
         /// `[max(m), min(f)[`.
         period: Occupation,
     },
+    /// A year, a date or a duration outside the supported range (see
+    /// [`crate::MIN_YEAR`], [`crate::MAX_YEAR`], [`crate::MAX_DAYS`]).
+    #[error("{what} is out of range: {value}")]
+    OutOfRange { what: &'static str, value: String },
     /// Mode "indoor" for a crop without pots needs at least 1 day (S03 §2).
     #[error("at least 1 day in pots is required")]
     PotDaysRequired,
@@ -114,6 +118,7 @@ impl PlanError {
             Self::BedMissing { .. } => "bed_absent",
             Self::ZoneOutOfBed { .. } => "zone_outside_bed",
             Self::Conflict { .. } => "conflict",
+            Self::OutOfRange { .. } => "out_of_range",
             Self::PotDaysRequired => "pot_days_required",
             Self::InvalidManualEnd { .. } => "manual_end_invalid",
             Self::EmptyOccupation => "occupation_empty",
