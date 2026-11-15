@@ -1,11 +1,11 @@
 import { describe, expect, test } from "vitest";
 import type { PlancheView, TerrainView } from "./bindings";
-import { anneesProposees, lettreDe, nomParDefaut, positionLibre } from "./planches";
+import { anneesProposees, bilan, enM2, enMetres, lettreDe, nomParDefaut, positionLibre } from "./planches";
 
 const terrain: TerrainView = { longueur_cm: 1100, largeur_cm: 650, case_cm: 50, allee_cm: 50 };
 
 function planche(nom: string, x: number, y: number, longueur_cm = 300, largeur_cm = 120): PlancheView {
-  return { id: nom, nom, planche_type: "planche", x, y, longueur_cm, largeur_cm, troncons: longueur_cm / 50 };
+  return { id: nom, nom, planche_type: "planche", x, y, longueur_cm, largeur_cm, troncons: longueur_cm / 50, series_supprimees: [] };
 }
 
 describe("nomParDefaut", () => {
@@ -48,4 +48,17 @@ describe("positionLibre", () => {
 
 test("the season selector offers last year to two years ahead", () => {
   expect(anneesProposees(2027)).toEqual([2026, 2027, 2028, 2029]);
+});
+
+describe("bilan", () => {
+  test("adds up the planches and keeps the rest for the allées", () => {
+    const b = bilan(terrain, [planche("A", 50, 50), planche("B", 400, 50, 100, 100)]);
+    expect(b).toEqual({ total: 715_000, cultivable: 36_000 + 10_000, allees: 669_000, nombre: 2 });
+  });
+});
+
+test("metres and square metres read in French", () => {
+  expect(enMetres(120)).toBe("1,2");
+  expect(enMetres(300)).toBe("3");
+  expect(enM2(36_000)).toBe("3,6");
 });

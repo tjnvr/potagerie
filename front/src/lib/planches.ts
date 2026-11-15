@@ -94,3 +94,42 @@ export function positionLibre(
 export function anneesProposees(anneeEnCours: number): number[] {
   return [anneeEnCours - 1, anneeEnCours, anneeEnCours + 1, anneeEnCours + 2];
 }
+
+/** Centimetres as « 1,2 » metres, the way the plan reads. */
+export function enMetres(cm: number): string {
+  return (cm / 100).toLocaleString("fr-FR", { maximumFractionDigits: 2 });
+}
+
+/** Square centimetres as « 71,5 » m². */
+export function enM2(cm2: number): string {
+  return (cm2 / 10_000).toLocaleString("fr-FR", { maximumFractionDigits: 1 });
+}
+
+/** The balance of the plan (S01 F-PLN-5): surfaces and number of planches. */
+export function bilan(terrain: TerrainView, planches: readonly PlancheView[]) {
+  const total = terrain.longueur_cm * terrain.largeur_cm;
+  const cultivable = planches.reduce((somme, p) => somme + p.longueur_cm * p.largeur_cm, 0);
+  return { total, cultivable, allees: total - cultivable, nombre: planches.length };
+}
+
+/** A civil date `YYYY-MM-DD` as « 15 mars », with the year when it is not `annee`. */
+export function dateCourte(date: string, annee?: number): string {
+  const jour = new Date(`${date}T12:00:00`);
+  const options: Intl.DateTimeFormatOptions =
+    jour.getFullYear() === annee ? { day: "numeric", month: "short" } : { day: "numeric", month: "short", year: "numeric" };
+  return jour.toLocaleDateString("fr-FR", options);
+}
+
+const NOMS_DE_CULTURE: Record<string, () => string> = {
+  tomate: m.culture_tomate,
+  laitue: m.culture_laitue,
+  carotte: m.culture_carotte,
+  haricot_vert: m.culture_haricot_vert,
+  courgette: m.culture_courgette,
+  poireau: m.culture_poireau,
+};
+
+/** The French name of a crop of the catalogue (`catalogue()` sends none). */
+export function nomCulture(id: string): string {
+  return NOMS_DE_CULTURE[id]?.() ?? id;
+}
