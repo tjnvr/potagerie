@@ -43,6 +43,7 @@
   "name_by_default": "{type} {letter}",
   "timeline_empty": "No planting yet. Add a bed in the editor, then plant it.",
   "settings_aisle": "Minimum aisle width",
+  "settings_language": "Language",
   "settings_data": "Data",
   "export_garden_title": "Export the garden",
   "export_help": "A file to keep, or to move to another device.",

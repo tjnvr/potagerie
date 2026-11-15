@@ -8,9 +8,15 @@
   import Icon from "../shell/Icon.svelte";
   import { call, app, dateLong } from "../state.svelte";
   import { m } from "../paraglide/messages.js";
+  import { getLocale, setLocale } from "../paraglide/runtime.js";
   import { textIncoherence } from "./incoherences";
 
   const AISLES = [30, 50, 80];
+  /** Each language is named in itself, so that it can be found from any other. */
+  const LANGUAGES = [
+    { locale: "en", name: "English" },
+    { locale: "fr", name: "Français" },
+  ] as const;
   const FILTERS = [{ name: m.filter_garden(), extensions: ["json"] }];
 
   type Import = { path: string; summary: ImportSummaryView };
@@ -134,6 +140,20 @@
       </div>
     </section>
   {/if}
+
+  <section>
+    <h2 class="petit">{m.settings_language()}</h2>
+    <div class="choice" role="group" aria-label={m.settings_language()}>
+      {#each LANGUAGES as { locale, name } (locale)}
+        <button
+          class:active={getLocale() === locale}
+          aria-pressed={getLocale() === locale}
+          lang={locale}
+          onclick={() => setLocale(locale)}>{name}</button
+        >
+      {/each}
+    </div>
+  </section>
 
   <section>
     <h2 class="petit uppercase">{m.settings_data()}</h2>

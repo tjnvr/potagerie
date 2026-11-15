@@ -43,6 +43,7 @@
   "name_by_default": "{type} {letter}",
   "timeline_empty": "Aucune série pour l’instant. Ajoute une planche dans l’atelier, puis plante-la.",
   "settings_aisle": "Largeur d’allée minimale",
+  "settings_language": "Langue",
   "settings_data": "Données",
   "export_garden_title": "Exporter le potager",
   "export_help": "Un fichier à garder, ou pour passer à un autre appareil.",
