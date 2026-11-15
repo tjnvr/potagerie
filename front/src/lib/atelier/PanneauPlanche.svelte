@@ -159,10 +159,14 @@
         })}
       </p>
       <p>{m.panneau_serie_dates({ debut: dateCourte(serie.date, vue.year), fin: dateCourte(serie.end, vue.year) })}</p>
+      <button class="lien" onclick={() => (appli.serieOuverte = { type: "edition", serie })}>{m.serie_modifier()}</button>
     </div>
   {:else}
     <p class="aide">{m.panneau_aucune_serie()}</p>
   {/each}
+  <button class="bouton principal" onclick={() => (appli.serieOuverte = { type: "nouvelle", plancheId: planche.id })}>
+    <Icone nom="plus" taille={16} />{m.serie_planter_ici()}
+  </button>
 
   <button class="section repli" aria-expanded={historiqueOuvert} onclick={() => (historiqueOuvert = !historiqueOuvert)}>
     {m.panneau_historique()}
@@ -374,6 +378,16 @@
     border-radius: 16px;
     background: var(--bg);
     font-size: 13px;
+  }
+
+  .lien {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--green);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: underline;
   }
 
   .serie p {

@@ -8,9 +8,13 @@
   import { appli } from "./lib/etat.svelte";
   import { m } from "./lib/paraglide/messages.js";
   import Reglages from "./lib/reglages/Reglages.svelte";
+  import { catalogue } from "./lib/serie/cultures.svelte";
+  import Catalogue from "./lib/serie/Catalogue.svelte";
+  import SerieEdition from "./lib/serie/SerieEdition.svelte";
 
   $effect(() => {
     appli.charger();
+    catalogue.charger();
   });
 
   $effect(() => {
@@ -34,6 +38,14 @@
 
 {#if appli.reglagesOuverts}
   <Reglages />
+{/if}
+
+{#if appli.vue && appli.serieOuverte}
+  <SerieEdition ouverture={appli.serieOuverte} />
+{/if}
+
+{#if appli.catalogueOuvert}
+  <Catalogue />
 {/if}
 
 {#if appli.message}

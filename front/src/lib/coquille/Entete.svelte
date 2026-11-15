@@ -1,13 +1,29 @@
 <script lang="ts">
   // Header of D01 (E03, E05): logo, Potager / Plan tabs, season, today,
   // save indicator (F-CPT-2, ET01) and the settings button of D02.
+  import { get } from "svelte/store";
+  import { memeJourAnnee } from "../dates";
   import { appli, type Onglet } from "../etat.svelte";
+  import IconeFrise from "../frise/IconeFrise.svelte";
   import { m } from "../paraglide/messages.js";
   import { anneesProposees } from "../planches";
+  import { allerA, allerAujourdhui, curseur } from "../temps";
   import Icone, { type NomIcone } from "./Icone.svelte";
   import Logo from "./Logo.svelte";
 
   const anneeEnCours = new Date().getFullYear();
+  /** A season of the selector: the cursor goes to the same day of that year. */
+  function choisirAnnee(annee: number) {
+    allerA(memeJourAnnee(get(curseur), annee));
+    void appli.charger(annee);
+  }
+
+  /** « Aujourd'hui » brings back the cursor, the timeline and the season. */
+  function revenirAujourdhui() {
+    allerAujourdhui();
+    void appli.charger(anneeEnCours);
+  }
+
   const onglets: { id: Onglet; icone: NomIcone; texte: () => string }[] = [
     { id: "potager", icone: "garden", texte: m.onglet_potager },
     { id: "plan", icone: "edit", texte: m.onglet_plan },
@@ -39,12 +55,12 @@
         class="saison"
         class:actif={appli.annee === annee}
         aria-pressed={appli.annee === annee}
-        onclick={() => appli.charger(annee)}>{annee}</button
+        onclick={() => choisirAnnee(annee)}>{annee}</button
       >
     {/each}
   </div>
 
-  <button class="bouton aujourdhui" onclick={() => appli.charger(anneeEnCours)}>
+  <button class="bouton aujourdhui" onclick={revenirAujourdhui}>
     <Icone nom="cal" taille={16} />{m.aujourdhui()}
   </button>
 
@@ -62,6 +78,16 @@
       </button>
     {/if}
   </div>
+
+  <button
+    class="rond"
+    aria-label={m.catalogue_ouvrir()}
+    title={m.catalogue_ouvrir()}
+    aria-expanded={appli.catalogueOuvert}
+    onclick={() => (appli.catalogueOuvert = true)}
+  >
+    <IconeFrise nom="book" taille={17} />
+  </button>
 
   <button
     class="rond"

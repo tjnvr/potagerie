@@ -5,7 +5,9 @@
 // « position refused » path; the real rules are Rust's, tested there.
 // `?exemple` starts with a terrain, 8 planches and a few series.
 import { mockIPC } from "@tauri-apps/api/mocks";
-import type { PlancheView, SerieView, TerrainView, TypePlanche, YearView } from "./bindings";
+import type { ErrorCode, PlancheView, SerieInput, SerieView, TerrainView, TypePlanche, YearView } from "./bindings";
+import { jourDe, premierJanvier } from "./dates";
+import { NON_GERE, creerSerie, creneaux, gerer, type Contexte } from "./simulation.series";
 
 type Args = Record<string, unknown>;
 type Geometrie = { planche_type: TypePlanche; x: number; y: number; longueur_cm: number; largeur_cm: number };
@@ -17,19 +19,34 @@ const TAILLES: Record<TypePlanche, [number, number]> = {
   bac: [200, 120],
 };
 
-function refus(code: string): never {
+function refus(code: ErrorCode): never {
   throw { code, detail: "simulated" };
 }
 
 export function simulerTauri(): void {
-  const maintenant = new Date();
-  const annee0 = maintenant.getFullYear();
-  const aujourdhui = maintenant.toISOString().slice(0, 10);
+  const parametres = new URLSearchParams(location.search);
+  // `?date=2027-06-20` pretends today is that day (screenshots, D01 shows 20 juin 2027).
+  const aujourdhui = parametres.get("date") ?? new Date().toISOString().slice(0, 10);
+  const annee0 = Number(aujourdhui.slice(0, 4));
   let terrain: TerrainView | null = null;
   let planches: PlancheView[] = [];
   let series: SerieView[] = [];
   let historique: SerieView[] = [];
   let version = 0;
+
+  const contexte: Contexte = {
+    terrain: () => terrain,
+    planches: () => planches,
+    series: () => series,
+    setSeries: (nouvelles) => (series = nouvelles),
+    aujourdhui,
+    annee0,
+    valider: (annee) => {
+      version++;
+      return vue(annee);
+    },
+    refus,
+  };
 
   function planche(nom: string, type: TypePlanche, x: number, y: number, l: number, h: number): PlancheView {
     return {
@@ -45,43 +62,11 @@ export function simulerTauri(): void {
     };
   }
 
-  function serie(
-    p: PlancheView,
-    culture: string,
-    t1: number,
-    t2: number,
-    mode: SerieView["mode"],
-    date: string,
-    fin: string,
-    rangs: number,
-    pieds: number,
-  ): SerieView {
-    return {
-      id: crypto.randomUUID(),
-      culture_id: culture,
-      planche_id: p.id,
-      troncon_debut: t1,
-      troncon_fin: t2,
-      mode,
-      date,
-      sowing: date,
-      planting_out: date,
-      harvest_start: date,
-      end: fin,
-      manual_end: false,
-      pot_days: 0,
-      rangs,
-      pieds_par_rang: pieds,
-      appearance_today: { appearance: "nothing" },
-    };
-  }
-
   if (new URLSearchParams(location.search).has("exemple")) {
     terrain = { longueur_cm: 1100, largeur_cm: 650, case_cm: 50, allee_cm: 50 };
-    const racines = planche("Racines", "planche", 400, 50, 300, 120);
     planches = [
       planche("Fond du jardin", "planche", 50, 50, 300, 120),
-      racines,
+      planche("Racines", "planche", 400, 50, 300, 120),
       planche("Les tomates", "planche", 50, 220, 400, 100),
       planche("Côté cabane", "planche", 500, 220, 300, 120),
       planche("Les courgettes", "planche", 50, 370, 300, 120),
@@ -90,13 +75,47 @@ export function simulerTauri(): void {
       planche("Au bout de l’allée", "butte", 750, 50, 300, 120),
     ];
     const Y = annee0;
-    const carotte = serie(racines, "carotte", 1, 3, "pleine_terre", `${Y}-03-15`, `${Y}-08-02`, 4, 37);
-    const poireau = serie(racines, "poireau", 4, 6, "abri", `${Y}-05-01`, `${Y + 1}-02-05`, 4, 12);
-    series = [carotte, poireau];
-    historique = [serie(racines, "carotte", 1, 3, "pleine_terre", `${Y - 1}-03-15`, `${Y - 1}-08-02`, 4, 37)];
-    racines.series_supprimees = [poireau.id];
+    const [fond, tomates, cabane, courgettes, racines, poireaux, salades] = [
+      planches[0]!,
+      planches[2]!,
+      planches[3]!,
+      planches[4]!,
+      planches[1]!,
+      planches[5]!,
+      planches[6]!,
+    ];
+    const entree = (
+      p: PlancheView,
+      culture_id: string,
+      troncon_debut: number,
+      troncon_fin: number,
+      mode: SerieInput["mode"],
+      date: string,
+    ): SerieInput => ({ culture_id, planche_id: p.id, troncon_debut, troncon_fin, mode, date, abri_jours: null, fin_manuelle: null });
+    for (const e of [
+      entree(fond, "laitue", 1, 6, "abri", `${Y}-03-01`),
+      entree(tomates, "tomate", 1, 4, "abri", `${Y}-03-10`),
+      entree(tomates, "laitue", 5, 8, "abri", `${Y}-04-12`),
+      entree(courgettes, "courgette", 1, 6, "abri", `${Y}-04-27`),
+      entree(racines, "carotte", 1, 3, "pleine_terre", `${Y}-03-15`),
+      entree(racines, "laitue", 1, 3, "plants", `${Y}-08-05`),
+      entree(racines, "poireau", 4, 6, "abri", `${Y}-05-01`),
+      entree(cabane, "laitue", 1, 6, "abri", `${Y}-03-02`),
+      entree(cabane, "haricot_vert", 1, 6, "pleine_terre", `${Y}-06-20`),
+      entree(poireaux, "poireau", 1, 2, "abri", `${Y}-03-25`),
+      entree(salades, "laitue", 1, 2, "plants", `${Y}-04-20`),
+      entree(salades, "laitue", 1, 2, "abri", `${Y}-07-12`),
+      entree(fond, "tomate", 1, 6, "plants", `${Y + 1}-05-10`),
+      entree(racines, "carotte", 1, 3, "pleine_terre", `${Y + 1}-03-20`),
+    ]) {
+      series.push(creerSerie(contexte, e));
+    }
+    const passee = creerSerie(contexte, entree(racines, "carotte", 1, 3, "pleine_terre", `${Y - 1}-03-15`));
+    series = series.filter((x) => x.id !== passee.id);
+    historique = [passee];
     version = 4;
   }
+
 
   /** Overlap, allée and terrain edges: a rough copy of S03 §15, for the demo. */
   function verifier(id: string, g: Geometrie): void {
@@ -115,6 +134,10 @@ export function simulerTauri(): void {
   }
 
   function vue(annee: number): YearView {
+    const debut = premierJanvier(annee);
+    const touche = (x: SerieView) =>
+      jourDe(x.sowing && x.mode === "abri" ? x.sowing : x.planting_out) < premierJanvier(annee + 1) && jourDe(x.end) > debut;
+    const anciennes = [...historique, ...series].filter((x) => jourDe(x.end) <= debut);
     return {
       year: annee,
       today: aujourdhui,
@@ -122,11 +145,14 @@ export function simulerTauri(): void {
       terrain,
       version,
       updated_at: terrain ? new Date().toISOString() : null,
-      planches,
-      series,
-      historique: annee > annee0 ? [...historique, ...series.filter((s) => s.end < `${annee}-01-02`)] : historique,
+      planches: planches.map((p) => ({
+        ...p,
+        series_supprimees: series.filter((x) => x.planche_id === p.id && jourDe(x.end) > debut).map((x) => x.id),
+      })),
+      series: series.filter(touche),
+      historique: anciennes,
       conflicts: [],
-      creneaux: [],
+      creneaux: terrain && annee >= annee0 ? creneaux(contexte, annee) : [],
       annotations: [],
       tasks: [],
     };
@@ -210,8 +236,11 @@ export function simulerTauri(): void {
         historique = [];
         version = 0;
         return null;
-      default:
+      default: {
+        const reponse = gerer(contexte, cmd, args);
+        if (reponse !== NON_GERE) return reponse;
         throw { code: "fichier", detail: `${cmd} is not simulated` };
+      }
     }
   });
 }

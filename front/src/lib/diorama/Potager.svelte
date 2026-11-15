@@ -1,9 +1,9 @@
 <script lang="ts">
   // Potager tab (E05), provisional: what the year view holds.
   // TODO(diorama): isometric garden view and season playback (P01, S05 §4).
-  // TODO(frise): timeline of the series (src/lib/frise).
   import type { YearView } from "../bindings";
   import CreationTerrain from "../coquille/CreationTerrain.svelte";
+  import Frise from "../frise/Frise.svelte";
   import { m } from "../paraglide/messages.js";
 
   let { vue }: { vue: YearView } = $props();
@@ -21,10 +21,9 @@
       <li>{m.potager_creneaux({ nombre: vue.creneaux.length })}</li>
       <li>{m.potager_taches({ nombre: vue.tasks.length })}</li>
     </ul>
-    {#if vue.series.length === 0}
-      <p class="frise-vide">{m.frise_vide()}</p>
-    {/if}
   </section>
+
+  <Frise {vue} />
 {/if}
 
 <style>
@@ -61,14 +60,6 @@
     background: var(--white);
     font-size: 13px;
     font-weight: 600;
-  }
-
-  .frise-vide {
-    padding: 48px 20px;
-    border: 1px dashed var(--line);
-    border-radius: 16px;
-    background: var(--white);
-    text-align: center;
   }
 
   @media (max-width: 720px) {

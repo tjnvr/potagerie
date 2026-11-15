@@ -2,6 +2,7 @@ import { mount } from "svelte";
 import "./app.css";
 import App from "./App.svelte";
 import { appli } from "./lib/etat.svelte";
+import { allerA } from "./lib/temps";
 
 async function demarrer() {
   // In a plain browser (`pnpm dev` without Tauri), answer the commands with an
@@ -12,6 +13,12 @@ async function demarrer() {
     simulerTauri();
     const params = new URLSearchParams(location.search);
     if (params.has("potager")) appli.onglet = "potager";
+    // `?date=2027-06-20`: the fake pretends it is that day (see simulation.ts).
+    const date = params.get("date");
+    if (date) {
+      allerA(date);
+      appli.annee = Number(date.slice(0, 4));
+    }
     if (params.has("reglages")) appli.reglagesOuverts = true;
   }
   mount(App, { target: document.getElementById("app")! });
