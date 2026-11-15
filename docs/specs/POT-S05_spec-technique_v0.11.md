@@ -1,7 +1,7 @@
 # POT-S05 · Spec technique — v0.11
 
 > Version : 0.11 (brouillon) · Date : 2026-11-15 · Auteur : Tim
-> Références : [S01](POT-S01_spec-fonctionnelle_v1.3.md) · [S02](POT-S02_catalogue-cultures_v0.2.md) · [S03](POT-S03_regles-calculs_v0.9.md) · [P01](../prototypes/POT-P01_rendu-iso_v0.1/README.md) · [D01](../design/POT-D01_ecrans-cles_v1.1/README.md) · [D02](../design/POT-D02_ecrans-complementaires_v0.1/README.md)
+> Références : [S01](POT-S01_spec-fonctionnelle_v1.4.md) · [S02](POT-S02_catalogue-cultures_v0.3.md) · [S03](POT-S03_regles-calculs_v0.10.md) · [P01](../prototypes/POT-P01_rendu-iso_v0.1/README.md) · [D01](../design/POT-D01_ecrans-cles_v1.1/README.md) · [D02](../design/POT-D02_ecrans-complementaires_v0.1/README.md)
 > La v0.4 a introduit Rust + Tauri, la v0.5 a aligné le modèle sur S01 et S03. La v0.6 a remplacé htmx par une interface Svelte + TypeScript qui appelle des commandes Tauri. La v0.7 reportait ce que le squelette de l'appli a tranché : liaison typée, erreurs, sécurité, polices, format d'export. La v0.8 reporte ce que l'atelier a tranché : commande `series_depassant`, champs de la vue, codes d'erreur de placement (voir 11). La v0.9 reporte ce que la frise, le formulaire de série et le catalogue ont tranché : aperçu de série, décalage d'une barre, cultures de saison, SVG autonome de la frise (voir 13). La v0.10 reporte ce que les réglages ont tranché : notes et périodes, validation d'un plan importé, `vider_plan`, états d'erreur de fichier (voir 14). La v0.11 reporte ce que l'export de la frise et les annotations ont tranché : écran E11, rendu des notes, commande `incoherences_plan` (voir 15).
 
 ## 1. Principes
