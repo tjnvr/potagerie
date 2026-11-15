@@ -15,6 +15,8 @@ export const PALETTE = {
   critFond: "#FBE4E2",
   absence: "#EEF2E6",
   selection: "#FDF1E4",
+  note: "#3F78B0",
+  noteEncre: "#1B3F63",
 } as const;
 
 /** One colour per crop of the catalogue (D01). */

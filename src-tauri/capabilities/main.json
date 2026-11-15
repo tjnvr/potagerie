@@ -25,6 +25,7 @@
     "allow-exporter-frise",
     "allow-exporter-potager",
     "allow-lire-import",
+    "allow-incoherences-plan",
     "allow-importer-potager",
     "allow-vider-plan",
     "allow-effacer-donnees",

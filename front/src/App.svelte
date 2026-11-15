@@ -10,6 +10,9 @@
   import Reglages from "./lib/reglages/Reglages.svelte";
   import { catalogue } from "./lib/serie/cultures.svelte";
   import Catalogue from "./lib/serie/Catalogue.svelte";
+  import ExportFrise from "./lib/frise/ExportFrise.svelte";
+  import AResoudre from "./lib/reglages/AResoudre.svelte";
+  import NoteEdition from "./lib/notes/NoteEdition.svelte";
   import SerieEdition from "./lib/serie/SerieEdition.svelte";
 
   $effect(() => {
@@ -27,6 +30,9 @@
 <Entete />
 
 <main class="page">
+  {#if appli.aResoudre.length > 0}
+    <AResoudre />
+  {/if}
   {#if !appli.vue}
     <p class="chargement">{m.chargement()}</p>
   {:else if appli.onglet === "plan"}
@@ -42,6 +48,14 @@
 
 {#if appli.vue && appli.serieOuverte}
   <SerieEdition ouverture={appli.serieOuverte} />
+{/if}
+
+{#if appli.vue && appli.noteOuverte}
+  <NoteEdition ouverture={appli.noteOuverte} />
+{/if}
+
+{#if appli.vue && appli.exportOuvert}
+  <ExportFrise />
 {/if}
 
 {#if appli.catalogueOuvert}

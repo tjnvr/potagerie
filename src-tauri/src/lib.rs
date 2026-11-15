@@ -50,6 +50,7 @@ pub fn specta_builder<R: tauri::Runtime>() -> Builder<R> {
             commands::exporter_frise,
             commands::exporter_potager,
             commands::lire_import,
+            commands::incoherences_plan,
             commands::importer_potager,
             commands::vider_plan,
             commands::effacer_donnees,

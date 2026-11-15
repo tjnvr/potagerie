@@ -23,6 +23,7 @@
   import { dateAbregee, dateDe, jourDe } from "../dates";
   import { enMetres, nomCulture, nomDeType } from "../planches";
   import { PALETTE, couleurCulture, melange } from "./couleurs";
+  import type { AnnotationView } from "../bindings";
   import { moisVisibles, xDe, type Barre, type Echelle, type Ligne } from "./geometrie";
 
   let {
@@ -37,6 +38,9 @@
     portee = null,
     anneeAffichee,
     selectionPlancheId = null,
+    annotations = [],
+    repereAujourdhui = true,
+    phases = true,
   }: {
     lignes: Ligne[];
     echelle: Echelle;
@@ -54,6 +58,12 @@
     portee?: string | null;
     anneeAffichee?: number;
     selectionPlancheId?: string | null;
+    /** Notes and periods to draw (S01 F-VIS-5); the caller already applied « Afficher les annotations ». */
+    annotations?: AnnotationView[];
+    /** The dashed « today » marker (an option of the export). */
+    repereAujourdhui?: boolean;
+    /** Pots, growth and harvest told apart; off, the bar is one solid block (an option of the export). */
+    phases?: boolean;
   } = $props();
 
   const largeur = $derived(echelle.largeur + largeurLibelles);
@@ -112,6 +122,27 @@
     return [base, b.finManuelle ? m.frise_fin_manuelle() : "", b.enConflit ? m.frise_conflit() : ""].filter(Boolean).join(" · ");
   }
 
+  /** Notes and periods in view, with the row they belong to (`null`: the whole potager). A hidden one is only ghosted on screen. */
+  const notes = $derived(
+    annotations
+      .filter((a) => (interactif || !a.masquee) && (a.planche_id === null || lignes.some((l) => l.planche.id === a.planche_id)))
+      .map((a) => {
+        const i = a.planche_id === null ? -1 : lignes.findIndex((l) => l.planche.id === a.planche_id);
+        const debut = jourDe(a.date_debut);
+        const fin = a.annotation_type === "period" ? jourDe(a.date_fin ?? a.date_debut) + 1 : debut;
+        const haut = i < 0 ? HAUTEUR_ENTETE : positions[i]!.haut;
+        const bas = i < 0 ? hauteurTotale : haut + positions[i]!.hauteur;
+        return { a, debut, fin, haut, bas, periode: a.annotation_type === "period", fantome: a.masquee };
+      })
+      .filter((n) => x(n.fin) >= largeurLibelles && x(n.debut) <= largeur),
+  );
+  function titreDeNote(a: AnnotationView): string {
+    const quand =
+      a.annotation_type === "period" && a.date_fin
+        ? m.note_aria_periode({ debut: dateAbregee(a.date_debut, anneeAffichee), fin: dateAbregee(a.date_fin, anneeAffichee) })
+        : dateAbregee(a.date_debut, anneeAffichee);
+    return `${a.texte} · ${quand}`;
+  }
   function dureeJours(fin: number, debut: number): number {
     return fin - debut;
   }
@@ -184,6 +215,22 @@
       <text x={a.x} y="38" font-size="18" font-weight="600" font-family="Fredoka, Figtree, sans-serif" fill={PALETTE.encre}>{a.annee}</text>
     {/each}
 
+    <!-- Periods: a coloured band behind the bars (F-VIS-5). -->
+    {#each notes.filter((n) => n.periode) as n (n.a.id)}
+      <rect
+        x={x(n.debut)}
+        y={n.haut}
+        width={Math.max((n.fin - n.debut) * echelle.pxParJour, 2)}
+        height={n.bas - n.haut}
+        fill={PALETTE.note}
+        fill-opacity={n.fantome ? 0.05 : n.a.planche_id === null ? 0.1 : 0.16}
+        stroke={n.fantome ? PALETTE.note : "none"}
+        stroke-dasharray="4 3"
+      />
+      {#if n.a.planche_id === null}
+        <rect x={x(n.debut)} y={HAUTEUR_ENTETE - 5} width={Math.max((n.fin - n.debut) * echelle.pxParJour, 2)} height="4" rx="2" fill={PALETTE.note} fill-opacity={n.fantome ? 0.35 : 1} />
+      {/if}
+    {/each}
     <!-- Free slots (S03 §8): dashed, with the crops Rust suggests. -->
     {#each lignes as ligne, i (ligne.planche.id)}
       {@const p = positions[i]!}
@@ -248,7 +295,7 @@
                 y={haut}
                 width={Math.max((s.fin - s.debut) * echelle.pxParJour, 0)}
                 height="26"
-                fill={s.phase === "godets" ? `url(#frise-godets-${b.cultureId})` : s.phase === "croissance" ? `url(#frise-croissance-${b.cultureId})` : couleurCulture(b.cultureId)}
+                fill={!phases ? couleurCulture(b.cultureId) : s.phase === "godets" ? `url(#frise-godets-${b.cultureId})` : s.phase === "croissance" ? `url(#frise-croissance-${b.cultureId})` : couleurCulture(b.cultureId)}
               />
             {/each}
           </g>
@@ -275,8 +322,41 @@
       {/each}
     {/each}
 
+    <!-- Notes and the names of the periods (F-VIS-5): what is clickable on screen. -->
+    {#each notes as n (n.a.id)}
+      {@const gauche = Math.max(x(n.debut), largeurLibelles)}
+      {@const opacite = n.fantome ? 0.4 : 1}
+      <g
+        class="note"
+        data-annotation={n.a.id}
+        role="button"
+        tabindex={interactif ? 0 : undefined}
+        aria-label={titreDeNote(n.a)}
+        opacity={opacite}
+      >
+        <title>{titreDeNote(n.a)}</title>
+        {#if !n.periode}
+          <line x1={x(n.debut)} x2={x(n.debut)} y1={n.haut + 4} y2={n.bas} stroke={PALETTE.note} stroke-width="1.5" stroke-dasharray="3 3" />
+          <circle cx={x(n.debut)} cy={n.haut + (n.a.planche_id === null ? 0 : 7)} r="5" fill={PALETTE.note} stroke={PALETTE.fond} stroke-width="1.5" />
+        {/if}
+        <text
+          x={n.periode ? gauche + 6 : x(n.debut) + 9}
+          y={n.haut + 10}
+          font-size="10"
+          font-weight="600"
+          fill={PALETTE.noteEncre}
+          stroke={PALETTE.fond}
+          stroke-width="3"
+          stroke-linejoin="round"
+          paint-order="stroke"
+          pointer-events="all">{n.a.texte}</text
+        >
+      </g>
+    {/each}
     <!-- Today (background marker) and the cursor of the time (F-VIS-3). -->
-    <line x1={x(jourAujourdhui)} x2={x(jourAujourdhui)} y1="40" y2={hauteurTotale} stroke={PALETTE.accent} stroke-width="1.5" stroke-dasharray="3 3" />
+    {#if repereAujourdhui}
+      <line x1={x(jourAujourdhui)} x2={x(jourAujourdhui)} y1="40" y2={hauteurTotale} stroke={PALETTE.accent} stroke-width="1.5" stroke-dasharray="3 3" />
+    {/if}
     {#if jourCurseur !== null}
       <g data-curseur>
         <line x1={x(jourCurseur)} x2={x(jourCurseur)} y1="16" y2={hauteurTotale} stroke={PALETTE.accent} stroke-width="2" />
@@ -313,6 +393,14 @@
 
 <style>
   .barre,
+  .note {
+    cursor: pointer;
+  }
+
+  .note:focus-visible text {
+    stroke: var(--accent);
+  }
+
   .creneau {
     outline: none;
   }

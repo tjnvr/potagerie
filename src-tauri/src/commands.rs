@@ -932,6 +932,22 @@ pub fn lire_import(
     })
 }
 
+/// What breaks the rules of the plan in the data of the device, to resolve
+/// (S03 §13). Nothing is deleted or corrected: the list lasts, after an
+/// import, until each case is settled with the usual actions.
+#[tauri::command]
+#[specta::specta]
+pub fn incoherences_plan(state: State<'_, AppState>) -> Result<Vec<IncoherenceView>, AppError> {
+    let Some(plan) = state.store().load()? else {
+        return Ok(Vec::new());
+    };
+    Ok(plan
+        .incoherences()
+        .iter()
+        .map(|i| incoherence_view(&plan, i))
+        .collect())
+}
+
 /// Replaces the potager by the file, after confirmation (F-CPT-3).
 #[tauri::command]
 #[specta::specta]

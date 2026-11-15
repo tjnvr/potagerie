@@ -8,7 +8,7 @@
 // « Importer » finds in the file, `?echec` makes the first save fail
 // (« Erreur d'enregistrement »), `?export=echec` makes the export fail.
 import { mockIPC } from "@tauri-apps/api/mocks";
-import type { ErrorCode, PlancheView, SerieInput, SerieView, TerrainView, TypePlanche, YearView } from "./bindings";
+import type { AnnotationInput, AnnotationView, ErrorCode, IncoherenceView, PlancheView, SerieInput, SerieView, TerrainView, TypePlanche, YearView } from "./bindings";
 import { jourDe, premierJanvier } from "./dates";
 import { NON_GERE, creerSerie, creneaux, gerer, type Contexte } from "./simulation.series";
 
@@ -36,6 +36,10 @@ export function simulerTauri(): void {
   let series: SerieView[] = [];
   let historique: SerieView[] = [];
   let version = 0;
+  let annotations: AnnotationView[] = [];
+  let prochaineAnnotation = 1;
+  /** What `?import=incoherent` leaves to resolve, until the demo plan is emptied. */
+  let aResoudre: IncoherenceView[] = [];
 
   const contexte: Contexte = {
     terrain: () => terrain,
@@ -145,6 +149,12 @@ export function simulerTauri(): void {
     const passee = creerSerie(contexte, entree(racines, "carotte", 1, 3, "pleine_terre", `${Y - 1}-03-15`));
     series = series.filter((x) => x.id !== passee.id);
     historique = [passee];
+    annotations = [
+      { id: "n0", annotation_type: "period", date_debut: `${Y}-08-01`, date_fin: `${Y}-08-21`, planche_id: null, texte: "Vacances", masquee: false },
+      { id: "n1", annotation_type: "period", date_debut: `${Y}-05-05`, date_fin: `${Y}-06-10`, planche_id: tomates.id, texte: "Paillage", masquee: false },
+      { id: "n2", annotation_type: "note", date_debut: `${Y}-06-02`, date_fin: null, planche_id: tomates.id, texte: "Tuteurer les tomates", masquee: false },
+      { id: "n3", annotation_type: "note", date_debut: `${Y}-04-10`, date_fin: null, planche_id: null, texte: "Dernières gelées ?", masquee: false },
+    ];
     version = 4;
   }
 
@@ -185,13 +195,22 @@ export function simulerTauri(): void {
       historique: anciennes,
       conflicts: [],
       creneaux: terrain && annee >= annee0 ? creneaux(contexte, annee) : [],
-      annotations: [],
+      annotations: annotations.filter(
+        (a) => a.date_debut < `${annee + 1}-01-01` && (a.date_fin ?? a.date_debut) >= `${annee}-01-01`,
+      ),
       tasks: [],
     };
   }
 
   function modifiable(annee: number): void {
     if (annee < annee0) refus("annee_passee");
+  }
+
+  function verifierAnnotation(annee: number, a: AnnotationInput): void {
+    modifiable(annee);
+    if (a.texte.trim() === "" || a.texte.trim().length > 80) refus("texte_invalide");
+    if (a.annotation_type === "period" && (!a.date_fin || a.date_fin < a.date_debut)) refus("annotation_dates_invalides");
+    if (a.planche_id && !planches.some((p) => p.id === a.planche_id)) refus("planche_inconnue");
   }
 
   const params = new URLSearchParams(location.search);
@@ -214,11 +233,44 @@ export function simulerTauri(): void {
       nombre: null,
       ...extra,
     });
+    const lireIncoherences = () => [
+      incoherence("trop_de_planches", { annee: annee0, nombre: 11 }),
+      incoherence("serie_orpheline", { annee: annee0, planche_nom: "Racines", culture_id: "carotte" }),
+      incoherence("chevauchement", { planche_nom: "Les tomates", culture_id: "tomate", autre_culture_id: "laitue" }),
+      incoherence("allee_trop_etroite", { annee: annee0, planche_nom: "Carré poireaux", autre_planche_nom: "Carré salades" }),
+    ];
     switch (cmd) {
       case "plugin:dialog|save":
         return "/tmp/potager-export.json";
       case "plugin:dialog|open":
         return "/tmp/potager-import.json";
+      case "exporter_frise":
+        if (params.get("export") === "echec") refus("fichier");
+        return null;
+      case "creer_annotation": {
+        const a = args.annotation as AnnotationInput;
+        verifierAnnotation(annee, a);
+        annotations.push({ ...a, date_fin: a.annotation_type === "period" ? a.date_fin : null, id: `n${100 + prochaineAnnotation++}` });
+        version++;
+        return vue(annee);
+      }
+      case "modifier_annotation": {
+        const a = args.annotation as AnnotationInput;
+        if (!annotations.some((x) => x.id === args.id)) refus("annotation_inconnue");
+        verifierAnnotation(annee, a);
+        annotations = annotations.map((x) =>
+          x.id === args.id ? { ...a, date_fin: a.annotation_type === "period" ? a.date_fin : null, id: x.id } : x,
+        );
+        version++;
+        return vue(annee);
+      }
+      case "supprimer_annotation":
+        modifiable(annee);
+        annotations = annotations.filter((x) => x.id !== args.id);
+        version++;
+        return vue(annee);
+      case "incoherences_plan":
+        return aResoudre;
       case "exporter_potager":
         if (params.get("export") === "echec") refus("fichier");
         return null;
@@ -234,24 +286,18 @@ export function simulerTauri(): void {
           serie_count: 12,
           older: cas === "ancien",
           replaces: terrain !== null,
-          incoherences:
-            cas === "incoherent"
-              ? [
-                  incoherence("trop_de_planches", { annee: annee0, nombre: 11 }),
-                  incoherence("serie_orpheline", { annee: annee0, planche_nom: "Racines", culture_id: "carotte" }),
-                  incoherence("chevauchement", { planche_nom: "Les tomates", culture_id: "tomate", autre_culture_id: "laitue" }),
-                  incoherence("allee_trop_etroite", { annee: annee0, planche_nom: "Carré poireaux", autre_planche_nom: "Carré salades" }),
-                ]
-              : [],
+          incoherences: cas === "incoherent" ? lireIncoherences() : [],
         };
       }
       case "importer_potager":
+        aResoudre = params.get("import") === "incoherent" ? lireIncoherences() : [];
         version++;
         return vue(annee);
       case "vider_plan":
         modifiable(annee);
         planches = [];
         series = [];
+        aResoudre = [];
         version++;
         return vue(annee);
       case "vue_annee":

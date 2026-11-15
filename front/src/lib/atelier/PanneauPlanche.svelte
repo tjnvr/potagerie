@@ -6,7 +6,9 @@
   import Confirmation from "../coquille/Confirmation.svelte";
   import Icone from "../coquille/Icone.svelte";
   import { appli } from "../etat.svelte";
+  import { get } from "svelte/store";
   import { m } from "../paraglide/messages.js";
+  import { curseur } from "../temps";
   import { dateCourte, enM2, enMetres, nomCulture, nomDeType } from "../planches";
   import type { Geo, Reponse } from "./glisser";
 
@@ -40,6 +42,9 @@
 
   const series = $derived(vue.series.filter((s) => s.planche_id === planche.id));
   const historique = $derived(vue.historique.filter((s) => s.planche_id === planche.id));
+  const notes = $derived(
+    vue.annotations.filter((a) => a.planche_id === planche.id).sort((a, b) => a.date_debut.localeCompare(b.date_debut)),
+  );
   const supprimees = $derived(vue.series.filter((s) => planche.series_supprimees.includes(s.id)));
   const geo = $derived<Geo>({
     x: planche.x,
@@ -166,6 +171,25 @@
   {/each}
   <button class="bouton principal" onclick={() => (appli.serieOuverte = { type: "nouvelle", plancheId: planche.id })}>
     <Icone nom="plus" taille={16} />{m.serie_planter_ici()}
+  </button>
+
+  <h3 class="section">{m.note_planche_titre()}</h3>
+  {#each notes as note (note.id)}
+    <div class="serie">
+      <strong>{note.texte}</strong>
+      {#if note.masquee}<span class="badge">{m.note_planche_masquee()}</span>{/if}
+      <p>
+        {note.date_fin
+          ? m.note_aria_periode({ debut: dateCourte(note.date_debut, vue.year), fin: dateCourte(note.date_fin, vue.year) })
+          : dateCourte(note.date_debut, vue.year)}
+      </p>
+      <button class="lien" onclick={() => (appli.noteOuverte = { type: "edition", annotation: note })}>{m.serie_modifier()}</button>
+    </div>
+  {:else}
+    <p class="aide">{m.note_planche_aucune()}</p>
+  {/each}
+  <button class="bouton" onclick={() => (appli.noteOuverte = { type: "nouvelle", date: get(curseur), plancheId: planche.id })}>
+    <Icone nom="plus" taille={16} />{m.note_planche_ajouter()}
   </button>
 
   <button class="section repli" aria-expanded={historiqueOuvert} onclick={() => (historiqueOuvert = !historiqueOuvert)}>

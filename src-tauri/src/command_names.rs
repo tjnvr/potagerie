@@ -23,6 +23,7 @@ pub const COMMANDS: &[&str] = &[
     "exporter_frise",
     "exporter_potager",
     "lire_import",
+    "incoherences_plan",
     "importer_potager",
     "vider_plan",
     "effacer_donnees",

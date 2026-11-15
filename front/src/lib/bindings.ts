@@ -85,6 +85,12 @@ export const commands = {
 	 *  whose structure is broken is refused (`import_invalide`).
 	 */
 	lireImport: (chemin: string, options?: InvokeOptions) => typedError<ImportSummaryView, AppError>(__TAURI_INVOKE("lire_import", { chemin }, options)),
+	/**
+	 *  What breaks the rules of the plan in the data of the device, to resolve
+	 *  (S03 §13). Nothing is deleted or corrected: the list lasts, after an
+	 *  import, until each case is settled with the usual actions.
+	 */
+	incoherencesPlan: (options?: InvokeOptions) => typedError<IncoherenceView[], AppError>(__TAURI_INVOKE("incoherences_plan", undefined, options)),
 	/**  Replaces the potager by the file, after confirmation (F-CPT-3). */
 	importerPotager: (annee: number, chemin: string, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("importer_potager", { annee, chemin }, options)),
 	/**

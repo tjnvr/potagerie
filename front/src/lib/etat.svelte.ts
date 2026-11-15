@@ -1,4 +1,4 @@
-import { commands, type AppError, type CreneauView, type SerieView, type SuggestionView, type YearView } from "./bindings";
+import { commands, type AnnotationView, type AppError, type CreneauView, type IncoherenceView, type PlancheId, type SerieView, type SuggestionView, type YearView } from "./bindings";
 import { estEchecEnregistrement, traduireErreur } from "./erreurs";
 
 
@@ -18,6 +18,12 @@ export type OuvertureSerie =
   | { type: "nouvelle"; plancheId: string; creneau?: CreneauView; suggestion?: SuggestionView }
   | { type: "edition"; serie: SerieView };
 
+/** What opens the note form: a new note on a day (on a planche or the whole
+ *  potager), or an existing annotation. */
+export type OuvertureNote =
+  | { type: "nouvelle"; date: string; plancheId: PlancheId | null }
+  | { type: "edition"; annotation: AnnotationView };
+
 /**
  * State of the interface (S05 §4). It keeps the last year view returned by
  * Rust and replaces it entirely after each command. No business rule here.
@@ -28,6 +34,12 @@ class Appli {
   reglagesOuverts = $state(false);
   /** E07, new serie and edition. */
   serieOuverte = $state<OuvertureSerie | null>(null);
+  /** The note form (F-VIS-5). */
+  noteOuverte = $state<OuvertureNote | null>(null);
+  /** E11, export of the timeline. */
+  exportOuvert = $state(false);
+  /** What is left to resolve in the plan (S03 §13), computed by Rust. */
+  aResoudre = $state<IncoherenceView[]>([]);
   /** E09, catalogue. */
   catalogueOuvert = $state(false);
   /** The last refusal of a command that changes the plan (not a save failure),
@@ -44,9 +56,16 @@ class Appli {
     const resultat = await appeler(() => commands.vueAnnee(annee));
     if (resultat.status === "ok") {
       this.vue = resultat.data;
+      await this.actualiserAResoudre();
     } else {
       this.signaler(resultat.error);
     }
+  }
+
+  /** Asks Rust what is left to resolve; the list stays until each case is settled. */
+  async actualiserAResoudre(): Promise<void> {
+    const resultat = await appeler(() => commands.incoherencesPlan());
+    if (resultat.status === "ok") this.aResoudre = resultat.data;
   }
 
   /** Runs a command that changes the plan and shows the view it returns. */
@@ -56,6 +75,7 @@ class Appli {
     this.dernierRefus = null;
     if (resultat.status === "ok") {
       this.vue = resultat.data;
+      void this.actualiserAResoudre();
       this.enregistrement = "enregistre";
       this.#reessai = null;
       return true;

@@ -159,6 +159,45 @@ fn export_import_and_clear() {
     assert_eq!(view["planches"][0]["nom"], "Bac A");
 }
 
+/// What the export screen sends (E11): the timeline drawn with the chosen
+/// options (here a period and a note, annotations on) becomes a valid PNG and PDF.
+#[test]
+fn exported_timeline_is_a_valid_png_and_pdf() {
+    let dir = tempfile::tempdir().unwrap();
+    let (_app, window) = app(&dir.path().join(DB_FILE));
+    let svg = r##"<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="120" viewBox="0 0 400 120">
+<rect width="400" height="120" fill="#fff"/>
+<rect x="150" y="20" width="120" height="80" fill="#f1c40f" fill-opacity="0.3"/>
+<text x="154" y="34" font-family="sans-serif" font-size="11" fill="#333">Paillage</text>
+<line x1="60" y1="20" x2="60" y2="100" stroke="#c0392b"/>
+<text x="64" y="60" font-family="sans-serif" font-size="11" fill="#333">Semer les radis</text>
+</svg>"##;
+    for (format, name, magic) in [
+        ("png", "frise.png", &b"\x89PNG\r\n\x1a\n"[..]),
+        ("pdf", "frise.pdf", &b"%PDF-"[..]),
+    ] {
+        let file = dir.path().join(name);
+        invoke(
+            &window,
+            "exporter_frise",
+            json!({ "svg": svg, "format": format, "chemin": file }),
+        )
+        .unwrap();
+        let bytes = std::fs::read(&file).unwrap();
+        assert!(bytes.starts_with(magic), "{name} has the wrong signature");
+        assert!(bytes.len() > 500, "{name} looks empty");
+    }
+    // A path that cannot be written is an error for the file states (ET01).
+    let err = invoke(
+        &window,
+        "exporter_frise",
+        json!({ "svg": svg, "format": "png", "chemin": dir.path().join("absent/frise.png") }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "fichier");
+}
+
 fn terrain_args() -> Value {
     json!({
         "annee": year(),

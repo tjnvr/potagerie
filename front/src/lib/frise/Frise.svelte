@@ -40,6 +40,7 @@
   let largeurTotale = $state(0);
   let echelle = $state<Echelle | null>(null);
   let replie = $state(false);
+  let afficherAnnotations = $state(true);
   let corps: HTMLElement | undefined = $state();
 
   const etroit = $derived(largeurTotale > 0 && largeurTotale < 560);
@@ -88,6 +89,8 @@
   const annees = $derived(echelle ? anneesVisibles(echelle) : [vue.year]);
   const vues = $derived(annees.map((a) => (a === vue.year ? vue : chargees[a])).filter((v): v is YearView => !!v));
   const lignes = $derived(construireLignes(vues, vue.year));
+  /** Notes and periods of the loaded years, each once (a period can touch two years). */
+  const annotations = $derived([...new Map(vues.flatMap((v) => v.annotations).map((a) => [a.id, a])).values()]);
   const aucuneSerie = $derived(vues.every((v) => v.series.length === 0));
 
   // A change of the plan (a command returned a new view): the other years are stale.
@@ -213,9 +216,11 @@
     }
     if (courant.type === "pan") {
       geste = null;
-      if (courant.bouge || !enZone(e) && !courant.cible?.closest("[data-creneau]")) return;
+      if (courant.bouge || !enZone(e) && !courant.cible?.closest("[data-creneau],[data-annotation]")) return;
       const creneau = courant.cible?.closest("[data-creneau]");
-      if (creneau) ouvrirCreneau(creneau.getAttribute("data-creneau")!);
+      const note = courant.cible?.closest("[data-annotation]");
+      if (note) ouvrirAnnotation(note.getAttribute("data-annotation")!);
+      else if (creneau) ouvrirCreneau(creneau.getAttribute("data-creneau")!);
       else allerA(dateDe(jourSousLePointeur(echelle, e.clientX, gauche())));
       return;
     }
@@ -291,6 +296,15 @@
     if (serie) appli.serieOuverte = { type: "edition", serie };
   }
 
+  function ouvrirAnnotation(id: string) {
+    const annotation = annotations.find((a) => a.id === id);
+    if (annotation) appli.noteOuverte = { type: "edition", annotation };
+  }
+
+  function annoter() {
+    appli.noteOuverte = { type: "nouvelle", date: get(curseur), plancheId: null };
+  }
+
   function ouvrirCreneau(cle: string) {
     const ligne = lignes.find((l) => l.creneaux.some((c) => c.cle === cle));
     const creneau = ligne?.creneaux.find((c) => c.cle === cle);
@@ -307,8 +321,10 @@
     const cible = e.target as Element;
     const barre = cible.closest("[data-barre]");
     const creneau = cible.closest("[data-creneau]");
+    const note = cible.closest("[data-annotation]");
     if (e.key === "Enter" || e.key === " ") {
-      if (barre) ouvrirBarre(barre.getAttribute("data-barre")!);
+      if (note) ouvrirAnnotation(note.getAttribute("data-annotation")!);
+      else if (barre) ouvrirBarre(barre.getAttribute("data-barre")!);
       else if (creneau) ouvrirCreneau(creneau.getAttribute("data-creneau")!);
       else return;
       e.preventDefault();
@@ -403,7 +419,9 @@
       <button class="rond" aria-label={m.frise_suivant()} title={m.frise_suivant()} onclick={() => aller(1)}><IconeFrise nom="apres" /></button>
       <button class="rond" aria-label={m.frise_zoom_avant()} title={m.frise_zoom_avant()} onclick={() => zoom(0.7)}><IconeFrise nom="plus" /></button>
       <button class="rond" aria-label={m.frise_zoom_arriere()} title={m.frise_zoom_arriere()} onclick={() => zoom(1 / 0.7)}><IconeFrise nom="moins" /></button>
-      <!-- TODO(export): « Annoter » and « Exporter la frise » (session D). -->
+      <button class="bouton" onclick={annoter}><IconeFrise nom="plus" taille={16} />{m.note_annoter()}</button>
+      <button class="bouton" onclick={() => (appli.exportOuvert = true)}>{m.export_ouvrir()}</button>
+      <label class="case"><input type="checkbox" bind:checked={afficherAnnotations} />{m.note_afficher()}</label>
       <button class="bouton" aria-expanded={!replie} onclick={() => (replie = !replie)}>
         {replie ? m.frise_deplier() : m.frise_replier()}
         <IconeFrise nom={replie ? "bas" : "haut"} taille={16} />
@@ -440,6 +458,7 @@
             {refus}
             {portee}
             anneeAffichee={vue.year}
+            annotations={afficherAnnotations ? annotations : []}
           />
         {/if}
       </div>
@@ -513,7 +532,18 @@
     background: var(--white);
   }
 
+  .case {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
   .bouton {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     min-height: 40px;
     padding: 0 14px;
     font-size: 14px;
