@@ -2,7 +2,7 @@
 
 > Version : 1.1 (brouillon) · Date : 2026-11-14 · Auteur : Tim
 > Canvas : https://claude.ai/artifact/DoHRUtcujzwPF6bfjdQtSN
-> Specs : [S01 v1.3](../../specs/POT-S01_spec-fonctionnelle_v1.3.md) · [S02 v0.2](../../specs/POT-S02_catalogue-cultures_v0.2.md) · [S03 v0.6](../../specs/POT-S03_regles-calculs_v0.6.md)
+> Specs : [S01 v1.3](../../specs/POT-S01_spec-fonctionnelle_v1.3.md) · [S02 v0.2](../../specs/POT-S02_catalogue-cultures_v0.2.md) · [S03 v0.7](../../specs/POT-S03_regles-calculs_v0.7.md)
 
 ## Changements depuis la v1.0
 
