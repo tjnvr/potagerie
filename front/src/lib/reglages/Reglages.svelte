@@ -1,23 +1,32 @@
 <script lang="ts">
   // Settings (E10, D02): allée width, export and import of the potager
-  // (F-CPT-3), erase the data (F-CPT-4). A side panel on a computer, the full
-  // screen on a phone.
+  // (F-CPT-3), empty the plan (F-PLN-4), erase the data (F-CPT-4). A side
+  // panel on a computer, the full screen on a phone.
   import { open, save } from "@tauri-apps/plugin-dialog";
-  import { commands, type ImportSummaryView } from "../bindings";
+  import { commands, type AppError, type ImportSummaryView } from "../bindings";
   import Confirmation from "../coquille/Confirmation.svelte";
   import Icone from "../coquille/Icone.svelte";
   import { appeler, appli, dateLongue } from "../etat.svelte";
   import { m } from "../paraglide/messages.js";
+  import { texteIncoherence } from "./incoherences";
 
   const ALLEES = [30, 50, 80];
   const FILTRES = [{ name: m.filtre_potager(), extensions: ["json"] }];
 
   type Import = { chemin: string; resume: ImportSummaryView };
   let importEnAttente = $state<Import | null>(null);
+  /** Why the last import or export failed (ET01): shown in the panel, not as a toast. */
+  let echecFichier = $state<AppError["code"] | null>(null);
   let effacement = $state<0 | 1 | 2>(0);
+  let vidage = $state(false);
   let panneau: HTMLElement;
 
   const terrain = $derived(appli.vue?.terrain ?? null);
+  const nbPlanches = $derived(appli.vue?.planches.length ?? 0);
+  const nbSeries = $derived(appli.vue?.planches.reduce((n, p) => n + p.series_supprimees.length, 0) ?? 0);
+  const lectureSeule = $derived(appli.vue?.read_only ?? false);
+  const aVider = $derived(nbPlanches > 0 && !lectureSeule);
+  const incoherences = $derived(importEnAttente?.resume.incoherences ?? []);
 
   $effect(() => {
     panneau.focus();
@@ -25,6 +34,15 @@
 
   function fermer() {
     appli.reglagesOuverts = false;
+  }
+
+  /** Import and file errors stay in the panel; anything else is a message. */
+  function echouer(erreur: AppError) {
+    if (["fichier", "import_invalide", "import_trop_recent"].includes(erreur.code)) {
+      echecFichier = erreur.code;
+    } else {
+      appli.signaler(erreur);
+    }
   }
 
   async function changerAllee(allee_cm: number) {
@@ -36,20 +54,23 @@
   }
 
   async function exporter() {
+    echecFichier = null;
     const aujourdhui = new Date().toISOString().slice(0, 10);
     const chemin = await save({ defaultPath: m.exporter_nom_fichier({ date: aujourdhui }), filters: FILTRES });
     if (!chemin) return;
     const resultat = await appeler(() => commands.exporterPotager(chemin));
     if (resultat.status === "ok") appli.informer(m.exporter_ok());
-    else appli.signaler(resultat.error);
+    else echouer(resultat.error);
   }
 
   async function choisirImport() {
+    echecFichier = null;
+    importEnAttente = null;
     const chemin = await open({ multiple: false, directory: false, filters: FILTRES });
     if (typeof chemin !== "string") return;
     const resultat = await appeler(() => commands.lireImport(chemin));
     if (resultat.status === "ok") importEnAttente = { chemin, resume: resultat.data };
-    else appli.signaler(resultat.error);
+    else echouer(resultat.error);
   }
 
   async function importer() {
@@ -58,6 +79,13 @@
     if (!chemin) return;
     if (await appli.modifier((annee) => commands.importerPotager(annee, chemin))) {
       appli.informer(m.importer_ok());
+    }
+  }
+
+  async function vider() {
+    vidage = false;
+    if (await appli.modifier((annee) => commands.viderPlan(annee))) {
+      appli.informer(m.reglages_vider_ok());
     }
   }
 
@@ -85,8 +113,11 @@
   onkeydown={(e) => e.key === "Escape" && fermer()}
 >
   <div class="tete">
+    <button class="rond retour" aria-label={m.reglages_retour()} onclick={fermer}>
+      <Icone nom="back" taille={16} />
+    </button>
     <h1 id="reglages-titre">{m.reglages()}</h1>
-    <button class="rond" aria-label={m.fermer()} onclick={fermer}><Icone nom="close" taille={16} /></button>
+    <button class="rond fermer" aria-label={m.fermer()} onclick={fermer}><Icone nom="close" taille={16} /></button>
   </div>
 
   {#if terrain}
@@ -118,6 +149,67 @@
       <div class="libelle"><strong>{m.importer_titre()}</strong><span>{m.importer_aide()}</span></div>
       <button class="bouton" onclick={choisirImport}><Icone nom="upload" taille={16} />{m.importer()}</button>
     </div>
+    {#if importEnAttente}
+      {@const resume = importEnAttente.resume}
+      {@const prudent = resume.older || incoherences.length > 0}
+      <div class="carte" class:alerte={prudent} role="group" aria-labelledby="import-titre">
+        <div class="carte-titre">
+          {#if prudent}<Icone nom="alert" taille={18} />{/if}
+          <strong id="import-titre">{resume.older ? m.import_plus_ancien() : m.import_confirmer()}</strong>
+        </div>
+        <p>
+          {m.import_resume({
+            date: dateLongue(resume.updated_at),
+            planches: resume.planche_count,
+            series: resume.serie_count,
+          })}
+          {#if resume.older && appli.vue?.updated_at}
+            {m.import_local_plus_recent({ date: dateLongue(appli.vue.updated_at) })}
+          {/if}
+        </p>
+        {#if incoherences.length > 0}
+          <p><strong>{m.import_incoherences_titre({ nombre: incoherences.length })}</strong></p>
+          <ul class="incoherences">
+            {#each incoherences as incoherence, i (i)}
+              <li>{texteIncoherence(incoherence)}</li>
+            {/each}
+          </ul>
+          <p>{m.import_incoherences_texte()}</p>
+        {/if}
+        {#if resume.replaces}<p>{m.import_remplace_tout()}</p>{/if}
+        <div class="actions">
+          <button class="bouton" onclick={() => (importEnAttente = null)}>{m.annuler()}</button>
+          <button class="bouton" class:alerte={prudent} class:principal={!prudent} onclick={importer}>
+            {prudent ? m.remplacer_quand_meme() : m.remplacer()}
+          </button>
+        </div>
+      </div>
+    {/if}
+    {#if echecFichier}
+      <div class="carte erreur" role="alert">
+        <div class="carte-titre">
+          <Icone nom="alert" taille={18} />
+          <strong>
+            {echecFichier === "fichier" ? m.etat_fichier_titre() : m.etat_import_impossible()}
+          </strong>
+        </div>
+        <p>
+          {echecFichier === "fichier"
+            ? m.etat_fichier_texte()
+            : echecFichier === "import_trop_recent"
+              ? m.etat_import_trop_recent()
+              : m.etat_import_illisible()}
+        </p>
+      </div>
+    {/if}
+    <div class="ligne">
+      <span class="pastille"><Icone nom="retry" taille={16} /></span>
+      <div class="libelle">
+        <strong>{m.reglages_vider_titre()}</strong>
+        <span>{lectureSeule ? m.reglages_vider_passee() : nbPlanches === 0 ? m.reglages_vider_rien() : m.reglages_vider_aide()}</span>
+      </div>
+      <button class="bouton" disabled={!aVider} onclick={() => (vidage = true)}>{m.reglages_vider()}</button>
+    </div>
     <div class="ligne">
       <span class="pastille danger"><Icone nom="trash" taille={16} /></span>
       <div class="libelle">
@@ -130,26 +222,15 @@
   </section>
 </div>
 
-{#if importEnAttente}
-  {@const resume = importEnAttente.resume}
+{#if vidage}
   <Confirmation
-    titre={resume.older ? m.import_plus_ancien() : m.import_confirmer()}
-    confirmer={resume.older ? m.remplacer_quand_meme() : m.remplacer()}
-    ton={resume.older ? "alerte" : "principal"}
-    onconfirmer={importer}
-    onannuler={() => (importEnAttente = null)}
+    titre={m.reglages_vider_confirmer({ annee: appli.annee })}
+    confirmer={m.reglages_vider_bouton()}
+    onconfirmer={vider}
+    onannuler={() => (vidage = false)}
   >
-    <p>
-      {m.import_resume({
-        date: dateLongue(resume.updated_at),
-        planches: resume.planche_count,
-        series: resume.serie_count,
-      })}
-    </p>
-    {#if resume.older && appli.vue?.updated_at}
-      <p>{m.import_local_plus_recent({ date: dateLongue(appli.vue.updated_at) })}</p>
-    {/if}
-    {#if resume.replaces}<p>{m.import_remplace_tout()}</p>{/if}
+    <p>{m.reglages_vider_texte({ planches: nbPlanches, series: nbSeries, annee: appli.annee })}</p>
+    <p>{m.reglages_vider_gardees()}</p>
   </Confirmation>
 {/if}
 
@@ -203,6 +284,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
   }
 
   .tete h1 {
@@ -291,7 +373,7 @@
   }
 
   .libelle {
-    flex: 1 1 180px;
+    flex: 1 1 120px;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -301,6 +383,74 @@
   .libelle span {
     font-size: 13px;
     color: var(--muted);
+  }
+
+  .bouton:disabled {
+    opacity: 0.45;
+  }
+
+  .carte {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 8px 0 14px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: var(--bg);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .carte p {
+    margin: 0;
+  }
+
+  .carte.alerte {
+    border-color: #f0c99d;
+    background: var(--warn-bg);
+  }
+
+  .carte.erreur {
+    border-color: #f1bdb9;
+    background: var(--crit-bg);
+  }
+
+  .carte-titre {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .carte.alerte .carte-titre {
+    color: var(--warn);
+  }
+
+  .carte.erreur .carte-titre {
+    color: var(--crit);
+  }
+
+  .carte-titre strong {
+    color: var(--ink);
+    font-size: 15px;
+  }
+
+  .incoherences {
+    margin: 0;
+    padding-left: 20px;
+    max-height: 180px;
+    overflow-y: auto;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .retour {
+    display: none;
   }
 
   .rouge {
@@ -314,6 +464,35 @@
       width: 100%;
       border-radius: 0;
       padding: 18px 16px;
+      background: var(--bg);
+      box-shadow: none;
+    }
+
+    .tete {
+      justify-content: flex-start;
+    }
+
+    .ligne {
+      flex-wrap: nowrap;
+      gap: 10px;
+    }
+
+    .ligne .bouton {
+      padding: 0 14px;
+    }
+
+    .pastille {
+      background: transparent;
+      width: 24px;
+    }
+
+    .retour {
+      display: grid;
+      background: var(--white);
+    }
+
+    .fermer {
+      display: none;
     }
   }
 </style>

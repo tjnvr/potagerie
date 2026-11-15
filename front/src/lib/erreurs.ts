@@ -30,6 +30,8 @@ const messages: Record<ErrorCode, () => string> = {
   terrain_existant: m.erreur_terrain_existant,
   case_invalide: m.erreur_case_invalide,
   annotation_inconnue: m.erreur_annotation_inconnue,
+  texte_invalide: m.note_erreur_texte,
+  annotation_dates_invalides: m.note_erreur_dates,
   enregistrement: m.erreur_enregistrement,
   version_perimee: m.erreur_version_perimee,
   base_trop_recente: m.erreur_base_trop_recente,

@@ -48,6 +48,14 @@
   <Catalogue />
 {/if}
 
+{#if appli.enregistrement === "erreur"}
+  <div class="echec" role="alert">
+    <span class="pastille"><Icone nom="alert" taille={16} />{m.etat_erreur()}</span>
+    <p>{m.erreur_enregistrement_texte()}</p>
+    <button class="bouton" onclick={() => appli.reessayer()}><Icone nom="retry" taille={16} />{m.reessayer()}</button>
+  </div>
+{/if}
+
 {#if appli.message}
   <div class="annonce" class:erreur={appli.message.ton === "erreur"} role="alert">
     {#if appli.message.ton === "erreur"}<Icone nom="alert" />{/if}
@@ -64,6 +72,42 @@
 
   .chargement {
     color: var(--muted);
+  }
+
+  /* ET01, state 4: the write failed, the change stays on screen. */
+  .echec {
+    position: fixed;
+    left: 50%;
+    bottom: 80px;
+    transform: translateX(-50%);
+    z-index: 19;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: min(440px, calc(100vw - 32px));
+    padding: 18px;
+    border-radius: 20px;
+    background: var(--card);
+    box-shadow: 0 8px 20px rgba(31, 58, 46, 0.2);
+    text-align: center;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .echec p {
+    margin: 0;
+  }
+
+  .echec .pastille {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: var(--pill);
+    background: var(--crit-bg);
+    color: var(--crit);
+    font-weight: 700;
   }
 
   .annonce {

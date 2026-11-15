@@ -3,7 +3,10 @@
 // truth: it only lets the interface be laid out, looked at and driven. It
 // copies just enough of the placement refusals of S03 §15 to see the
 // « position refused » path; the real rules are Rust's, tested there.
-// `?exemple` starts with a terrain, 8 planches and a few series.
+// `?exemple` starts with a terrain, 8 planches and a few series. For the
+// settings: `?import=ancien|incoherent|illisible|recent|fichier` picks what
+// « Importer » finds in the file, `?echec` makes the first save fail
+// (« Erreur d'enregistrement »), `?export=echec` makes the export fail.
 import { mockIPC } from "@tauri-apps/api/mocks";
 import type { ErrorCode, PlancheView, SerieInput, SerieView, TerrainView, TypePlanche, YearView } from "./bindings";
 import { jourDe, premierJanvier } from "./dates";
@@ -191,10 +194,66 @@ export function simulerTauri(): void {
     if (annee < annee0) refus("annee_passee");
   }
 
+  const params = new URLSearchParams(location.search);
+  let echecEnregistrement = params.has("echec");
+
   mockIPC((cmd, payload) => {
     const args = (payload ?? {}) as Args;
     const annee = Number(args.annee ?? annee0);
+    if (echecEnregistrement && cmd !== "vue_annee" && cmd !== "catalogue" && !cmd.startsWith("plugin:")) {
+      echecEnregistrement = false;
+      refus("enregistrement");
+    }
+    const incoherence = (code: string, extra: Partial<Record<string, unknown>>) => ({
+      code,
+      annee: null,
+      planche_nom: null,
+      autre_planche_nom: null,
+      culture_id: null,
+      autre_culture_id: null,
+      nombre: null,
+      ...extra,
+    });
     switch (cmd) {
+      case "plugin:dialog|save":
+        return "/tmp/potager-export.json";
+      case "plugin:dialog|open":
+        return "/tmp/potager-import.json";
+      case "exporter_potager":
+        if (params.get("export") === "echec") refus("fichier");
+        return null;
+      case "lire_import": {
+        const cas = params.get("import") ?? "ancien";
+        if (cas === "illisible") refus("import_invalide");
+        if (cas === "recent") refus("import_trop_recent");
+        if (cas === "fichier") refus("fichier");
+        return {
+          updated_at: cas === "ancien" ? "2026-11-02T10:00:00Z" : new Date().toISOString(),
+          version: 7,
+          planche_count: cas === "incoherent" ? 11 : 8,
+          serie_count: 12,
+          older: cas === "ancien",
+          replaces: terrain !== null,
+          incoherences:
+            cas === "incoherent"
+              ? [
+                  incoherence("trop_de_planches", { annee: annee0, nombre: 11 }),
+                  incoherence("serie_orpheline", { annee: annee0, planche_nom: "Racines", culture_id: "carotte" }),
+                  incoherence("chevauchement", { planche_nom: "Les tomates", culture_id: "tomate", autre_culture_id: "laitue" }),
+                  incoherence("allee_trop_etroite", { annee: annee0, planche_nom: "Carré poireaux", autre_planche_nom: "Carré salades" }),
+                ]
+              : [],
+        };
+      }
+      case "importer_potager":
+        version++;
+        return vue(annee);
+      case "vider_plan":
+        modifiable(annee);
+        planches = [];
+        series = [];
+        version++;
+        return vue(annee);
       case "vue_annee":
         return vue(annee);
       case "creer_terrain": {
