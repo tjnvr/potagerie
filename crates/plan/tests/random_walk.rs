@@ -143,3 +143,74 @@ fn random_operations_keep_the_plan_sound() {
         }
     }
 }
+
+/// What the app offers must be accepted: every suggestion of every free slot can
+/// be created as it is, in any state of the plan.
+#[test]
+fn every_suggestion_of_every_slot_can_be_created() {
+    let today = d(2027, 3, 10);
+    let crops: Vec<_> = Catalogue::v1().iter().collect();
+    let mut offered = 0;
+    for seed in 100..112u64 {
+        let mut r = Rng(seed);
+        let mut plan = Plan::new(PlanId::from_uuid(Uuid::from_u128(1)), plot(), now());
+        let mut n: u128 = 10;
+        for step in 0..60 {
+            n += 1;
+            let beds: Vec<_> = plan.beds.keys().copied().collect();
+            if r.below(3) == 0 || beds.is_empty() {
+                let before = plan.clone();
+                let ok = plan
+                    .add_bed(
+                        bed_id(n),
+                        format!("B{n}"),
+                        2027,
+                        random_geometry(&mut r),
+                        today,
+                    )
+                    .and_then(|_| plan.check_placements(2027));
+                if ok.is_err() {
+                    plan = before;
+                }
+            } else {
+                let id = beds[r.below(beds.len() as u64) as usize];
+                let crop = crops[r.below(crops.len() as u64) as usize];
+                let t1 = r.below(4) as u32 + 1;
+                let zone = plan::Zone::new(t1, t1 + r.below(2) as u32);
+                let date = d(2027, 1 + r.below(12) as u32, 1 + r.below(28) as u32);
+                if let Ok(z) = zone
+                    && let Ok(p) = Planting::new(crop, id, z, Mode::OpenGround, date, None, None)
+                {
+                    let _ = plan.add_planting(PlantingId::from_uuid(Uuid::from_u128(n)), p);
+                }
+            }
+            for year in [2027, 2028] {
+                for slot in plan.slots(year) {
+                    for s in plan.suggestions_with_ties(&slot, Catalogue::v1(), today) {
+                        offered += 1;
+                        let crop = Catalogue::v1().crop(&s.crop_id).unwrap();
+                        let planting = s.into_planting(crop, &slot).unwrap_or_else(|e| {
+                            panic!(
+                                "seed {seed} step {step}: {} cannot be built: {e:?}",
+                                s.crop_id
+                            )
+                        });
+                        let mut probe = plan.clone();
+                        probe
+                            .add_planting(PlantingId::from_uuid(Uuid::from_u128(999_999)), planting)
+                            .unwrap_or_else(|e| {
+                                panic!(
+                                    "seed {seed} step {step} year {year}: offered {} in {:?}..{:?} on {:?} but refused: {e:?}",
+                                    s.crop_id, slot.start, slot.end, slot.zone
+                                )
+                            });
+                    }
+                }
+            }
+        }
+    }
+    assert!(
+        offered > 100,
+        "the test must really offer something: {offered}"
+    );
+}
