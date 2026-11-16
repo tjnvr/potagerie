@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Potagerie — plan your vegetable garden</title>
+  <meta name="description" content="Potagerie is a free desktop app to plan a vegetable garden: draw your plot, plant 67 crops and watch the season grow. No account, your data stays on your computer.">
+  <meta property="og:title" content="Potagerie — plan your vegetable garden">
+  <meta property="og:description" content="Draw your plot, plan your plantings on a timeline and watch the season grow. Free, offline, no account.">
+  <meta property="og:image" content="img/garden.png">
+  <link rel="icon" href="img/icon.svg" type="image/svg+xml">
+  <style>
+    @font-face { font-family: "Figtree"; font-weight: 400; font-display: swap; src: url("fonts/Figtree-Regular.ttf") format("truetype"); }
+    @font-face { font-family: "Figtree"; font-weight: 500 700; font-display: swap; src: url("fonts/Figtree-SemiBold.ttf") format("truetype"); }
+    @font-face { font-family: "Fredoka"; font-weight: 600; font-display: swap; src: url("fonts/Fredoka-SemiBold.ttf") format("truetype"); }
+    :root {
+      --bg: #eef2e6; --card: #e3ecdd; --ink: #1f3a2e; --muted: #56705f; --line: #d3decd;
+      --accent: #f2a65a; --accent-ink: #5a3410; --green: #2f7d5b; --white: #fff;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 400 17px/1.55 "Figtree", system-ui, sans-serif; }
+    h1, h2, h3 { font-family: "Fredoka", "Figtree", sans-serif; font-weight: 600; line-height: 1.15; margin: 0; }
+    a { color: var(--green); }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+    header.top { display: flex; align-items: center; justify-content: space-between; padding: 20px 0; }
+    .brand { display: flex; align-items: center; gap: 10px; font: 600 24px "Fredoka", sans-serif; color: var(--ink); text-decoration: none; }
+    .brand img { width: 36px; height: 36px; }
+    nav a { margin-left: 20px; color: var(--ink); text-decoration: none; font-weight: 500; }
+    nav a:hover { text-decoration: underline; }
+    .hero { text-align: center; padding: 48px 0 24px; }
+    .hero h1 { font-size: clamp(36px, 6vw, 60px); max-width: 15ch; margin: 0 auto 18px; }
+    .hero p.lead { font-size: 20px; color: var(--muted); max-width: 40ch; margin: 0 auto 28px; }
+    .button { display: inline-block; padding: 13px 24px; border-radius: 999px; font-weight: 600; text-decoration: none; background: var(--ink); color: var(--white); }
+    .button.alt { background: var(--white); color: var(--ink); border: 1px solid var(--line); }
+    .button:hover { filter: brightness(1.15); }
+    .actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .note { font-size: 14px; color: var(--muted); margin-top: 14px; }
+    .shot { margin: 40px auto 0; border-radius: 22px; overflow: hidden; box-shadow: 0 18px 50px rgba(31, 58, 46, .18); background: var(--white); }
+    .shot img { display: block; width: 100%; height: auto; }
+    section { padding: 64px 0 0; }
+    section h2 { font-size: clamp(28px, 4vw, 38px); margin-bottom: 12px; }
+    section > .wrap > p.sub { color: var(--muted); max-width: 56ch; margin: 0 0 32px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .card { background: var(--card); border-radius: 20px; padding: 22px; }
+    .card h3 { font-size: 20px; margin-bottom: 8px; }
+    .card p { margin: 0; color: var(--muted); font-size: 16px; }
+    .split { display: grid; grid-template-columns: 1fr 1.3fr; gap: 32px; align-items: center; }
+    .split .shot { margin: 0; }
+    .steps { counter-reset: s; list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+    .steps li { counter-increment: s; padding-left: 52px; position: relative; }
+    .steps li::before { content: counter(s); position: absolute; left: 0; top: -2px; width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font: 600 18px/36px "Fredoka", sans-serif; text-align: center; }
+    .steps b { display: block; }
+    .download { background: var(--ink); color: var(--white); border-radius: 28px; padding: 40px; text-align: center; }
+    .download h2 { color: var(--white); }
+    .download p { color: #cfe0d4; max-width: 52ch; margin: 0 auto 22px; }
+    .download .button { background: var(--accent); color: var(--accent-ink); }
+    .download .button.alt { background: transparent; color: var(--white); border-color: #56705f; }
+    details { background: var(--card); border-radius: 16px; padding: 16px 20px; margin-bottom: 10px; }
+    summary { cursor: pointer; font-weight: 600; }
+    details p { margin: 10px 0 0; color: var(--muted); }
+    code { background: var(--white); padding: 2px 6px; border-radius: 6px; font-size: .9em; }
+    footer { padding: 48px 0 40px; color: var(--muted); font-size: 14px; text-align: center; }
+    @media (max-width: 760px) { .split { grid-template-columns: 1fr; } nav a:not(.keep) { display: none; } .download { padding: 28px 20px; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <a class="brand" href="#"><img src="img/icon.svg" alt="">Potagerie</a>
+      <nav>
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#faq">FAQ</a>
+        <a class="keep" href="https://github.com/tjnvr/potagerie">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <div class="hero">
+        <h1>Plan your vegetable garden, then watch it grow</h1>
+        <p class="lead">Draw your plot, plan what goes where and when, and play the season on a little isometric garden.</p>
+        <div class="actions">
+          <a class="button" href="https://github.com/tjnvr/potagerie/releases">Download for macOS and Windows</a>
+          <a class="button alt" href="#how">See how it works</a>
+        </div>
+        <p class="note">Free and open source. No account, no server: your garden stays on your computer.</p>
+        <div class="shot"><img src="img/garden.png" alt="The Potagerie garden view: an isometric garden with beds, a time cursor and a season slider" width="1440" height="900"></div>
+      </div>
+
+      <section id="features">
+        <div class="wrap" style="padding:0">
+          <h2>Everything a small garden needs</h2>
+          <p class="sub">Potagerie does the date arithmetic, so you can think about what to grow.</p>
+          <div class="grid">
+            <div class="card"><h3>Draw your plot</h3><p>Set the size of your land, then drag beds, squares, mounds and planters onto it. Aisles are kept for you.</p></div>
+            <div class="card"><h3>A timeline of plantings</h3><p>One row per bed. Sowing, growing and harvest are drawn as phases, and conflicts are refused before they happen.</p></div>
+            <div class="card"><h3>67 crops</h3><p>From tomatoes to garlic, with sowing windows, spacing and harvest times. Filter by family or by what is in season now.</p></div>
+            <div class="card"><h3>Suggestions for free slots</h3><p>A bed empty for a few weeks? Potagerie proposes the crops that fit the gap and fill it best.</p></div>
+            <div class="card"><h3>Play the season</h3><p>Move the cursor or press play: the plants of the garden grow, stage by stage, over the year.</p></div>
+            <div class="card"><h3>Export and keep</h3><p>Export the timeline as a PNG or a PDF to print, and the whole garden as a file to back up or move.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="how">
+        <div class="wrap">
+          <div class="split">
+            <div>
+              <h2>From an empty plot to a plan</h2>
+              <ol class="steps">
+                <li><b>Create your plot</b>Its size, the size of a cell and the minimum aisle width.</li>
+                <li><b>Place your beds</b>Click free grass or drag a bed from the tray. Resize with the handles.</li>
+                <li><b>Plant them</b>Pick a crop, a sowing date and the segments of the bed. The harvest dates follow.</li>
+                <li><b>Follow the year</b>Annotate frosts and chores, and come back to <i>Today</i> any time.</li>
+              </ol>
+            </div>
+            <div class="shot"><img src="img/plan.png" alt="The plan editor: beds on a plot grid, with a summary of the areas" width="1440" height="900"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="download">
+        <div class="wrap">
+          <div class="download">
+            <h2>Get Potagerie</h2>
+            <p>Installers for macOS (universal) and Windows are attached to each release. The app is not signed yet, so the system asks you to confirm the first launch.</p>
+            <div class="actions">
+              <a class="button" href="https://github.com/tjnvr/potagerie/releases">Open the releases</a>
+              <a class="button alt" href="https://github.com/tjnvr/potagerie#install">Install instructions</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="faq">
+        <div class="wrap">
+          <h2>Questions</h2>
+          <p class="sub"></p>
+          <details><summary>Where is my data?</summary><p>In a single file on your computer (<code>potagerie.db</code>). Nothing is sent anywhere. You can export your garden to a file and import it on another machine.</p></details>
+          <details><summary>macOS says the developer cannot be identified</summary><p>The app is not signed with an Apple Developer account. Open System Settings, Privacy &amp; Security, and choose “Open Anyway”. If macOS says the app is damaged, run <code>xattr -dr com.apple.quarantine /Applications/Potagerie.app</code>.</p></details>
+          <details><summary>Which languages?</summary><p>English and French. The app follows the language of your system, and you can change it in the settings.</p></details>
+          <details><summary>Is there a phone version?</summary><p>Not yet: the first release targets the desktop. The interface is already built to adapt to a phone.</p></details>
+          <details><summary>Which crops are included?</summary><p>67 annual vegetables and herbs. Perennials such as asparagus or rhubarb are not in this version.</p></details>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <img src="img/icon.png" alt="" width="40" height="40"><br>
+      Potagerie · <a href="https://github.com/tjnvr/potagerie">Source on GitHub</a> · <a href="https://github.com/tjnvr/potagerie/releases">Releases</a>
+    </footer>
+  </div>
+</body>
+</html>
