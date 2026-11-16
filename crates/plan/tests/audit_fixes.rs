@@ -58,3 +58,20 @@ fn the_to_resolve_list_shows_every_placement_problem() {
         .count();
     assert!(placements >= 2, "{placements} placement problems for {a:?}");
 }
+
+#[test]
+fn deleting_or_clearing_in_an_absurd_year_is_refused() {
+    let (mut plan, bed) = plan_with_bed();
+    let far = 2_000_000_000;
+    let today = d(2027, 1, 1);
+    assert!(matches!(
+        plan.delete_bed(bed, far, today),
+        Err(PlanError::OutOfRange { .. })
+    ));
+    assert!(matches!(
+        plan.clear_from(far, today),
+        Err(PlanError::OutOfRange { .. })
+    ));
+    // Nothing was stored, so the later operations still run at once.
+    plan.incoherences();
+}

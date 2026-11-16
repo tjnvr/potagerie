@@ -2,6 +2,7 @@
 // the messages, order and filters are the interface's.
 import type { CropView } from "../bindings";
 import { m } from "../paraglide/messages.js";
+import { localeTag } from "../locale";
 
 /** « Solanaceae » → `solanaceae`: the key of the family in the messages. */
 export function keyFamily(family: string): string {
@@ -21,5 +22,5 @@ export function nameFamily(family: string): string {
 
 /** The crops sorted by their translated name. */
 export function tri(crops: readonly CropView[], name: (id: string) => string): CropView[] {
-  return [...crops].sort((a, b) => name(a.id).localeCompare(name(b.id), "fr"));
+  return [...crops].sort((a, b) => name(a.id).localeCompare(name(b.id), localeTag()));
 }

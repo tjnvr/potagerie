@@ -25,6 +25,7 @@ impl Plan {
         if year < today.year() {
             return Err(PlanError::PastYear { year, today });
         }
+        crate::range::check_year("year", year)?;
         let mut cleared = Cleared::default();
         // Every bed that exists in `year`, and those created in a later year only.
         let mut ids: Vec<BedId> = self.beds_in(year).iter().map(|(id, _, _)| *id).collect();

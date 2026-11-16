@@ -90,17 +90,20 @@
    *  kept whole when possible, and what still does not fit ends with « … ». */
   function nameLines(name: string, columnWidth: number, fontSize: number): string[] {
     const max = Math.max(6, Math.floor(columnWidth / (fontSize * 0.52)));
-    const cut = (t: string) => (t.length > max ? t.slice(0, max - 1) + "…" : t);
-    if (name.length <= max) return [name];
-    const words = name.split(" ");
+    // Counted in characters, not in UTF-16 units, so an emoji is never cut in two.
+    const count = (t: string) => Array.from(t).length;
+    const cut = (t: string) => (count(t) > max ? Array.from(t).slice(0, max - 1).join("") + "…" : t);
+    const clean = name.trim().replace(/\s+/g, " ");
+    if (count(clean) <= max) return [clean];
+    const words = clean.split(" ");
     let first = "";
     let i = 0;
     for (; i < words.length; i++) {
       const next = first ? first + " " + words[i] : (words[i] ?? "");
-      if (next.length > max) break;
+      if (count(next) > max) break;
       first = next;
     }
-    if (!first) return [cut(name)];
+    if (!first) return [cut(clean)];
     return [first, cut(words.slice(i).join(" "))].filter(Boolean);
   }
   /** Month names that fit their column: three letters, one letter when narrow, none when tiny. */

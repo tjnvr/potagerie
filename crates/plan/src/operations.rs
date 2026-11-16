@@ -124,6 +124,7 @@ impl Plan {
         if year < today.year() {
             return Err(PlanError::PastYear { year, today });
         }
+        crate::range::check_year("year", year)?;
         let bed = self
             .beds
             .get_mut(&bed_id)

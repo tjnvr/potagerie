@@ -68,9 +68,9 @@
 
   <div class="state" role="status">
     {#if app.saving === "saved"}
-      <span class="ok"><Icon name="check" size={16} /></span>{m.state_saved()}
+      <span class="ok"><Icon name="check" size={16} /></span><span class="label">{m.state_saved()}</span>
     {:else if app.saving === "saving"}
-      {m.state_saving()}
+      <span class="label">{m.state_saving()}</span>
     {:else}
       <span class="error"><Icon name="alert" size={16} />{m.state_error()}</span>
       <button class="button retry" onclick={() => app.retry()}>
@@ -207,6 +207,19 @@
     border-radius: 50%;
     border: 1px solid var(--line);
     background: var(--white);
+  }
+
+  /* Very narrow: only the mark of the save state stays visible, so that the
+     header does not wrap onto a third row (the text stays for screen readers). */
+  @media (max-width: 480px) {
+    .state .label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
   }
 
   /* Phone (lot 2 layout, prepared now): two rows, smaller marks. */

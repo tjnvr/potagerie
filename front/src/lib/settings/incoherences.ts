@@ -1,4 +1,4 @@
-// French text of the incoherences listed for an imported plan (S03 §13).
+// message text of the incoherences listed for an imported plan (S03 §13).
 // Rust decides what is incoherent; this only writes it.
 import type { IncoherenceView } from "../bindings";
 import { m } from "../paraglide/messages.js";

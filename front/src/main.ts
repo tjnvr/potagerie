@@ -4,6 +4,10 @@ import App from "./App.svelte";
 import { app } from "./lib/state.svelte";
 import { setDensityBench } from "./lib/diorama/plants";
 import { goTo } from "./lib/time";
+import { getLocale } from "./lib/paraglide/runtime.js";
+
+// The language of the document is the one of the interface (screen readers).
+document.documentElement.lang = getLocale();
 
 async function start() {
   // In a plain browser (`pnpm dev` without Tauri), answer the commands with an

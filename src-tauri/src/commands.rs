@@ -27,8 +27,9 @@ use crate::error::{AppError, ErrorCode};
 pub struct AppState {
     store: Mutex<Option<SqliteStore>>,
     db_path: PathBuf,
-    /// Why the database could not be opened, when it could not.
-    open_error: Mutex<Option<String>>,
+    /// Why the database could not be opened, when it could not: the error code
+    /// (`base_unreadable`, or `base_too_recent` for a newer app version) and the detail.
+    open_error: Mutex<Option<(ErrorCode, String)>>,
 }
 
 /// The open store, locked.
@@ -51,7 +52,14 @@ impl AppState {
     pub fn open(db_path: &Path) -> Self {
         let (store, error) = match SqliteStore::open(db_path) {
             Ok(store) => (Some(store), None),
-            Err(error) => (None, Some(error.to_string())),
+            Err(error) => {
+                let code = if matches!(error, store::StoreError::SchemaTooNew { .. }) {
+                    ErrorCode::BaseTooRecent
+                } else {
+                    ErrorCode::BaseUnreadable
+                };
+                (None, Some((code, error.to_string())))
+            }
         };
         Self {
             store: Mutex::new(store),
@@ -65,21 +73,30 @@ impl AppState {
         // every write is one SQL statement.
         let guard = self.store.lock().unwrap_or_else(|e| e.into_inner());
         if guard.is_none() {
-            let why = self
-                .open_error
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .clone()
-                .unwrap_or_default();
-            return Err(AppError::new(ErrorCode::BaseUnreadable, why));
+            return Err(self.open_failure());
         }
         Ok(StoreGuard(guard))
     }
 
+    /// The error of a database that could not be opened.
+    fn open_failure(&self) -> AppError {
+        let (code, why) = self
+            .open_error
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone()
+            .unwrap_or((ErrorCode::BaseUnreadable, String::new()));
+        AppError::new(code, why)
+    }
+
     /// Deletes every stored data. A database that could not be opened is removed
-    /// (with its `-wal` and `-shm` files) and created again.
+    /// (with its `-wal` and `-shm` files) and created again, except one written by
+    /// a newer version of the app: it holds valid data and is never erased.
     fn erase(&self) -> Result<(), AppError> {
         let mut guard = self.store.lock().unwrap_or_else(|e| e.into_inner());
+        if guard.is_none() && self.open_failure().code == ErrorCode::BaseTooRecent {
+            return Err(self.open_failure());
+        }
         if let Some(store) = guard.as_mut() {
             store.clear()?;
             return Ok(());

@@ -1003,3 +1003,25 @@ fn bed_names_are_trimmed_when_saved() {
     .unwrap();
     assert_eq!(view["beds"][0]["name"], "Leeks");
 }
+
+#[test]
+fn a_database_of_a_newer_version_is_reported_as_too_recent_and_never_erased() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = dir.path().join(DB_FILE);
+    {
+        let (_app, window) = app(&db);
+        invoke(&window, "view_year", json!({ "year": year() })).unwrap();
+    }
+    let conn = rusqlite::Connection::open(&db).unwrap();
+    conn.pragma_update(None, "user_version", 99).unwrap();
+    drop(conn);
+    let before = std::fs::read(&db).unwrap();
+
+    let (_app, window) = app(&db);
+    let err = invoke(&window, "view_year", json!({ "year": year() })).unwrap_err();
+    assert_eq!(err["code"], "base_too_recent");
+    // The data is valid, only newer: erasing is refused and the file is untouched.
+    let err = invoke(&window, "erase_data", json!({})).unwrap_err();
+    assert_eq!(err["code"], "base_too_recent");
+    assert_eq!(std::fs::read(&db).unwrap(), before);
+}

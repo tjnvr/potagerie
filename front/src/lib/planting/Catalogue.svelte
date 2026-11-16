@@ -34,7 +34,7 @@
     root?.focus();
   });
 
-  const families = $derived([...new Set(catalogue.crops.map((c) => c.family))].sort((a, b) => nameFamily(a).localeCompare(nameFamily(b), "fr")));
+  const families = $derived([...new Set(catalogue.crops.map((c) => c.family))].sort((a, b) => nameFamily(a).localeCompare(nameFamily(b), localeTag())));
   const list = $derived(
     tri(catalogue.crops, nameCrop).filter(
       (c) => (!family || c.family === family) && (!onlySeason || season.includes(c.id)),
