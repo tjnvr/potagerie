@@ -14,14 +14,17 @@ Scope: the code of lot 1 after the move to English (`crates/`, `src-tauri/`, `fr
 | 6 | The layout tag value became `shown`, the task type stayed `planter` | Wrong wire names | `present` and `plant` |
 | 7 | The front tests depended on the language of the machine | They would fail on a French Mac | The tests pin the English messages |
 
+## Fixed after the review (one patch each)
+
+- **0.2.1** — Garlic and spring onion are now suggested in the slots that reach 15 November (S03 v0.12, §9). Test: `a_winter_crop_may_run_past_the_end_of_the_search_window`.
+
 ## Known problems, not fixed
 
-1. **Garlic and spring onion are never suggested.** The free slots end on 15 November (S03 §8) and a suggestion must reach its minimum harvest before the end of the slot (S03 §9): an autumn crop harvested the next year cannot. They can be planted by hand. `plan/tests/catalogue_wide.rs` lists them, so a change shows up.
-2. **Ties between suggestions are sorted by the English crop name**, whatever the language of the interface. S03 §9 says "alphabetical order of the name". Decide: sort by the displayed name (needs the messages on the Rust side) or by `id`.
-3. **An unreadable database shows "Saving failed" and an endless "Loading…"**, with a Retry that cannot help. The Settings screen still opens, so "Erase the app data" recovers, but nothing says so. A dedicated "data unreadable" state is missing.
-4. **The version 0.2.0 release was built before the renaming.** It is the last version that writes French names. The first release with English names must be tested by hand on a real 0.2.0 database (the migration is only tested on a database built by the tests).
-5. **The canvases on claude.ai** (D01, D02) are still the French ones: the files in the repository are the reference, the canvases have to be re-imported by hand.
-6. **Not covered**: the real Tauri window (WebKit, WebView2) and touch were never exercised by these checks, only headless WebKit and Chrome; Undo / Redo is not built (F-PLN-6); the PDF has no header, plan thumbnail or task calendar yet (S01 F-EXP-2).
+1. **Ties between suggestions are sorted by the English crop name**, whatever the language of the interface. S03 §9 says "alphabetical order of the name". Decide: sort by the displayed name (needs the messages on the Rust side) or by `id`.
+2. **An unreadable database shows "Saving failed" and an endless "Loading…"**, with a Retry that cannot help. The Settings screen still opens, so "Erase the app data" recovers, but nothing says so. A dedicated "data unreadable" state is missing.
+3. **The version 0.2.0 release was built before the renaming.** It is the last version that writes French names. The first release with English names must be tested by hand on a real 0.2.0 database (the migration is only tested on a database built by the tests).
+4. **The canvases on claude.ai** (D01, D02) are still the French ones: the files in the repository are the reference, the canvases have to be re-imported by hand.
+5. **Not covered**: the real Tauri window (WebKit, WebView2) and touch were never exercised by these checks, only headless WebKit and Chrome; Undo / Redo is not built (F-PLN-6); the PDF has no header, plan thumbnail or task calendar yet (S01 F-EXP-2).
 
 ## What was checked and found sound
 

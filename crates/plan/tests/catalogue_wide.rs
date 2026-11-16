@@ -41,8 +41,11 @@ fn every_crop_gives_valid_suggestions_in_any_slot() {
                     s.planting_out >= start,
                     "{name}: planting out before the slot"
                 );
+                // Only a slot that reaches 15 November may be overrun (winter crops).
+                let open_ended =
+                    end == d(2027, 11, 15) && s.harvest_start > end + chrono::Duration::days(1);
                 assert!(
-                    s.end <= end + chrono::Duration::days(1),
+                    open_ended || s.end <= end + chrono::Duration::days(1),
                     "{name}: ends after the slot"
                 );
                 assert!(s.harvest_start <= s.end, "{name}: harvest after the end");
@@ -65,12 +68,11 @@ fn every_crop_gives_valid_suggestions_in_any_slot() {
     );
 }
 
-/// The crops no free slot can ever suggest. The slots end on 15 November
-/// (S03 §8) and a suggestion must reach its minimum harvest before the end of
-/// the slot (S03 §9): a crop planted in autumn and harvested the next year
-/// cannot. They can still be planted by hand. If this list changes, the
-/// catalogue or the rules did: check it is on purpose.
-const NEVER_SUGGESTED: &[&str] = &["spring-onion", "garlic"];
+/// The crops no free slot can ever suggest. Winter crops (garlic, spring onion)
+/// harvest the next year: they are suggested in the slots that reach 15
+/// November, which they may overrun (S03 §9). If this list is not empty, the
+/// catalogue or the rules changed: check it is on purpose.
+const NEVER_SUGGESTED: &[&str] = &[];
 
 #[test]
 fn only_the_known_crops_are_never_suggested() {
@@ -94,4 +96,30 @@ fn only_the_known_crops_are_never_suggested() {
         }
     }
     assert_eq!(never, NEVER_SUGGESTED);
+}
+
+#[test]
+fn a_winter_crop_may_run_past_the_end_of_the_search_window() {
+    let (_plan, bed) = plan_with_bed();
+    let garlic = Catalogue::v1().crop("garlic").unwrap();
+    let today = d(2027, 1, 10);
+    let slot = Slot {
+        bed_id: bed,
+        year: 2027,
+        zone: zone(1, 6),
+        start: d(2027, 10, 1),
+        end: d(2027, 11, 15),
+    };
+    let s = plan::evaluate(&slot, garlic, today).expect("garlic is suggested");
+    // Planted on 15 October, harvested from the next summer: no cut, no manual end.
+    assert_eq!(s.planting_out, d(2027, 10, 15));
+    assert!(s.end > d(2028, 1, 1));
+    assert_eq!(s.manual_end, None);
+    assert!(s.score() > 0.0 && s.score() <= 1.0);
+    // A slot that ends earlier is not open: the crop is still discarded.
+    let closed = Slot {
+        end: d(2027, 11, 1),
+        ..slot
+    };
+    assert!(plan::evaluate(&closed, garlic, today).is_none());
 }

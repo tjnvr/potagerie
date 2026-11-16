@@ -105,16 +105,27 @@ pub fn evaluate(slot: &Slot, crop: &Crop, today: NaiveDate) -> Option<Suggestion
     };
     let harvest_start = planting.dates().harvest_start;
 
-    // 3. Minimal harvest: half the harvest duration, rounded up.
+    // A slot that reaches the end of the search window (15 November) is not
+    // closed by another planting: a crop that only starts to harvest after it
+    // (garlic, spring onion: the winter crops) may run past it, into the next
+    // year, up to its natural end.
     let duration = i64::from(crop.harvest_duration_days);
     let after_slot = plus_days(slot_end, 1);
-    if plus_days(harvest_start, (duration + 1) / 2) > after_slot {
+    let open_ended =
+        NaiveDate::from_ymd_opt(slot.year, 11, 15) == Some(slot_end) && harvest_start > after_slot;
+
+    // 3. Minimum harvest: half the harvest duration, rounded up.
+    if !open_ended && plus_days(harvest_start, (duration + 1) / 2) > after_slot {
         return None;
     }
 
     // 4. Proposed end.
     let natural_end = plus_days(harvest_start, duration);
-    let end = after_slot.min(natural_end);
+    let end = if open_ended {
+        natural_end
+    } else {
+        after_slot.min(natural_end)
+    };
 
     Some(Suggestion {
         crop_id: crop.id.clone(),
@@ -126,7 +137,7 @@ pub fn evaluate(slot: &Slot, crop: &Crop, today: NaiveDate) -> Option<Suggestion
         end,
         manual_end: (end < natural_end).then_some(end),
         // 5. Filling score.
-        filled_days: (end - start).num_days(),
+        filled_days: (end.min(after_slot) - start).num_days(),
         slot_days: slot.length_days(),
     })
 }

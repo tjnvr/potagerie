@@ -1,7 +1,7 @@
 # POT-S05 · Technical specification — v0.12
 
 > Version: 0.12 (draft) · Date: 2026-11-15 · Author: Tim
-> References: [S01](POT-S01_functional-spec_v1.6.md) · [S02](POT-S02_crop-catalogue_v0.4.md) · [S03](POT-S03_rules-and-calculations_v0.11.md) · [P01](../prototypes/POT-P01_iso-rendering_v0.2/README.md) · [D01](../design/POT-D01_key-screens_v1.2/README.md) · [D02](../design/POT-D02_additional-screens_v0.2/README.md)
+> References: [S01](POT-S01_functional-spec_v1.6.md) · [S02](POT-S02_crop-catalogue_v0.4.md) · [S03](POT-S03_rules-and-calculations_v0.12.md) · [P01](../prototypes/POT-P01_iso-rendering_v0.2/README.md) · [D01](../design/POT-D01_key-screens_v1.2/README.md) · [D02](../design/POT-D02_additional-screens_v0.2/README.md)
 > v0.12 is the English translation of v0.11. The code, the files, the message keys, the JSON fields and the crop ids are in English; the names below are the ones of the code. A database or an export written by app versions 0.1 and 0.2 (French names) is upgraded when it is read (section 5, "Storage"). History: v0.4 introduced Rust + Tauri, v0.5 aligned the model on S01 and S03, v0.6 replaced htmx by a Svelte + TypeScript interface that calls Tauri commands, v0.7 to v0.11 carried what the app skeleton, the plan editor, the timeline, the settings and the export settled (section 11 and following).
 
 ## 1. Principles
