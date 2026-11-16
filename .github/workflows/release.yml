@@ -98,3 +98,22 @@ jobs:
           else
             gh release create "$GITHUB_REF_NAME" "${files[@]}" --title "Potagerie $GITHUB_REF_NAME" --notes-file .github/release-notes.md --prerelease
           fi
+      # Keep only the latest pre-release of a major: delete the older ones of the
+      # same major (the tags stay). A release only deletes lower versions, so two
+      # builds that finish out of order cannot delete the newer one.
+      - name: Delete the older pre-releases of this major
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          major="${GITHUB_REF_NAME#v}"
+          major="${major%%.*}"
+          gh release list --limit 200 --json tagName,isPrerelease \
+            --jq '.[] | select(.isPrerelease) | .tagName' | while read -r tag; do
+            [ "$tag" = "$GITHUB_REF_NAME" ] && continue
+            case "$tag" in "v$major."*) ;; *) continue ;; esac
+            oldest="$(printf '%s\n%s\n' "$tag" "$GITHUB_REF_NAME" | sort -V | head -n 1)"
+            if [ "$oldest" = "$tag" ]; then
+              echo "Deleting the pre-release $tag"
+              gh release delete "$tag" --yes
+            fi
+          done

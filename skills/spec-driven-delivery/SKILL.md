@@ -57,7 +57,7 @@ Same list as `.github/workflows/ci.yml`. One failure = fix first, then run the w
 - After the push, check the CI of `main` and of the tag; if red, fix forward.
 
 ## 8. Release and landing page
-- Check the assets (`gh release view vX.Y.Z`) and delete the superseded pre-releases.
+- Check the assets (`gh release view vX.Y.Z`). The release workflow deletes the older pre-releases of the same major by itself (tags stay): only the latest one remains.
 - A change the user can see also updates `site/`: texts in `index.html` and its French map,
   screenshots in `site/img/` and `site/img/fr/`. The Pages workflow deploys on push.
 
