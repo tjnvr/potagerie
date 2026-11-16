@@ -51,9 +51,27 @@ fn parse(svg: &str) -> Result<usvg::Tree, ExportError> {
     usvg::Tree::from_str(svg, &options).map_err(|e| ExportError::InvalidSvg(e.to_string()))
 }
 
+/// True for the characters the embedded fonts (Figtree, Fredoka) can draw: Latin
+/// letters with their accents, the usual punctuation and a few symbols.
+fn is_drawable(c: char) -> bool {
+    matches!(c,
+        '\t' | '\n' | '\r' | ' '..='~'
+        | '\u{A0}'..='\u{17F}'
+        | '\u{2010}'..='\u{2027}'
+        | '\u{2030}'..='\u{203A}'
+        | '\u{20AC}' | '\u{2192}')
+}
+
+/// Removes what the fonts cannot draw (emoji, symbols such as `≈` or `✓`):
+/// they would come out as empty boxes in the file. The markup of the SVG is
+/// ASCII, so only the texts of the garden are touched.
+pub(crate) fn drawable_only(svg: &str) -> String {
+    svg.chars().filter(|c| is_drawable(*c)).collect()
+}
+
 /// Converts the SVG of the timeline to the bytes of a PNG or PDF file.
 pub fn render_timeline(svg: &str, format: TimelineFormat) -> Result<Vec<u8>, ExportError> {
-    let tree = parse(svg)?;
+    let tree = parse(&drawable_only(svg))?;
     match format {
         TimelineFormat::Png => {
             let size = tree
@@ -149,5 +167,18 @@ mod tests {
             render_timeline("<svg", TimelineFormat::Png),
             Err(ExportError::InvalidSvg(_))
         ));
+    }
+}
+
+#[cfg(test)]
+mod drawable_tests {
+    use super::drawable_only;
+
+    #[test]
+    fn keeps_accents_and_punctuation_and_drops_what_the_fonts_lack() {
+        let svg = "<text>Côté cabane · Bout de l’allée – Œillet « 1,2 m » ½ → €</text>";
+        assert_eq!(drawable_only(svg), svg);
+        let with_emoji = "<text>Tomates 🍅 ≈ 120 ✓ ⅓ ✿</text>";
+        assert_eq!(drawable_only(with_emoji), "<text>Tomates   120   </text>");
     }
 }

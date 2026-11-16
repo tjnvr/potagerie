@@ -23,6 +23,7 @@ Scope: the code of lot 1 after the move to English (`crates/`, `src-tauri/`, `fr
 - **0.2.5** — A winter suggestion (garlic, spring onion) is no longer offered when its bed is already taken next spring: it would have been refused at creation. Test: `a_winter_suggestion_is_not_proposed_when_next_spring_is_taken`.
 - **0.3.2** — A database written by a newer app version is reported `base_too_recent` and never erased (it was shown as damaged and offered for erasure). `delete_bed` and `clear_plan` refuse an absurd year (`out_of_range`). The document language follows the interface, catalogue sorts follow it too, long / emoji / double-space bed names are handled in the timeline, and the header no longer wraps onto a third row at 390 px in French (S05 v0.15).
 - **Tests added**: a random walk of 25 seeds × 150 operations keeps the plan sound (the only expected exception is a bed shortened under a planting, S03 §17), and every suggestion of every free slot, in 12 random states of the plan, can be created without refusal.
+- **0.3.3** — The PNG / PDF export no longer shows empty boxes for emoji or symbols (`≈`, `⅓`, `✓`) in bed names and notes: the characters the embedded fonts lack are removed from the exported file (S05 v0.16 §16). Accented French text was already drawn correctly.
 
 ## Known problems, not fixed
 
