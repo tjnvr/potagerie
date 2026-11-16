@@ -51,12 +51,28 @@ jobs:
         run: pnpm --dir front check
       - name: pnpm test
         run: pnpm --dir front test
-      # Use cases of the interface (docs/POT-00_test-matrix.md), in Chromium and WebKit.
-      - name: Install the browsers of the e2e tests
+
+  # Use cases of the interface (docs/POT-00_test-matrix.md), in Chromium and WebKit.
+  # Pinned to ubuntu-24.04: Playwright does not support the newer ubuntu-latest yet.
+  e2e:
+    name: Use cases (e2e)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: front/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: front/pnpm-lock.yaml
+      - run: pnpm --dir front install --frozen-lockfile
+      - name: Install the browsers
         run: pnpm --dir front exec playwright install --with-deps chromium webkit
       - name: pnpm e2e
         run: pnpm --dir front e2e
-      - name: Keep the traces of failed e2e tests
+      - name: Keep the traces of failed tests
         if: failure()
         uses: actions/upload-artifact@v4
         with:
