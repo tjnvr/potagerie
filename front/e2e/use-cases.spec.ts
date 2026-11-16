@@ -74,6 +74,23 @@ test("UC-06 timeline: a free slot opens the planting form, planting adds a bar",
   await expect(bars).toHaveCount(before + 1);
 });
 
+test("UC-14 timeline: a click on a bar opens the planting to edit", async ({ page }) => {
+  await open(page);
+  await toGarden(page);
+  const bars = page.locator(".bar");
+  const count = await bars.count();
+  for (let i = 0; i < count; i++) {
+    const box = await bars.nth(i).boundingBox();
+    if (box && box.x > 240 && box.x < 900) {
+      await bars.nth(i).scrollIntoViewIfNeeded();
+      const seen = (await bars.nth(i).boundingBox())!;
+      await page.mouse.click(seen.x + seen.width / 2, seen.y + seen.height / 2);
+      break;
+    }
+  }
+  await expect(page.getByRole("heading", { name: "Edit the planting" })).toBeVisible();
+});
+
 test("UC-07 notes: empty text is refused, 80 characters at most, the note appears", async ({ page }) => {
   await open(page);
   await toGarden(page);

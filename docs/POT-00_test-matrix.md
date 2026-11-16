@@ -25,6 +25,7 @@ against the Vite dev server with the in-memory fake of the Tauri commands (`?exa
 | UC-11 | Escape closes every window | accessibility | Settings, catalogue, export, note | automated |
 | UC-12 | Phone: no sideways scroll (garden, plan) | layout | `scrollWidth ≤ innerWidth` at 390 px | automated |
 | UC-13 | Phone: catalogue two crops a row | layout | Two cards on the first row | automated |
+| UC-14 | Edit a planting from its bar | F-PLA-1 | A click on a visible bar opens "Edit the planting" | automated |
 | UC-20 | Move / resize a bed by dragging, refusal goes back | F-PLN-6 | Position kept or restored with the reason | not yet (pointer drag, needs the real rules in Rust: covered by `cargo test`) |
 | UC-21 | Delete a bed with plantings (confirmation) | F-PLN-4 | Warning with the count, then removal | not yet |
 | UC-22 | Clear the plan, erase the data (double confirmation) | F-CPT-4 | Plan emptied / app data erased | not yet |
