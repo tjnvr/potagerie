@@ -62,8 +62,10 @@ pub fn export_garden(plan: &Plan, path: &Path) -> Result<(), ExportError> {
 /// structure (S03 §13). Incoherences do not refuse it.
 pub fn read_garden(path: &Path) -> Result<Plan, ExportError> {
     let text = fs::read_to_string(path)?;
+    // A file saved by Notepad (Windows) starts with a UTF-8 byte order mark.
+    let text = text.strip_prefix('\u{feff}').unwrap_or(&text);
     let envelope: EnvelopeIn =
-        serde_json::from_str(&text).map_err(|e| ExportError::InvalidImport(e.to_string()))?;
+        serde_json::from_str(text).map_err(|e| ExportError::InvalidImport(e.to_string()))?;
     if envelope.format != FORMAT {
         return Err(ExportError::InvalidImport(format!(
             "format {:?}",
@@ -136,6 +138,19 @@ mod tests {
         assert_eq!(read_garden(&path).unwrap(), plan);
         let text = fs::read_to_string(&path).unwrap();
         assert!(text.contains("\"format\": \"potagerie\""));
+    }
+
+    #[test]
+    fn a_file_saved_with_a_utf8_bom_is_still_read() {
+        // Notepad on Windows adds a byte order mark when it saves a UTF-8 file.
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("garden.json");
+        let plan = plan_at(9);
+        export_garden(&plan, &path).unwrap();
+        let mut bytes = vec![0xEF, 0xBB, 0xBF];
+        bytes.extend(fs::read(&path).unwrap());
+        fs::write(&path, bytes).unwrap();
+        assert_eq!(read_garden(&path).unwrap(), plan);
     }
 
     #[test]
