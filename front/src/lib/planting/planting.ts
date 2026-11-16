@@ -13,7 +13,7 @@ import type {
   SuggestionView,
   ZoneView,
 } from "../bindings";
-import { dayOf } from "../dates";
+import { dayOf, shiftDate } from "../dates";
 
 export type Zone = { start: number; end: number };
 
@@ -141,6 +141,21 @@ export function toPlantingInput(f: Form): PlantingInput {
     manual_end: f.manualEnd,
     date_is_transplanting: f.mode === "indoor" && f.transplanting,
   };
+}
+
+/** A new start date (S03 §2): an end edited by hand follows it, shifted by the same
+ *  number of days, as when a bar is dragged. Otherwise it would stay where it was and
+ *  could end up before the new start, or more than a year after it. */
+export function changeDate(f: Form, date: string): Form {
+  if (!f.manualEnd || !f.date || !date || date === f.date) return { ...f, date };
+  const days = dayOf(date) - dayOf(f.date);
+  return { ...f, date, manualEnd: shiftDate(f.manualEnd, days) };
+}
+
+/** Another crop, mode or number of days under cover changes what the planting is:
+ *  an end edited by hand no longer means anything and the end is calculated again. */
+export function resetManualEnd(f: Form): Form {
+  return f.manualEnd ? { ...f, manualEnd: null } : f;
 }
 
 /** Toggling « I rather know the transplanting date »: the field shows the

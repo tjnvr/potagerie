@@ -1,7 +1,7 @@
 # POT-D02 · Additional screens V1 — v0.2
 
 > Version: 0.2 (draft) · Date: 2026-11-15 · Author: Tim
-> Specs: [S01 v1.6](../../specs/POT-S01_functional-spec_v1.7.md) · [S02 v0.4](../../specs/POT-S02_crop-catalogue_v0.4.md) · [S03 v0.13](../../specs/POT-S03_rules-and-calculations_v0.14.md)
+> Specs: [S01 v1.6](../../specs/POT-S01_functional-spec_v1.7.md) · [S02 v0.4](../../specs/POT-S02_crop-catalogue_v0.4.md) · [S03 v0.13](../../specs/POT-S03_rules-and-calculations_v0.15.md)
 > Follows [D01 v1.2](../POT-D01_key-screens_v1.2/README.md), which already covers E03, E05 and E07 (phone), and the visual direction (DV01).
 > v0.2 is the English translation of v0.1: texts, files and generator are in English. The layout does not change.
 

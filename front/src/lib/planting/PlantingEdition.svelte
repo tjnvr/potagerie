@@ -29,6 +29,8 @@
     SHORTCUTS,
     applySuggestion,
     toggleTransplanting,
+    changeDate,
+    resetManualEnd,
     endInput,
     formSincePlanting,
     formEmpty,
@@ -153,13 +155,13 @@
     if (id === f.cropId) return;
     const c = catalogue.crop(id);
     // The card checked at first follows the crop; once the user has picked a mode it stays.
-    f = { ...f, cropId: id, mode: edition || user && modeChosen ? f.mode : modeInitial(c) };
+    f = resetManualEnd({ ...f, cropId: id, mode: edition || user && modeChosen ? f.mode : modeInitial(c) });
   }
 
   let modeChosen = $state(false);
   function chooseMode(mode: Mode) {
     modeChosen = true;
-    f = { ...f, mode, transplanting: mode === "indoor" ? f.transplanting : false };
+    f = resetManualEnd({ ...f, mode, transplanting: mode === "indoor" ? f.transplanting : false });
   }
 
   // ---------- Zone ----------
@@ -359,14 +361,14 @@
       {#if withoutPots}
         <label class="field">
           <span>{m.planting_pots_question()}</span>
-          <input type="number" min="1" step="1" inputmode="numeric" bind:value={f.indoorDays} />
+          <input type="number" min="1" step="1" inputmode="numeric" bind:value={f.indoorDays} onchange={() => (f = resetManualEnd(f))} />
           <small>{m.planting_pots_help()}</small>
         </label>
       {/if}
 
       <h2 class="question"><span class="number">3</span>{question}</h2>
       <label class="date">
-        <input type="date" bind:value={f.date} aria-label={question} />
+        <input type="date" value={f.date} onchange={(e) => (f = changeDate(f, e.currentTarget.value))} aria-label={question} />
         <span class="day">{dateValid(f.date) ? dateComplete(f.date) : ""}</span>
       </label>
       {#if f.mode === "indoor"}

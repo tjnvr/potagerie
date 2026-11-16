@@ -3,6 +3,8 @@ import type { CropView, PlantingPreview, PlantingView, SuggestionView } from "..
 import {
   applySuggestion,
   toggleTransplanting,
+  changeDate,
+  resetManualEnd,
   endInput,
   formSincePlanting,
   formEmpty,
@@ -125,5 +127,24 @@ describe("form to command input", () => {
     expect(segmentsMiniTimeline(dates, "indoor").map((s) => s.phase)).toEqual(["pots", "growth", "harvest"]);
     expect(segmentsMiniTimeline(dates, "indoor").map((s) => s.days)).toEqual([56, 75, 70]);
     expect(segmentsMiniTimeline(dates, "plants").map((s) => s.phase)).toEqual(["growth", "harvest"]);
+  });
+});
+
+describe("the end edited by hand follows the planting (S03 §2)", () => {
+  const base = { ...formEmpty(tomato, "p1", 6, "2027-03-01"), manualEnd: "2027-09-01" };
+
+  it("shifts with the start date, like a dragged bar", () => {
+    const f = changeDate(base, "2028-03-01");
+    expect(f.date).toBe("2028-03-01");
+    expect(f.manualEnd).toBe("2028-09-01");
+  });
+
+  it("stays absent when there was none", () => {
+    expect(changeDate({ ...base, manualEnd: null }, "2028-03-01").manualEnd).toBeNull();
+  });
+
+  it("is calculated again when the crop, the mode or the days under cover change", () => {
+    expect(resetManualEnd(base).manualEnd).toBeNull();
+    expect(resetManualEnd({ ...base, manualEnd: null }).manualEnd).toBeNull();
   });
 });
