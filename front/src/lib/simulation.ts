@@ -11,6 +11,12 @@ import { mockIPC } from "@tauri-apps/api/mocks";
 import type { AnnotationInput, AnnotationView, ErrorCode, IncoherenceView, BedView, PlantingInput, PlantingView, PlotView, TypeBed, YearView } from "./bindings";
 import { dayOf, premierJanuary } from "./dates";
 import { NON_HANDLES, createPlanting, slots, gerer, type Context } from "./simulation.plantings";
+import { getLocale } from "./paraglide/runtime.js";
+
+/** Example data in the language of the interface (English is the base). */
+function tr(en: string, fr: string): string {
+  return getLocale() === "fr" ? fr : en;
+}
 
 type Args = Record<string, unknown>;
 type Geometry = { bed_type: TypeBed; x: number; y: number; length_cm: number; width_cm: number };
@@ -101,14 +107,14 @@ export function simulerTauri(): void {
   } else if (new URLSearchParams(location.search).has("example")) {
     plot = { length_cm: 1100, width_cm: 650, cell_cm: 50, aisle_cm: 50 };
     beds = [
-      bed("Back of the garden", "bed", 50, 50, 300, 120),
-      bed("Roots", "bed", 400, 50, 300, 120),
-      bed("The tomatoes", "bed", 50, 220, 400, 100),
-      bed("Shed side", "bed", 500, 220, 300, 120),
-      bed("The zucchinis", "bed", 50, 370, 300, 120),
-      bed("Leek square", "square", 400, 370, 100, 100),
-      bed("Salad square", "square", 550, 390, 100, 100),
-      bed("End of the aisle", "mound", 750, 50, 300, 120),
+      bed(tr("Back of the garden", "Fond du potager"), "bed", 50, 50, 300, 120),
+      bed(tr("Roots", "Racines"), "bed", 400, 50, 300, 120),
+      bed(tr("The tomatoes", "Les tomates"), "bed", 50, 220, 400, 100),
+      bed(tr("Shed side", "Côté cabane"), "bed", 500, 220, 300, 120),
+      bed(tr("The zucchinis", "Les courgettes"), "bed", 50, 370, 300, 120),
+      bed(tr("Leek square", "Carré poireaux"), "square", 400, 370, 100, 100),
+      bed(tr("Salad square", "Carré salades"), "square", 550, 390, 100, 100),
+      bed(tr("End of the aisle", "Bout de l’allée"), "mound", 750, 50, 300, 120),
     ];
     const Y = annee0;
     const [fond, tomatoes, shed, zucchinis, roots, leeks, salads] = [
@@ -151,9 +157,9 @@ export function simulerTauri(): void {
     history = [past];
     annotations = [
       { id: "n0", annotation_type: "period", date_start: `${Y}-08-01`, date_end: `${Y}-08-21`, bed_id: null, text: "Holidays", hidden: false },
-      { id: "n1", annotation_type: "period", date_start: `${Y}-05-05`, date_end: `${Y}-06-10`, bed_id: tomatoes.id, text: "Mulching", hidden: false },
-      { id: "n2", annotation_type: "note", date_start: `${Y}-06-02`, date_end: null, bed_id: tomatoes.id, text: "Stake the tomatoes", hidden: false },
-      { id: "n3", annotation_type: "note", date_start: `${Y}-04-10`, date_end: null, bed_id: null, text: "Last frosts?", hidden: false },
+      { id: "n1", annotation_type: "period", date_start: `${Y}-05-05`, date_end: `${Y}-06-10`, bed_id: tomatoes.id, text: tr("Mulching", "Paillage"), hidden: false },
+      { id: "n2", annotation_type: "note", date_start: `${Y}-06-02`, date_end: null, bed_id: tomatoes.id, text: tr("Stake the tomatoes", "Tuteurer les tomates"), hidden: false },
+      { id: "n3", annotation_type: "note", date_start: `${Y}-04-10`, date_end: null, bed_id: null, text: tr("Last frosts?", "Dernières gelées ?"), hidden: false },
     ];
     version = 4;
   }
@@ -235,9 +241,9 @@ export function simulerTauri(): void {
     });
     const readIncoherences = () => [
       incoherence("too_many_beds", { year: annee0, count: 11 }),
-      incoherence("planting_orphan", { year: annee0, bed_name: "Roots", crop_id: "carrot" }),
-      incoherence("overlap", { bed_name: "The tomatoes", crop_id: "tomato", other_crop_id: "lettuce" }),
-      incoherence("aisle_too_narrow", { year: annee0, bed_name: "Leek square", other_bed_name: "Salad square" }),
+      incoherence("planting_orphan", { year: annee0, bed_name: tr("Roots", "Racines"), crop_id: "carrot" }),
+      incoherence("overlap", { bed_name: tr("The tomatoes", "Les tomates"), crop_id: "tomato", other_crop_id: "lettuce" }),
+      incoherence("aisle_too_narrow", { year: annee0, bed_name: tr("Leek square", "Carré poireaux"), other_bed_name: tr("Salad square", "Carré salades") }),
     ];
     switch (cmd) {
       case "plugin:dialog|save":
