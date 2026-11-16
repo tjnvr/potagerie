@@ -19,12 +19,12 @@ Scope: the code of lot 1 after the move to English (`crates/`, `src-tauri/`, `fr
 - **0.2.1** — Garlic and spring onion are now suggested in the slots that reach 15 November (S03 v0.12, §9). Test: `a_winter_crop_may_run_past_the_end_of_the_search_window`.
 - **0.2.2** — Ties between suggestions are sorted with the crop name shown in the interface language, not the English one (S03 v0.13): Rust also sends the crops tied with the third, the front sorts them again (`front/src/lib/suggestions.ts`).
 - **0.2.3** — A damaged database no longer stops the app at launch, and no longer leaves "Loading…" for ever: commands answer `base_unreadable`, the shell shows an explanation with Retry and a way to the settings, and "Erase the app data" removes the damaged file and starts again. Tests in `src-tauri/src/tests.rs` (`a_damaged_database_does_not_stop_the_app_and_can_be_erased`).
+- **0.2.4** — The migration is now tested on a real database written by the `v0.2.0` tag (`crates/store/tests/fixtures/potagerie-v0.2.0.db`, test `the_real_0_2_0_database_is_upgraded_and_saved_again`): it opens, reads, passes `check_structure` and is saved again. Still worth one manual look with the installed app.
 
 ## Known problems, not fixed
 
-1. **The version 0.2.0 release was built before the renaming.** It is the last version that writes French names. The first release with English names must be tested by hand on a real 0.2.0 database (the migration is only tested on a database built by the tests).
-2. **The canvases on claude.ai** (D01, D02) are still the French ones: the files in the repository are the reference, the canvases have to be re-imported by hand.
-3. **Not covered**: the real Tauri window (WebKit, WebView2) and touch were never exercised by these checks, only headless WebKit and Chrome; Undo / Redo is not built (F-PLN-6); the PDF has no header, plan thumbnail or task calendar yet (S01 F-EXP-2).
+1. **The canvases on claude.ai** (D01, D02) are still the French ones: the files in the repository are the reference, the canvases have to be re-imported by hand.
+2. **Not covered**: the real Tauri window (WebKit, WebView2) and touch were never exercised by these checks, only headless WebKit and Chrome; Undo / Redo is not built (F-PLN-6); the PDF has no header, plan thumbnail or task calendar yet (S01 F-EXP-2).
 
 ## What was checked and found sound
 
