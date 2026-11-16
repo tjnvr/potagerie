@@ -25,7 +25,7 @@ Scope: the code of lot 1 after the move to English (`crates/`, `src-tauri/`, `fr
 - **Tests added**: a random walk of 25 seeds × 150 operations keeps the plan sound (the only expected exception is a bed shortened under a planting, S03 §17), and every suggestion of every free slot, in 12 random states of the plan, can be created without refusal.
 - **0.3.3** — The PNG / PDF export no longer shows empty boxes for emoji or symbols (`≈`, `⅓`, `✓`) in bed names and notes: the characters the embedded fonts lack are removed from the exported file (S05 v0.16 §16). Accented French text was already drawn correctly.
 - **0.3.4** — An export file re-saved by Notepad on Windows (UTF-8 with a byte order mark) is no longer refused as invalid on import. Test: `a_file_saved_with_a_utf8_bom_is_still_read`.
-- **0.3.6** — End dates of a planting more than a year after its sowing: an end edited by hand (or cut by a suggestion) stayed in place when the crop, mode, days under cover or the start date changed in the form. The end now follows a changed date (shifted by the same number of days) and is dropped when the crop, mode or days under cover change (S03 v0.15 §2).
+- **0.3.7** — End dates of a planting more than a year after its sowing: an end edited by hand (or cut by a suggestion) stayed in place when the crop, mode, days under cover or the start date changed in the form. The end now follows a changed date (shifted by the same number of days) and is dropped when the crop, mode or days under cover change (S03 v0.15 §2).
 
 ## Known problems, not fixed
 
