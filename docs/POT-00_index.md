@@ -7,6 +7,7 @@ docs/
 ├── POT-00_index.md                         ← this file
 ├── POT-00_lot1-coverage.md                 ← state of the F-… requirements at lot 1
 ├── POT-00_review-2026-11.md                ← edge cases and bugs found in a review
+├── POT-00_test-matrix.md                   ← use cases and their automated tests (e2e), first navigation analysis
 ├── specs/
 │   ├── POT-S01_functional-spec_v1.7.md     ← current versions
 │   ├── POT-S02_crop-catalogue_v0.4.md

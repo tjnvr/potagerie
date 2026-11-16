@@ -51,6 +51,18 @@ jobs:
         run: pnpm --dir front check
       - name: pnpm test
         run: pnpm --dir front test
+      # Use cases of the interface (docs/POT-00_test-matrix.md), in Chromium and WebKit.
+      - name: Install the browsers of the e2e tests
+        run: pnpm --dir front exec playwright install --with-deps chromium webkit
+      - name: pnpm e2e
+        run: pnpm --dir front e2e
+      - name: Keep the traces of failed e2e tests
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-traces
+          path: front/test-results
+          if-no-files-found: ignore
 
   bundle:
     name: Bundle (${{ matrix.name }})

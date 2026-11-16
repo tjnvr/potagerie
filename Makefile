@@ -2,7 +2,7 @@
 # Needs: Rust stable, the Tauri CLI (cargo install tauri-cli --version "^2"),
 # Node.js 22+ and pnpm.
 
-.PHONY: install dev build test check fmt bindings
+.PHONY: install dev build test check e2e fmt bindings
 
 install:
 	pnpm --dir front install --frozen-lockfile
@@ -32,3 +32,7 @@ fmt:
 # Rewrites front/src/lib/bindings.ts from the Rust commands.
 bindings:
 	UPDATE_BINDINGS=1 cargo test -p potagerie bindings_are_up_to_date
+
+# Use cases of the interface in Chromium and WebKit (first time: pnpm --dir front exec playwright install chromium webkit).
+e2e: install
+	pnpm --dir front e2e

@@ -39,12 +39,13 @@ One change = one slice, shipped on its own. Small slices, one by one.
 
 ## 5. Local gate: nothing is pushed to `main` unless ALL of it passes
 `cargo fmt --all --check` · `cargo clippy --workspace --all-targets -- -D warnings` ·
-`cargo test --workspace` · `pnpm -C front check` · `pnpm -C front test` · `pnpm -C front build`.
+`cargo test --workspace` · `pnpm -C front check` · `pnpm -C front test` · `pnpm -C front build` · `pnpm -C front e2e`.
 Same list as `.github/workflows/ci.yml`. One failure = fix first, then run the whole list again.
 
 ## 6. Functional check
 - Run the app (`make dev`), or the front with `?example` in headless WebKit: walk the user path
   and look at the result (screenshots at 1440 and 360 px, in English and French).
+- A new user-visible behaviour gets a row in `docs/POT-00_test-matrix.md` and a `UC-xx` test in `front/e2e/` (run by `pnpm -C front e2e` and by the CI).
 - Say what was NOT verified (real Tauri window, touch, installed build).
 
 ## 7. Commit and ship
