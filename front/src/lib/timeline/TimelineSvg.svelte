@@ -1,7 +1,7 @@
 <script lang="ts" module>
   import { localeTag } from "../locale";
   /** Layout constants, shared with the controller (pointer to row, export). */
-  export const WIDTH_LABELS = 150;
+  export const WIDTH_LABELS = 172;
   export const WIDTH_LABELS_NARROW = 84;
   export const HEIGHT_HEADER = 62;
   export const HEIGHT_LANE = 34;
@@ -89,7 +89,7 @@
   /** The name of a bed on at most two lines that fit the label column: words are
    *  kept whole when possible, and what still does not fit ends with « … ». */
   function nameLines(name: string, columnWidth: number, fontSize: number): string[] {
-    const max = Math.max(6, Math.floor(columnWidth / (fontSize * 0.56)));
+    const max = Math.max(6, Math.floor(columnWidth / (fontSize * 0.52)));
     const cut = (t: string) => (t.length > max ? t.slice(0, max - 1) + "…" : t);
     if (name.length <= max) return [name];
     const words = name.split(" ");
