@@ -199,6 +199,12 @@ impl Plan {
             .iter()
             .filter_map(|c| {
                 let mut suggestion = evaluate(slot, c, today)?;
+                // A suggestion that runs past the slot (winter crops) must also
+                // be free where it goes: the slot does not look beyond 15 November.
+                if suggestion.end > plus_days(slot.end, 1) {
+                    let planting = suggestion.into_planting(c, slot).ok()?;
+                    self.validate_planting(None, &planting).ok()?;
+                }
                 suggestion.recent_family = previous_families.contains(&c.family);
                 Some((suggestion, c))
             })

@@ -20,6 +20,7 @@ Scope: the code of lot 1 after the move to English (`crates/`, `src-tauri/`, `fr
 - **0.2.2** — Ties between suggestions are sorted with the crop name shown in the interface language, not the English one (S03 v0.13): Rust also sends the crops tied with the third, the front sorts them again (`front/src/lib/suggestions.ts`).
 - **0.2.3** — A damaged database no longer stops the app at launch, and no longer leaves "Loading…" for ever: commands answer `base_unreadable`, the shell shows an explanation with Retry and a way to the settings, and "Erase the app data" removes the damaged file and starts again. Tests in `src-tauri/src/tests.rs` (`a_damaged_database_does_not_stop_the_app_and_can_be_erased`).
 - **0.2.4** — The migration is now tested on a real database written by the `v0.2.0` tag (`crates/store/tests/fixtures/potagerie-v0.2.0.db`, test `the_real_0_2_0_database_is_upgraded_and_saved_again`): it opens, reads, passes `check_structure` and is saved again. Still worth one manual look with the installed app.
+- **0.2.5** — A winter suggestion (garlic, spring onion) is no longer offered when its bed is already taken next spring: it would have been refused at creation. Test: `a_winter_suggestion_is_not_proposed_when_next_spring_is_taken`.
 
 ## Known problems, not fixed
 

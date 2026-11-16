@@ -6,7 +6,7 @@ mod common;
 
 use catalogue::Catalogue;
 use common::*;
-use plan::{Mode, Slot};
+use plan::{Mode, Planting, Slot};
 
 #[test]
 fn every_crop_gives_valid_suggestions_in_any_slot() {
@@ -122,4 +122,31 @@ fn a_winter_crop_may_run_past_the_end_of_the_search_window() {
         ..slot
     };
     assert!(plan::evaluate(&closed, garlic, today).is_none());
+}
+
+/// A winter suggestion runs into next year: it must not be proposed when the
+/// bed is already taken there, or the user would be refused what we offered.
+#[test]
+fn a_winter_suggestion_is_not_proposed_when_next_spring_is_taken() {
+    let (mut plan, bed) = plan_with_bed();
+    let garlic = Catalogue::v1().crop("garlic").unwrap();
+    let today = d(2027, 1, 10);
+    let slot = Slot { bed_id: bed, year: 2027, zone: zone(1, 6), start: d(2027, 10, 1), end: d(2027, 11, 15) };
+    // Free next year: suggested, and it can be created.
+    let free = plan.suggestions(&slot, Catalogue::v1(), today);
+    assert!(free.iter().any(|s| s.crop_id == "garlic"));
+    let s = plan::evaluate(&slot, garlic, today).unwrap();
+    plan.add_planting(planting_id(900), s.into_planting(garlic, &slot).unwrap()).expect("created");
+    // Next year the garlic holds the bed: no slot before its harvest ends.
+    assert!(plan.slots(2028).iter().all(|n| n.start >= d(2028, 6, 1)));
+
+    // A planting already waiting in March 2028: garlic must not be offered.
+    let (mut busy, bed) = plan_with_bed();
+    let carrot = Catalogue::v1().crop("carrot").unwrap();
+    let march = Planting::new(carrot, bed, zone(1, 6), Mode::OpenGround, d(2028, 3, 20), None, None).unwrap();
+    busy.add_planting(planting_id(901), march).unwrap();
+    let slot = Slot { bed_id: bed, ..slot };
+    let offered = busy.suggestions(&slot, Catalogue::v1(), today);
+    assert!(offered.iter().all(|s| s.crop_id != "garlic"), "{offered:?}");
+    assert!(busy.suggestions_with_ties(&slot, Catalogue::v1(), today).iter().all(|s| s.crop_id != "garlic"));
 }
