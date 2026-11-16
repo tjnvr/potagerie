@@ -48,7 +48,7 @@ pub struct Crop {
     pub frost_sensitive: bool,
 }
 
-/// A `MM-JJ` → `MM-JJ` period of the catalogue.
+/// A `MM-DD` → `MM-DD` period of the catalogue.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Period {
@@ -63,7 +63,7 @@ impl Period {
     }
 }
 
-/// A month and day without a year (`MM-JJ`), serialised as `"05-01"`.
+/// A month and day without a year (`MM-DD`), serialised as `"05-01"`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct MonthDay {
     month: u32,
@@ -73,7 +73,7 @@ pub struct MonthDay {
 impl MonthDay {
     /// Builds a month-day; `02-29` is accepted.
     pub fn new(month: u32, day: u32) -> Option<Self> {
-        // 2024 is a leap year, so every valid MM-JJ exists in it.
+        // 2024 is a leap year, so every valid MM-DD exists in it.
         NaiveDate::from_ymd_opt(2024, month, day).map(|_| Self { month, day })
     }
 
@@ -90,7 +90,7 @@ impl MonthDay {
     pub fn in_year(&self, year: i32) -> NaiveDate {
         NaiveDate::from_ymd_opt(year, self.month, self.day)
             .or_else(|| NaiveDate::from_ymd_opt(year, self.month, self.day - 1))
-            .expect("a valid MM-JJ always exists in a year, up to 02-29")
+            .expect("a valid MM-DD always exists in a year, up to 02-29")
     }
 
     /// Month-day of a civil date.
@@ -112,7 +112,7 @@ impl std::str::FromStr for MonthDay {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let invalid = || format!("invalid MM-JJ date: {s:?}");
+        let invalid = || format!("invalid MM-DD date: {s:?}");
         let (m, j) = s.split_once('-').ok_or_else(invalid)?;
         if m.len() != 2 || j.len() != 2 {
             return Err(invalid());

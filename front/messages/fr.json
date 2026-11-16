@@ -373,7 +373,7 @@
   "catalogue_filter_family": "Filtrer par famille",
   "catalogue_all": "Toutes",
   "catalogue_none": "Aucune culture ne correspond.",
-  "catalogue_count": "{count} cultures en V1 · liste allongée après la V1.",
+  "catalogue_count": "{count} cultures. Les vivaces (asperge, rhubarbe…) ne sont pas incluses.",
   "catalogue_sheet": "Fiche",
   "catalogue_stage_sowing": "Semis",
   "catalogue_stage_grows": "Jeune pousse",

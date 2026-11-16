@@ -85,13 +85,13 @@ export function simulerTauri(): void {
     ]);
     beds.push(bed("Planter A", "planter", 1050, 50, 100, 100), bed("Planter B", "planter", 1050, 350, 100, 100));
     const plan: [string, PlantingInput["mode"], string][][] = [
-      [["lettuce", "open_ground", "03-01"], ["green_bean", "open_ground", "07-20"]],
+      [["lettuce", "open_ground", "03-01"], ["green-bean", "open_ground", "07-20"]],
       [["carrot", "open_ground", "03-15"], ["lettuce", "open_ground", "09-01"]],
       [["tomato", "indoor", "03-10"]],
       [["zucchini", "indoor", "04-15"]],
       [["leek", "indoor", "03-01"]],
       [["lettuce", "open_ground", "03-10"], ["leek", "plants", "09-01"]],
-      [["green_bean", "open_ground", "05-10"], ["lettuce", "open_ground", "09-10"]],
+      [["green-bean", "open_ground", "05-10"], ["lettuce", "open_ground", "09-10"]],
       [["carrot", "open_ground", "04-01"]],
       [["tomato", "plants", "05-05"]],
       [["lettuce", "open_ground", "03-05"], ["lettuce", "open_ground", "07-15"]],
@@ -143,7 +143,7 @@ export function simulerTauri(): void {
       entree(roots, "lettuce", 1, 3, "plants", `${Y}-08-05`),
       entree(roots, "leek", 4, 6, "indoor", `${Y}-05-01`),
       entree(shed, "lettuce", 1, 6, "indoor", `${Y}-03-02`),
-      entree(shed, "green_bean", 1, 6, "open_ground", `${Y}-06-20`),
+      entree(shed, "green-bean", 1, 6, "open_ground", `${Y}-06-20`),
       entree(leeks, "leek", 1, 2, "indoor", `${Y}-03-25`),
       entree(salads, "lettuce", 1, 2, "plants", `${Y}-04-20`),
       entree(salads, "lettuce", 1, 2, "indoor", `${Y}-07-12`),

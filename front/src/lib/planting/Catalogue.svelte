@@ -46,7 +46,7 @@
     app.catalogueOpen = false;
   }
 
-  /** `MM-JJ` as « 1er mars ». */
+  /** `MM-DD` as « 1er mars ». */
   function dayMonth(monthDay: string): string {
     const [month = 1, day = 1] = monthDay.split("-").map(Number);
     return new Date(Date.UTC(2001, month - 1, day)).toLocaleDateString(localeTag(), { day: "numeric", month: "long", timeZone: "UTC" });
@@ -419,6 +419,25 @@
     }
     h1 {
       font-size: 24px;
+    }
+    /* 67 crops: two cards a row, and the families on one scrolling line. */
+    .grille {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .carte {
+      min-height: 112px;
+      padding: 12px 8px 10px;
+    }
+    .filters {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+      margin-inline: -16px;
+      padding-inline: 16px;
+    }
+    .filter {
+      flex: none;
     }
   }
 </style>

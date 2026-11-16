@@ -134,9 +134,9 @@ pub struct CropView {
     pub indoor_days: u32,
     pub harvest_after_days: u32,
     pub harvest_duration_days: u32,
-    /// `MM-JJ`.
+    /// `MM-DD`.
     pub planting_out_start: String,
-    /// `MM-JJ`.
+    /// `MM-DD`.
     pub planting_out_end: String,
     pub row_cm: u32,
     pub spacing_cm: u32,

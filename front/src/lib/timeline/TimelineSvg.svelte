@@ -85,6 +85,24 @@
 
   const month = $derived(monthVisible(scale));
   const compact = $derived(widthLabels < WIDTH_LABELS);
+
+  /** The name of a bed on at most two lines that fit the label column: words are
+   *  kept whole when possible, and what still does not fit ends with « … ». */
+  function nameLines(name: string, columnWidth: number, fontSize: number): string[] {
+    const max = Math.max(6, Math.floor(columnWidth / (fontSize * 0.56)));
+    const cut = (t: string) => (t.length > max ? t.slice(0, max - 1) + "…" : t);
+    if (name.length <= max) return [name];
+    const words = name.split(" ");
+    let first = "";
+    let i = 0;
+    for (; i < words.length; i++) {
+      const next = first ? first + " " + words[i] : (words[i] ?? "");
+      if (next.length > max) break;
+      first = next;
+    }
+    if (!first) return [cut(name)];
+    return [first, cut(words.slice(i).join(" "))].filter(Boolean);
+  }
   /** Month names that fit their column: three letters, one letter when narrow, none when tiny. */
   const namesOfMonth = $derived(
     month.map((mo) => {
@@ -378,9 +396,13 @@
         <rect x="0" y={p.top} width="3" height={p.height} fill={PALETTE.accent} />
       {/if}
       <line x1="0" x2={widthLabels} y1={p.top - 0.5} y2={p.top - 0.5} stroke={PALETTE.trait} />
-      <text x={compact ? 8 : 12} y={p.top + p.height / 2 + (compact ? 4 : -2)} font-size={compact ? 12 : 14} font-weight="600" fill={PALETTE.ink}>{row.bed.name}</text>
+      {@const size = compact ? 12 : 14}
+      {@const lines = nameLines(row.bed.name, widthLabels - (compact ? 16 : 20), size)}
+      <text x={compact ? 8 : 12} y={p.top + p.height / 2 + (compact ? 4 : -2) - (lines.length - 1) * (size / 2 + 1)} font-size={size} font-weight="600" fill={PALETTE.ink}>
+        {#each lines as line, k (k)}<tspan x={compact ? 8 : 12} dy={k === 0 ? 0 : size + 2}>{line}</tspan>{/each}
+      </text>
       {#if !compact}
-        <text x="12" y={p.top + p.height / 2 + 15} font-size="12" fill={PALETTE.muted}>
+        <text x="12" y={p.top + p.height / 2 + 15 + (lines.length - 1) * 8} font-size="12" fill={PALETTE.muted}>
           {m.timeline_bed_dim({
             type: nameOfType(row.bed.bed_type),
             length: formatMeters(row.bed.length_cm),

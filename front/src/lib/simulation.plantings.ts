@@ -25,17 +25,34 @@ import type {
 } from "./bindings";
 import { dateOf, shiftDate, dayOf } from "./dates";
 
+import catalogueJson from "../../../crates/catalogue/crops.json";
+
+type RawCrop = {
+  id: string;
+  family: string;
+  indoor_days: number;
+  harvest_after_days: number;
+  harvest_duration_days: number;
+  planting_out: { start: string; end: string };
+  row_cm: number;
+  spacing_cm: number;
+};
+
 type Args = Record<string, unknown>;
 
-/** S02 §3. */
-export const CROPS: CropView[] = [
-  { id: "tomato", family: "Solanaceae", indoor_days: 56, harvest_after_days: 75, harvest_duration_days: 70, planting_out_start: "05-01", planting_out_end: "06-15", row_cm: 80, spacing_cm: 60 },
-  { id: "lettuce", family: "Asteraceae", indoor_days: 28, harvest_after_days: 50, harvest_duration_days: 20, planting_out_start: "03-01", planting_out_end: "09-30", row_cm: 30, spacing_cm: 30 },
-  { id: "carrot", family: "Apiaceae", indoor_days: 0, harvest_after_days: 100, harvest_duration_days: 40, planting_out_start: "03-01", planting_out_end: "07-15", row_cm: 25, spacing_cm: 4 },
-  { id: "green_bean", family: "Fabaceae", indoor_days: 0, harvest_after_days: 60, harvest_duration_days: 30, planting_out_start: "05-10", planting_out_end: "07-31", row_cm: 50, spacing_cm: 10 },
-  { id: "zucchini", family: "Cucurbitaceae", indoor_days: 21, harvest_after_days: 50, harvest_duration_days: 80, planting_out_start: "05-01", planting_out_end: "06-30", row_cm: 100, spacing_cm: 100 },
-  { id: "leek", family: "Amaryllidaceae", indoor_days: 70, harvest_after_days: 120, harvest_duration_days: 90, planting_out_start: "05-15", planting_out_end: "07-31", row_cm: 30, spacing_cm: 12 },
-];
+/** The V1 catalogue (S02): the real file of the Rust core, so that the demo shows
+ *  the 67 crops. */
+export const CROPS: CropView[] = (catalogueJson as RawCrop[]).map((c) => ({
+  id: c.id,
+  family: c.family,
+  indoor_days: c.indoor_days,
+  harvest_after_days: c.harvest_after_days,
+  harvest_duration_days: c.harvest_duration_days,
+  planting_out_start: c.planting_out.start,
+  planting_out_end: c.planting_out.end,
+  row_cm: c.row_cm,
+  spacing_cm: c.spacing_cm,
+}));
 
 export type Context = {
   plot: () => PlotView | null;

@@ -373,7 +373,7 @@
   "catalogue_filter_family": "Filter by family",
   "catalogue_all": "All",
   "catalogue_none": "No crop matches.",
-  "catalogue_count": "{count} crops in V1 · longer list after V1.",
+  "catalogue_count": "{count} crops. Perennials (asparagus, rhubarb…) are not included.",
   "catalogue_sheet": "Sheet",
   "catalogue_stage_sowing": "Sowing",
   "catalogue_stage_grows": "Young shoot",

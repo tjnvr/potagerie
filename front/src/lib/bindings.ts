@@ -187,9 +187,9 @@ export type CropView = {
 	indoor_days: number,
 	harvest_after_days: number,
 	harvest_duration_days: number,
-	/**  `MM-JJ`. */
+	/**  `MM-DD`. */
 	planting_out_start: string,
-	/**  `MM-JJ`. */
+	/**  `MM-DD`. */
 	planting_out_end: string,
 	row_cm: number,
 	spacing_cm: number,
