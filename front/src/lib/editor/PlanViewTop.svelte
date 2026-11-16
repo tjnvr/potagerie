@@ -33,6 +33,7 @@
     onmodify = async () => "ok" as Response,
     onbeforeplot = () => {},
     onplace = () => {},
+    ondraw = () => {},
   }: {
     plot: PlotView;
     beds: BedView[];
@@ -46,17 +47,52 @@
     onbeforeplot?: () => void;
     /** A click on free grass, with nothing selected: put a bed there. */
     onplace?: (point: Point) => void;
+    /** A zone drawn by dragging on free grass, snapped to the cases. */
+    ondraw?: (geo: Geo) => void;
   } = $props();
 
   // A click on the grass first clears the selection; only a click made with
   // nothing selected puts a bed down.
   let selectionBeforeClick: string | null = null;
-  function pressGrass() {
+  // Drawing a zone: a mouse press on free grass then a drag draws a rectangle
+  // snapped to the cases, shown from the first pixel (no drag threshold).
+  let bandStart: Point | null = null;
+  let band = $state<Geo | null>(null);
+  let drew = false;
+  function pressGrass(e: PointerEvent) {
     if (geste) return;
     selectionBeforeClick = selectionId;
     onselect(null);
+    drew = false;
+    bandStart = !readOnly && e.pointerType === "mouse" && e.button === 0 ? (versCm(e.clientX, e.clientY) ?? null) : null;
+  }
+  function growBand(e: PointerEvent) {
+    if (!bandStart) return;
+    const p = versCm(e.clientX, e.clientY);
+    if (!p) return;
+    const c = plot.cell_cm;
+    const x0 = Math.floor(Math.min(bandStart.x, p.x) / c) * c;
+    const y0 = Math.floor(Math.min(bandStart.y, p.y) / c) * c;
+    const x1 = Math.ceil(Math.max(bandStart.x, p.x) / c) * c;
+    const y1 = Math.ceil(Math.max(bandStart.y, p.y) / c) * c;
+    const moved = Math.hypot(p.x - bandStart.x, p.y - bandStart.y) > c / 4;
+    if (!moved && !band) return;
+    band = { x: x0, y: y0, length_cm: Math.min(x1, plot.length_cm) - x0, width_cm: Math.min(y1, plot.width_cm) - y0 };
+  }
+  function endBand() {
+    const zone = band;
+    band = null;
+    bandStart = null;
+    if (zone && zone.length_cm >= plot.cell_cm && zone.width_cm >= plot.cell_cm) {
+      drew = true;
+      ondraw(zone);
+    }
   }
   function clickGrass(e: MouseEvent) {
+    if (drew) {
+      drew = false;
+      return;
+    }
     if (readOnly || selectionBeforeClick !== null) return;
     const point = versCm(e.clientX, e.clientY);
     if (point) onplace(point);
@@ -242,8 +278,14 @@
   viewBox="{box.x} {box.y} {box.width} {box.height}"
   role="group"
   aria-label={m.plan_aria({ count: beds.length })}
-  onpointermove={bouge}
-  onpointerup={raised}
+  onpointermove={(e) => {
+    growBand(e);
+    bouge(e);
+  }}
+  onpointerup={(e) => {
+    endBand();
+    raised(e);
+  }}
   onpointercancel={cancelled}
 >
   <rect
@@ -338,6 +380,9 @@
       {/if}
     {/if}
 
+  {#if band}
+    <rect class="ghost" x={band.x} y={band.y} width={band.length_cm} height={band.width_cm} rx="6" />
+  {/if}
   {#if ghost}
     <rect
       class="ghost"

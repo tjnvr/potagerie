@@ -91,6 +91,23 @@ test("UC-14 timeline: a click on a bar opens the planting to edit", async ({ pag
   await expect(page.getByRole("heading", { name: "Edit the planting" })).toBeVisible();
 });
 
+test("UC-15 plan: dragging on free grass draws a zone as the pointer moves", async ({ page }) => {
+  await open(page);
+  await page.getByRole("button", { name: "2027", exact: true }).click();
+  await page.getByRole("button", { name: "Plan", exact: true }).click();
+  const grass = page.locator("rect.grass");
+  const r = (await grass.boundingBox())!;
+  const x = r.x + r.width * 0.55;
+  const y = r.y + r.height * 0.7;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + 20, y + 20);
+  // The preview shows at once, well before the old 4 px + drop logic would.
+  await expect(page.locator("rect.ghost")).toHaveCount(1);
+  await page.mouse.move(x + r.width * 0.1, y + r.height * 0.08, { steps: 4 });
+  await page.mouse.up();
+});
+
 test("UC-07 notes: empty text is refused, 80 characters at most, the note appears", async ({ page }) => {
   await open(page);
   await toGarden(page);

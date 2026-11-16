@@ -80,6 +80,20 @@
     await poser(type, pos.x, pos.y);
   }
 
+  /** A zone drawn on the grass: a bed of the chosen type, then resized to the zone. */
+  async function drawZone(zone: { x: number; y: number; length_cm: number; width_cm: number }) {
+    if (!view.plot || complete) return;
+    const type = scope ?? "bed";
+    await poser(type, zone.x, zone.y);
+    const id = selectionId;
+    const bed = id ? app.view?.beds.find((b) => b.id === id) : null;
+    if (id && bed) {
+      await app.modify((year) =>
+        commands.modifyBed(year, id, null, { bed_type: bed.bed_type, ...zone }),
+      );
+    }
+  }
+
   // Drag from the tray: the same long press on a finger, the same pointer logic.
   const planter = new ControllerDrag({ onArmed: () => {} });
   let typePlanter: TypeBed | null = null;
@@ -194,6 +208,7 @@
         onmodify={modify}
         onbeforeplot={() => app.report({ code: "bed_outside_plot", detail: "" })}
         onplace={poserHere}
+        ondraw={drawZone}
       />
       {#if view.beds.length === 0}
         <p class="help">{m.plan_empty()}</p>
