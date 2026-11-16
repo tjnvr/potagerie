@@ -439,7 +439,7 @@
   "export_title": "Exporter la frise",
   "export_format": "Format",
   "export_format_pdf": "PDF",
-  "export_format_pdf_help": "A4 ou A3 paysage, à imprimer",
+  "export_format_pdf_help": "A4 paysage, à imprimer",
   "export_format_png": "Image PNG",
   "export_format_png_help": "À partager ou garder une trace",
   "export_period": "Période",

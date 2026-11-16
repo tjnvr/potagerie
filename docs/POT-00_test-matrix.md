@@ -41,7 +41,7 @@ Walked with the example data at 1440 px and 390 px, in English and French, in We
 
 Found and fixed: the catalogue footer said "6 crops in V1" (0.2.7); the catalogue was one card a row on a phone (0.2.7);
 bed names were cut in the timeline (0.2.7, 0.2.9); the Garden tab kept the date the cursor was left on (0.2.6);
-the header wrapped onto a third row on a phone in French (0.3.2); emoji and symbols came out as empty boxes in the export (0.3.3).
+the header wrapped onto a third row on a phone in French (0.3.2); the export dialog announced "A4 or A3" while only A4 exists (0.3.5); emoji and symbols came out as empty boxes in the export (0.3.3).
 
 Still open (observations, no decision yet):
 1. The app opens on **Plan**, not on Garden; "See the garden" is the way across.
@@ -49,4 +49,5 @@ Still open (observations, no decision yet):
 3. **Free slots that are entirely in the past** are offered (for example 7 June → 15 November seen on 16 November) and planting in the past is allowed; the specs say nothing about it.
 4. On the timeline, annotation labels can overlap the label of a bar underneath (the halo keeps them readable).
 5. The garden view is small at 390 px (a lot of empty margin around the isometric drawing).
-6. Not testable here: the real Tauri window, touch gestures, the installed build, the file dialogs.
+6. In the export dialog the preview includes the dotted free slots (arguably noise on a printed sheet): to decide.
+7. Not testable here: the real Tauri window, touch gestures, the installed build, the file dialogs.

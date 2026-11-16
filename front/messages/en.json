@@ -439,7 +439,7 @@
   "export_title": "Export the timeline",
   "export_format": "Format",
   "export_format_pdf": "PDF",
-  "export_format_pdf_help": "A4 or A3 landscape, to print",
+  "export_format_pdf_help": "A4 landscape, to print",
   "export_format_png": "PNG image",
   "export_format_png_help": "To share or keep a record",
   "export_period": "Period",
