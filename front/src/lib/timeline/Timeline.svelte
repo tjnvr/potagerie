@@ -33,6 +33,7 @@
     zoomer,
     type Scale,
   } from "./geometry";
+  import { rankSuggestions } from "../suggestions";
   import IconTimeline from "./IconTimeline.svelte";
 
   let { view }: { view: YearView } = $props();
@@ -318,7 +319,7 @@
       type: "new",
       bedId: row.bed.id,
       slot: slot.source,
-      suggestion: slot.source.suggestions[0],
+      suggestion: rankSuggestions(slot.source.suggestions)[0],
     };
   }
 

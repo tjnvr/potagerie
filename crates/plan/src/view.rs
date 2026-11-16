@@ -142,6 +142,9 @@ pub struct SuggestionView {
     pub manual_end: Option<NaiveDate>,
     /// Filling score rounded to a tenth, in tenths (0 to 10).
     pub score_tenths: u32,
+    /// Same family as the last planting before the slot: ranked after the others
+    /// of the same score.
+    pub recent_family: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -305,10 +308,11 @@ impl YearView {
                 start: slot.start,
                 end: slot.end,
                 suggestions: plan
-                    .suggestions(slot, catalogue, today)
+                    .suggestions_with_ties(slot, catalogue, today)
                     .into_iter()
                     .map(|s| SuggestionView {
                         score_tenths: u32::try_from(s.score_tenths()).unwrap_or(0),
+                        recent_family: s.recent_family,
                         crop_id: s.crop_id,
                         mode: s.mode,
                         date: s.date,

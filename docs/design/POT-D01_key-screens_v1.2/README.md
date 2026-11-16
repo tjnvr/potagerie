@@ -2,7 +2,7 @@
 
 > Version: 1.2 (draft) · Date: 2026-11-15 · Author: Tim
 > Canvas: https://claude.ai/artifact/DoHRUtcujzwPF6bfjdQtSN
-> Specs: [S01 v1.6](../../specs/POT-S01_functional-spec_v1.6.md) · [S02 v0.4](../../specs/POT-S02_crop-catalogue_v0.4.md) · [S03 v0.12](../../specs/POT-S03_rules-and-calculations_v0.12.md)
+> Specs: [S01 v1.6](../../specs/POT-S01_functional-spec_v1.6.md) · [S02 v0.4](../../specs/POT-S02_crop-catalogue_v0.4.md) · [S03 v0.13](../../specs/POT-S03_rules-and-calculations_v0.13.md)
 > v1.2 is the English translation of v1.1: texts, files and generator are in English. The layout does not change.
 
 ## Changes since v1.0 (kept from v1.1)

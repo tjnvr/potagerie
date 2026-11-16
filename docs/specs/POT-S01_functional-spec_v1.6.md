@@ -1,7 +1,7 @@
 # Potagerie — V1 functional specification
 
 > Version: 1.6 (draft) · Date: 15 November 2026 · Author: Tim · Domain: potagerie.garden
-> v1.6 is the English translation of v1.5; no requirement changes. Stack and lots: [S05](POT-S05_technical-spec_v0.12.md). Rules and calculations: [S03](POT-S03_rules-and-calculations_v0.12.md). Catalogue: [S02](POT-S02_crop-catalogue_v0.4.md).
+> v1.6 is the English translation of v1.5; no requirement changes. Stack and lots: [S05](POT-S05_technical-spec_v0.12.md). Rules and calculations: [S03](POT-S03_rules-and-calculations_v0.13.md). Catalogue: [S02](POT-S02_crop-catalogue_v0.4.md).
 > v1.3: three clarifications revealed by D02 (additional screens), see §11.
 
 ---

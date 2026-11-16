@@ -289,12 +289,13 @@ function suggestions(ctx: Context, start: number, end: number): SuggestionView[]
       end: iso(f),
       manual_end: f < r + c.harvest_duration_days ? iso(f) : null,
       score_tenths: Math.round(((f - start) / N) * 10),
+      recent_family: false,
     });
   }
-  return list
-    .sort((a, b) => b.score_tenths - a.score_tenths || a.name.localeCompare(b.name))
-    .slice(0, 3)
-    .map(({ name: _name, ...s }) => s);
+  list.sort((a, b) => b.score_tenths - a.score_tenths || a.name.localeCompare(b.name));
+  // Like Rust: the first 3, and the crops tied with the 3rd.
+  const last = list[2]?.score_tenths;
+  return list.filter((s, i) => i < 3 || s.score_tenths === last).map(({ name: _name, ...s }) => s);
 }
 
 export function slots(ctx: Context, year: number): SlotView[] {

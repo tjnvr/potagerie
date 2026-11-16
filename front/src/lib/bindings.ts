@@ -434,6 +434,11 @@ export type SuggestionView = {
 	manual_end: string | null,
 	/**  Filling score rounded to a tenth, in tenths (0 to 10). */
 	score_tenths: number,
+	/**
+	 *  Same family as the last planting before the slot: ranked after the others
+	 *  of the same score.
+	 */
+	recent_family: boolean,
 };
 
 export type TaskType = "sow-indoor" | "transplant" | "plant" | "sow-ground" | "harvest";

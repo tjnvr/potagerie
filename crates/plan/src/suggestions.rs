@@ -38,6 +38,9 @@ pub struct Suggestion {
     pub filled_days: i64,
     /// `N = F − D + 1`: length of the slot.
     pub slot_days: i64,
+    /// The crop is of the family of the last planting that ended before the
+    /// slot on its zone: it comes after the others of the same score.
+    pub recent_family: bool,
 }
 
 impl Suggestion {
@@ -139,6 +142,7 @@ pub fn evaluate(slot: &Slot, crop: &Crop, today: NaiveDate) -> Option<Suggestion
         // 5. Filling score.
         filled_days: (end.min(after_slot) - start).num_days(),
         slot_days: slot.length_days(),
+        recent_family: false,
     })
 }
 
@@ -155,21 +159,59 @@ impl Plan {
         catalogue: &Catalogue,
         today: NaiveDate,
     ) -> Vec<Suggestion> {
+        let mut ranked = self.ranked_suggestions(slot, catalogue, today);
+        ranked.truncate(MAX_SUGGESTIONS);
+        ranked
+    }
+
+    /// The first [`MAX_SUGGESTIONS`] of [`Plan::suggestions`], plus the crops tied
+    /// with the last of them (same score, same family flag), still in English
+    /// alphabetical order. The tie-break by name is the display language's:
+    /// the interface sorts these ties again with the names it shows.
+    pub fn suggestions_with_ties(
+        &self,
+        slot: &Slot,
+        catalogue: &Catalogue,
+        today: NaiveDate,
+    ) -> Vec<Suggestion> {
+        let ranked = self.ranked_suggestions(slot, catalogue, today);
+        let key = |s: &Suggestion| (Reverse(s.score_tenths()), s.recent_family);
+        let Some(last) = ranked.get(MAX_SUGGESTIONS - 1).map(key) else {
+            return ranked;
+        };
+        ranked
+            .into_iter()
+            .enumerate()
+            .take_while(|(i, s)| *i < MAX_SUGGESTIONS || key(s) == last)
+            .map(|(_, s)| s)
+            .collect()
+    }
+
+    /// Every suggestion for the slot, ranked (S03 §9).
+    fn ranked_suggestions(
+        &self,
+        slot: &Slot,
+        catalogue: &Catalogue,
+        today: NaiveDate,
+    ) -> Vec<Suggestion> {
         let previous_families = self.families_of_last_finished_planting(slot, catalogue);
         let mut candidates: Vec<(Suggestion, &Crop)> = catalogue
             .iter()
-            .filter_map(|c| Some((evaluate(slot, c, today)?, c)))
+            .filter_map(|c| {
+                let mut suggestion = evaluate(slot, c, today)?;
+                suggestion.recent_family = previous_families.contains(&c.family);
+                Some((suggestion, c))
+            })
             .collect();
         candidates.sort_by_key(|(suggestion, crop)| {
             (
                 Reverse(suggestion.score_tenths()),
-                previous_families.contains(&crop.family),
+                suggestion.recent_family,
                 crop.name.to_lowercase(),
             )
         });
         candidates
             .into_iter()
-            .take(MAX_SUGGESTIONS)
             .map(|(suggestion, _)| suggestion)
             .collect()
     }

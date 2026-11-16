@@ -17,6 +17,8 @@
   import IconTimeline from "../timeline/IconTimeline.svelte";
   import { m } from "../paraglide/messages.js";
   import { formatMeters, nameCrop } from "../beds";
+  import { rankSuggestions } from "../suggestions";
+  import { localeTag } from "../locale";
   import { cursor } from "../time";
   import { get } from "svelte/store";
   import { isOk } from "./call";
@@ -135,13 +137,14 @@
 
   // ---------- Crops: the suggestions first, then those in season ----------
 
-  const suggested = $derived(slot?.suggestions.map((s) => s.crop_id) ?? []);
+  const slotSuggestions = $derived(slot ? rankSuggestions(slot.suggestions) : []);
+  const suggested = $derived(slotSuggestions.map((s) => s.crop_id));
   const order = $derived(
     catalogue.crops
       .map((c) => c.id)
       .sort((a, b) => {
         const row = (id: string) => (suggested.includes(id) ? 0 : season.includes(id) ? 1 : 2);
-        return row(a) - row(b) || nameCrop(a).localeCompare(nameCrop(b), "fr");
+        return row(a) - row(b) || nameCrop(a).localeCompare(nameCrop(b), localeTag());
       }),
   );
 
@@ -296,10 +299,10 @@
               end: dateAbbreviated(slot.end, view.year),
             })}
           </p>
-          {#if slot.suggestions.length > 0}
+          {#if slotSuggestions.length > 0}
             <p class="etiquette">{m.planting_suggestions()}</p>
             <div class="puces">
-              {#each slot.suggestions as s (s.crop_id)}
+              {#each slotSuggestions as s (s.crop_id)}
                 <button
                   class="puce"
                   class:active={f.cropId === s.crop_id && f.date === s.date}

@@ -77,6 +77,7 @@ describe("form to command input", () => {
       end: "2027-10-06",
       manual_end: "2027-10-06",
       score_tenths: 10,
+      recent_family: false,
     };
     const f = applySuggestion(formEmpty(tomato, "p1", 6, "2027-01-01"), s, { start: 1, end: 6 });
     expect(f).toMatchObject({ cropId: "lettuce", mode: "plants", date: "2027-08-02", manualEnd: "2027-10-06" });

@@ -24,6 +24,7 @@
   import { dateAbbreviated, dateOf, dayOf } from "../dates";
   import { formatMeters, nameCrop, nameOfType } from "../beds";
   import { PALETTE, colorCrop, melange } from "./colors";
+  import { rankSuggestions } from "../suggestions";
   import type { AnnotationView } from "../bindings";
   import { monthVisible, xOf, type Bar, type Scale, type Row } from "./geometry";
 
@@ -239,7 +240,7 @@
         {@const widthC = (c.end - c.start) * scale.pxByDay}
         {@const days = c.end - c.start}
         {@const partial = c.source.segment_start !== 1 || c.source.segment_end !== row.bed.segments}
-        {@const names = c.source.suggestions.map((s) => nameCrop(s.crop_id)).join(", ")}
+        {@const names = rankSuggestions(c.source.suggestions).map((s) => nameCrop(s.crop_id)).join(", ")}
         <g
           class="slot"
           data-slot={c.key}

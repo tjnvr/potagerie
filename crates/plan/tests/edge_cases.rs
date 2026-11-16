@@ -794,6 +794,35 @@ fn at_most_3_suggestions_ranked_by_filling_then_name() {
 }
 
 #[test]
+fn the_ties_of_the_last_suggestion_are_sent_for_the_interface_to_sort() {
+    let (plan, bed) = plan_with_bed();
+    let c = Slot {
+        bed_id: bed,
+        year: 2027,
+        zone: zone(1, 6),
+        start: d(2027, 5, 1),
+        end: d(2027, 11, 15),
+    };
+    let today = d(2027, 4, 20);
+    let top = plan.suggestions(&c, Catalogue::reference(), today);
+    let with_ties = plan.suggestions_with_ties(&c, Catalogue::reference(), today);
+    assert!(with_ties.len() >= top.len());
+    assert_eq!(&with_ties[..top.len()], &top[..]);
+    let third = top[2].score_tenths();
+    assert!(with_ties[3..].iter().all(|s| s.score_tenths() == third));
+    // Everything tied with the third is there: nothing else has its score.
+    let all = plan
+        .suggestions_with_ties(&c, Catalogue::reference(), today)
+        .len();
+    let tied = Catalogue::reference()
+        .iter()
+        .filter_map(|k| plan::evaluate(&c, k, today))
+        .filter(|s| s.score_tenths() == third)
+        .count();
+    assert_eq!(all, 1 + tied);
+}
+
+#[test]
 fn on_equal_score_a_different_family_from_the_last_planting_comes_first() {
     let ids = |plan: &Plan, bed| -> Vec<String> {
         let c = Slot {
