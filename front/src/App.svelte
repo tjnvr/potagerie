@@ -6,6 +6,7 @@
   import Icon from "./lib/shell/Icon.svelte";
   import Garden from "./lib/diorama/Garden.svelte";
   import { app } from "./lib/state.svelte";
+  import { translateError } from "./lib/errors";
   import { m } from "./lib/paraglide/messages.js";
   import Settings from "./lib/settings/Settings.svelte";
   import { catalogue } from "./lib/planting/crops.svelte";
@@ -33,7 +34,17 @@
   {#if app.toResolve.length > 0}
     <ToResolve />
   {/if}
-  {#if !app.view}
+  {#if !app.view && app.loadFailure}
+    <section class="load-failed" role="alert">
+      <h1>{m.load_failed_title()}</h1>
+      <p>{translateError(app.loadFailure)}</p>
+      <p class="muted">{m.load_failed_text()}</p>
+      <div class="actions">
+        <button class="button" onclick={() => app.load()}><Icon name="retry" size={16} />{m.retry()}</button>
+        <button class="button" onclick={() => (app.settingsOpen = true)}>{m.load_failed_settings()}</button>
+      </div>
+    </section>
+  {:else if !app.view}
     <p class="loading">{m.loading()}</p>
   {:else if app.tab === "plan"}
     <Editor view={app.view} />
@@ -86,6 +97,28 @@
 
   .loading {
     color: var(--muted);
+  }
+
+  .load-failed {
+    max-width: 520px;
+    margin: 48px auto;
+    padding: 24px;
+    border-radius: 20px;
+    background: var(--card);
+    text-align: center;
+  }
+
+  .load-failed .muted {
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .load-failed .actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 16px;
   }
 
   /* ET01, state 4: the write failed, the change stays on screen. */

@@ -54,6 +54,8 @@ pub enum ErrorCode {
     VersionStale,
     /// The database was written by a newer version of the app.
     BaseTooRecent,
+    /// The database file is damaged or unreadable: erase the data to start again.
+    BaseUnreadable,
     // From exports and imports.
     File,
     ImportInvalid,
@@ -117,7 +119,8 @@ impl From<PlanError> for AppError {
 impl From<StoreError> for AppError {
     fn from(error: StoreError) -> Self {
         let code = match &error {
-            StoreError::Database(_) | StoreError::Document(_) => ErrorCode::Saving,
+            StoreError::Database(_) => ErrorCode::Saving,
+            StoreError::Document(_) => ErrorCode::BaseUnreadable,
             StoreError::StaleVersion { .. } => ErrorCode::VersionStale,
             StoreError::SchemaTooNew { .. } => ErrorCode::BaseTooRecent,
         };

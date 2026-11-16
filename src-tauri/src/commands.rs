@@ -20,21 +20,82 @@ use tauri::State;
 use crate::error::{AppError, ErrorCode};
 
 /// Shared state: the store of the device.
+///
+/// A database that cannot be opened (a damaged file) does not stop the app:
+/// every command then answers `base_unreadable`, so that the interface can say
+/// so and offer to erase the data (`erase_data` removes the damaged file).
 pub struct AppState {
-    store: Mutex<SqliteStore>,
+    store: Mutex<Option<SqliteStore>>,
+    db_path: PathBuf,
+    /// Why the database could not be opened, when it could not.
+    open_error: Mutex<Option<String>>,
+}
+
+/// The open store, locked.
+pub struct StoreGuard<'a>(MutexGuard<'a, Option<SqliteStore>>);
+
+impl std::ops::Deref for StoreGuard<'_> {
+    type Target = SqliteStore;
+    fn deref(&self) -> &SqliteStore {
+        self.0.as_ref().expect("checked by AppState::store")
+    }
+}
+
+impl std::ops::DerefMut for StoreGuard<'_> {
+    fn deref_mut(&mut self) -> &mut SqliteStore {
+        self.0.as_mut().expect("checked by AppState::store")
+    }
 }
 
 impl AppState {
-    pub fn open(db_path: &Path) -> Result<Self, AppError> {
-        Ok(Self {
-            store: Mutex::new(SqliteStore::open(db_path)?),
-        })
+    pub fn open(db_path: &Path) -> Self {
+        let (store, error) = match SqliteStore::open(db_path) {
+            Ok(store) => (Some(store), None),
+            Err(error) => (None, Some(error.to_string())),
+        };
+        Self {
+            store: Mutex::new(store),
+            db_path: db_path.to_path_buf(),
+            open_error: Mutex::new(error),
+        }
     }
 
-    fn store(&self) -> MutexGuard<'_, SqliteStore> {
+    fn store(&self) -> Result<StoreGuard<'_>, AppError> {
         // A panic while holding the lock cannot leave a half-written plan:
         // every write is one SQL statement.
-        self.store.lock().unwrap_or_else(|e| e.into_inner())
+        let guard = self.store.lock().unwrap_or_else(|e| e.into_inner());
+        if guard.is_none() {
+            let why = self
+                .open_error
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .clone()
+                .unwrap_or_default();
+            return Err(AppError::new(ErrorCode::BaseUnreadable, why));
+        }
+        Ok(StoreGuard(guard))
+    }
+
+    /// Deletes every stored data. A database that could not be opened is removed
+    /// (with its `-wal` and `-shm` files) and created again.
+    fn erase(&self) -> Result<(), AppError> {
+        let mut guard = self.store.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(store) = guard.as_mut() {
+            store.clear()?;
+            return Ok(());
+        }
+        for suffix in ["", "-wal", "-shm"] {
+            let mut name = self.db_path.clone().into_os_string();
+            name.push(suffix);
+            match std::fs::remove_file(PathBuf::from(name)) {
+                Ok(()) => {}
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+                Err(e) => return Err(AppError::new(ErrorCode::File, e.to_string())),
+            }
+        }
+        *guard = Some(SqliteStore::open(&self.db_path)?);
+        *self.open_error.lock().unwrap_or_else(|e| e.into_inner()) = None;
+        Ok(())
     }
 }
 
@@ -52,7 +113,7 @@ fn change(
     year: i32,
     change: impl FnOnce(&mut Plan, NaiveDate) -> Result<(), AppError>,
 ) -> Result<YearView, AppError> {
-    let mut store = state.store();
+    let mut store = state.store()?;
     let mut plan = store
         .load()?
         .ok_or_else(|| AppError::new(ErrorCode::PlotAbsent, "create the plot first"))?;
@@ -415,7 +476,7 @@ pub fn catalogue() -> Vec<CropView> {
 #[tauri::command]
 #[specta::specta]
 pub fn view_year(state: State<'_, AppState>, year: i32) -> Result<YearView, AppError> {
-    let plan = state.store().load()?;
+    let plan = state.store()?.load()?;
     Ok(view(plan.as_ref(), year))
 }
 
@@ -427,7 +488,7 @@ pub fn create_plot(
     year: i32,
     plot: PlotInput,
 ) -> Result<YearView, AppError> {
-    let mut store = state.store();
+    let mut store = state.store()?;
     if store.load()?.is_some() {
         return Err(AppError::new(
             ErrorCode::PlotExisting,
@@ -560,7 +621,7 @@ pub fn plantings_exceeding(
     length_cm: u32,
 ) -> Result<Vec<PlantingId>, AppError> {
     let plan = state
-        .store()
+        .store()?
         .load()?
         .ok_or_else(|| AppError::new(ErrorCode::PlotAbsent, "create the plot first"))?;
     let cell_cm = plan.plot.cell_cm.cm();
@@ -713,7 +774,7 @@ pub fn preview_planting(
     planting: PlantingInput,
 ) -> Result<PlantingPreview, AppError> {
     let plan = state
-        .store()
+        .store()?
         .load()?
         .ok_or_else(|| AppError::new(ErrorCode::PlotAbsent, "create the plot first"))?;
     Ok(build_planting_preview(&plan, id, &planting))
@@ -896,7 +957,7 @@ pub async fn export_timeline(
 #[specta::specta]
 pub fn export_garden(state: State<'_, AppState>, path: PathBuf) -> Result<(), AppError> {
     let plan = state
-        .store()
+        .store()?
         .load()?
         .ok_or_else(|| AppError::new(ErrorCode::PlotAbsent, "nothing to export"))?;
     export::export_garden(&plan, &path)?;
@@ -913,7 +974,7 @@ pub fn read_import(
     state: State<'_, AppState>,
     path: PathBuf,
 ) -> Result<ImportSummaryView, AppError> {
-    let local = state.store().load()?;
+    let local = state.store()?.load()?;
     let plan = export::read_garden(&path)?;
     let summary = export::summarise(&plan, local.as_ref());
     Ok(ImportSummaryView {
@@ -937,7 +998,7 @@ pub fn read_import(
 #[tauri::command]
 #[specta::specta]
 pub fn incoherences_plan(state: State<'_, AppState>) -> Result<Vec<IncoherenceView>, AppError> {
-    let Some(plan) = state.store().load()? else {
+    let Some(plan) = state.store()?.load()? else {
         return Ok(Vec::new());
     };
     Ok(plan
@@ -958,7 +1019,7 @@ pub fn import_garden(
     let plan = export::read_garden(&path)?;
     // `read_garden` refused a broken structure; the other incoherences are
     // kept as they are (S03 §13) and were listed by `read_import`.
-    state.store().replace(&plan)?;
+    state.store()?.replace(&plan)?;
     Ok(view(Some(&plan), year))
 }
 
@@ -978,6 +1039,5 @@ pub fn clear_plan(state: State<'_, AppState>, year: i32) -> Result<YearView, App
 #[tauri::command]
 #[specta::specta]
 pub fn erase_data(state: State<'_, AppState>) -> Result<(), AppError> {
-    state.store().clear()?;
-    Ok(())
+    state.erase()
 }

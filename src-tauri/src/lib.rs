@@ -89,7 +89,7 @@ pub fn run() {
             builder.mount_events(app);
             let dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&dir)?;
-            let state = AppState::open(&dir.join(DB_FILE))?;
+            let state = AppState::open(&dir.join(DB_FILE));
             app.manage(state);
             Ok(())
         })

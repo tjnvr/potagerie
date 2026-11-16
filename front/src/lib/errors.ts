@@ -36,6 +36,7 @@ const messages: Record<ErrorCode, () => string> = {
   saving: m.error_saving,
   version_stale: m.error_version_stale,
   base_too_recent: m.error_base_too_recent,
+  base_unreadable: m.error_base_unreadable,
   file: m.error_file,
   import_invalid: m.error_import_invalid,
   import_too_recent: m.error_import_too_recent,

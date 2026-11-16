@@ -32,3 +32,12 @@ test("other refusals leave the indicator alone and show a message", async () => 
   expect(app.message?.tone).toBe("error");
   expect(app.message?.text).toBe("Past seasons can no longer be changed.");
 });
+
+test("a first load that fails is kept for the shell, not left as an endless « Loading… »", async () => {
+  app.view = null;
+  app.loadFailure = null;
+  // No Tauri here: the command fails like a damaged data file would.
+  await app.load();
+  expect(app.view).toBeNull();
+  expect(app.loadFailure).not.toBeNull();
+});

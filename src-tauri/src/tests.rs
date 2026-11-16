@@ -18,7 +18,7 @@ fn app(db: &Path) -> (tauri::App<MockRuntime>, WebviewWindow<MockRuntime>) {
         .invoke_handler(builder.invoke_handler())
         .build(context())
         .expect("failed to build the app");
-    app.manage(AppState::open(db).unwrap());
+    app.manage(AppState::open(db));
     let window = WebviewWindowBuilder::new(&app, "main", Default::default())
         .build()
         .unwrap();
@@ -923,4 +923,61 @@ fn incoherent_imports_are_accepted_with_a_list_and_nothing_is_deleted() {
     // The planting of the unknown bed is kept, not shown.
     let again = invoke(&window, "read_import", json!({ "path": file })).unwrap();
     assert_eq!(again["planting_count"], 3);
+}
+
+#[test]
+fn a_damaged_database_does_not_stop_the_app_and_can_be_erased() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = dir.path().join(DB_FILE);
+    std::fs::write(&db, b"this is not a SQLite database, just text".repeat(50)).unwrap();
+
+    let (_app, window) = app(&db);
+    let err = invoke(&window, "view_year", json!({ "year": year() })).unwrap_err();
+    assert_eq!(err["code"], "base_unreadable");
+    let err = invoke(
+        &window,
+        "create_plot",
+        json!({
+            "year": year(),
+            "plot": { "length_cm": 1100, "width_cm": 650, "cell_cm": 50, "aisle_cm": 50 }
+        }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "base_unreadable");
+
+    // Erasing removes the damaged file and starts again from an empty garden.
+    invoke(&window, "erase_data", json!({})).unwrap();
+    let view = invoke(&window, "view_year", json!({ "year": year() })).unwrap();
+    assert_eq!(view["plot"], Value::Null);
+    invoke(
+        &window,
+        "create_plot",
+        json!({
+            "year": year(),
+            "plot": { "length_cm": 1100, "width_cm": 650, "cell_cm": 50, "aisle_cm": 50 }
+        }),
+    )
+    .unwrap();
+}
+
+#[test]
+fn a_database_with_an_unreadable_document_is_reported_as_unreadable() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = dir.path().join(DB_FILE);
+    {
+        let (_app, window) = app(&db);
+        invoke(&window, "view_year", json!({ "year": year() })).unwrap();
+    }
+    let conn = rusqlite::Connection::open(&db).unwrap();
+    conn.execute(
+        "INSERT INTO plan (id, version, updated_at, document) VALUES (1, 1, '2027-01-01T00:00:00Z', '{not json')",
+        [],
+    )
+    .unwrap();
+    drop(conn);
+    let (_app, window) = app(&db);
+    let err = invoke(&window, "view_year", json!({ "year": year() })).unwrap_err();
+    assert_eq!(err["code"], "base_unreadable");
+    invoke(&window, "erase_data", json!({})).unwrap();
+    invoke(&window, "view_year", json!({ "year": year() })).unwrap();
 }

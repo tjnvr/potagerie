@@ -232,7 +232,9 @@ export type ErrorCode = "year_past" | "too_many_beds" | "bed_unknown" | "plantin
 /**  The plan changed since it was read; reload and retry. */
 "version_stale" | 
 /**  The database was written by a newer version of the app. */
-"base_too_recent" | "file" | "import_invalid" | "import_too_recent" | "svg_invalid" | "rendering_impossible";
+"base_too_recent" | 
+/**  The database file is damaged or unreadable: erase the data to start again. */
+"base_unreadable" | "file" | "import_invalid" | "import_too_recent" | "svg_invalid" | "rendering_impossible";
 
 export type GeometryInput = {
 	bed_type: TypeBed,

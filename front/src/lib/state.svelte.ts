@@ -47,6 +47,9 @@ class App {
    *  for the screens that word it themselves (a bar that goes back, S03 T12). */
   lastRefusal = $state<AppError | null>(null);
   view = $state<YearView | null>(null);
+  /** Why the first load failed (a damaged data file): the shell says so instead
+   *  of an endless « Loading… ». */
+  loadFailure = $state<AppError | null>(null);
   saving = $state<Saving>("saved");
   message = $state<Message | null>(null);
   #retry: (() => Promise<void>) | null = null;
@@ -57,7 +60,11 @@ class App {
     const result = await call(() => commands.viewYear(year));
     if (result.status === "ok") {
       this.view = result.data;
+      this.loadFailure = null;
       await this.refreshToResolve();
+    } else if (!this.view) {
+      // Nothing to show yet: the shell explains and offers a way out.
+      this.loadFailure = result.error;
     } else {
       this.report(result.error);
     }
