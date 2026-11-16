@@ -1,7 +1,7 @@
 # Potagerie — V1 functional specification
 
-> Version: 1.6 (draft) · Date: 15 November 2026 · Author: Tim · Domain: potagerie.garden
-> v1.6 is the English translation of v1.5; no requirement changes. Stack and lots: [S05](POT-S05_technical-spec_v0.13.md). Rules and calculations: [S03](POT-S03_rules-and-calculations_v0.13.md). Catalogue: [S02](POT-S02_crop-catalogue_v0.4.md).
+> Version: 1.7 (draft) · Date: 2026-11-16 November 2026 · Author: Tim · Domain: potagerie.garden
+> v1.7 settles the inconsistencies found by the audit (catalogue size, season selector, performance target, what comes after lot 1). v1.6 is the English translation of v1.5; no requirement changes. Stack and lots: [S05](POT-S05_technical-spec_v0.14.md). Rules and calculations: [S03](POT-S03_rules-and-calculations_v0.14.md). Catalogue: [S02](POT-S02_crop-catalogue_v0.4.md).
 > v1.3: three clarifications revealed by D02 (additional screens), see §11.
 
 ---
@@ -69,7 +69,7 @@ V1 is delivered in three lots (S05, §9):
 - **Decor**: compost bin, water tank, greenhouse, path, bench.
 - **Climate**: frost dates, frost periods in the timeline.
 - **Alerts**: frost, planting-out period, rotation, companions, exposure.
-- **Wider catalogue**: about thirty crops, green manures included, with exposure and good and bad neighbours.
+- **Wider catalogue**: green manures and perennials, with exposure and good and bad neighbours.
 - **Season album**: a frozen image of the garden at its peak, kept each year.
 - Timeline export as CSV.
 - Calendar export as iCal (.ics). The design already prepares it (S03, §11).
@@ -185,7 +185,7 @@ Decor (F-PLN-3) is out of V1 (see 2.2).
 
 **F-CAT-1 — Content**
 - **In V1, the 67 annual crops of S02** (section 3 bis): nightshades, cabbages, roots, squashes, legumes, salads, alliums, a few annual herbs.
-- The list will grow after V1. Indicative list: pepper, eggplant, potato, squash, cucumber, melon, pea, broad bean, parsnip, beetroot, radish, turnip, onion, garlic, shallot, lamb's lettuce, spinach, chard, cabbage, broccoli, basil, parsley, strawberry, green manure (phacelia).
+- The V1 catalogue holds 67 annual crops (S02); perennials and green manures come after V1.
 
 **F-CAT-2 — Crop sheet**
 
@@ -207,7 +207,7 @@ The schema is **frozen for V1**; it is detailed in S02.
 Exposure and good and bad neighbours will come with the wider catalogue.
 
 - A crop has **a single** planting-out window.
-- A window may straddle two years (for example garlic: 15 October – 15 March).
+- A window may straddle two years (a window such as 15 October – 15 March is allowed by the schema; no crop of the V1 catalogue uses it).
 
 **F-CAT-3 — Browsing**
 - List that can be filtered by family and by planting-out season ("in season now").
@@ -247,7 +247,7 @@ Exposure and good and bad neighbours will come with the wider catalogue.
 - Two plantings can coexist on a bed if their **zones do not overlap** during the same period. Otherwise validation is impossible and the app shows the segments and the period in conflict.
 
 **F-PLA-4 — Continuous time**
-- There is **no season selector**: the timeline scrolls continuously from one year to the next, and the plantings straddling two years (garlic, winter leek) appear in one piece.
+- There is no **required** season selector: the timeline scrolls continuously from one year to the next, and the plantings straddling two years (an autumn sowing harvested the next year) appear in one piece. The header offers the neighbouring years as a shortcut.
 - The diorama shows the plan **of the year where the cursor is** (F-PLN-4). When the cursor crosses 1 January, it takes the layout of the new year.
 - Past crops stay viewable and editable (the plan of the past years, however, is frozen). They feed the reminder of the families grown.
 
@@ -439,7 +439,7 @@ Catalogue (global, read-only)
 ## 8. Non-functional requirements
 
 - **Platforms**: installed app on computer, macOS and Windows (lot 1), then on phone, iOS and Android (lot 2). Layout adapted from 360 px wide, prepared from lot 1.
-- **Performance**: the garden view stays smooth (60 frames per second targeted) during the season playback, for a garden of 20 beds and 60 plantings.
+- **Performance**: the garden view stays smooth (60 frames per second targeted) during the season playback, for a garden of 10 beds (the limit) and the plantings they hold.
 - **Responsiveness**: the computed values update instantly while typing.
 - **Data**: automatic saving, and nothing must be lost if the app is closed.
 - **Language**: the interface is available in English (base language) and French, picked from the language of the system. All the texts, catalogue names included, are meant to be translated: adding a language comes down to adding a translation file, without touching anything else.
@@ -464,7 +464,8 @@ None for now.
 - Tracking reality and automatic readjustment of the plan.
 - Harvest log and production summary.
 - Local weather and adjustment of the frost alerts.
-- Wider catalogue (about thirty crops, green manures included), then customisable, varieties.
+- Wider catalogue (green manures and perennials), then customisable, varieties.
+- After lot 1: rotate and duplicate a bed, Undo / Redo, the warning for two beds with the same name, the reminder of the families grown in the bed panel, the A3 paper size and the header, plan thumbnail and task calendar of the PDF.
 - Read-only sharing of the garden.
 - Several gardens or several plans (versions).
 

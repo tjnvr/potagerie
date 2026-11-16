@@ -111,7 +111,7 @@ impl Plan {
                     out.push(Incoherence::TooManyBeds { year, count });
                 }
             }
-            if let Err(e) = self.check_placements(first) {
+            for e in self.placement_errors(first) {
                 out.push(Incoherence::Placement(e));
             }
         }

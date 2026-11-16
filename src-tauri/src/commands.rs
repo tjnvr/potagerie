@@ -539,6 +539,7 @@ pub fn create_bed(
     change(&state, year, |plan, today| {
         let (length_cm, width_cm) = default_size(bed_type);
         plan::check_name(&name)?;
+        let name = name.trim().to_string();
         plan.add_bed(
             BedId::generate(),
             name,
@@ -574,6 +575,7 @@ pub fn modify_bed(
         }
         if let Some(name) = name {
             plan::check_name(&name)?;
+            let name = name.trim().to_string();
             plan.beds
                 .get_mut(&id)
                 .ok_or(plan::PlanError::UnknownBed(id))?

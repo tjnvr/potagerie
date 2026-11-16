@@ -981,3 +981,25 @@ fn a_database_with_an_unreadable_document_is_reported_as_unreadable() {
     invoke(&window, "erase_data", json!({})).unwrap();
     invoke(&window, "view_year", json!({ "year": year() })).unwrap();
 }
+
+#[test]
+fn bed_names_are_trimmed_when_saved() {
+    let dir = tempfile::tempdir().unwrap();
+    let (_app, window) = app(&dir.path().join(DB_FILE));
+    invoke(
+        &window,
+        "create_plot",
+        json!({
+            "year": year(),
+            "plot": { "length_cm": 1100, "width_cm": 650, "cell_cm": 50, "aisle_cm": 50 }
+        }),
+    )
+    .unwrap();
+    let view = invoke(
+        &window,
+        "create_bed",
+        json!({ "year": year(), "bedType": "bed", "name": "  Leeks  ", "x": 50, "y": 50 }),
+    )
+    .unwrap();
+    assert_eq!(view["beds"][0]["name"], "Leeks");
+}

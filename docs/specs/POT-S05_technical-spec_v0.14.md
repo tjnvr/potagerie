@@ -1,8 +1,8 @@
-# POT-S05 · Technical specification — v0.13
+# POT-S05 · Technical specification — v0.14
 
-> Version: 0.13 (draft) · Date: 2026-11-16 · Author: Tim
-> References: [S01](POT-S01_functional-spec_v1.6.md) · [S02](POT-S02_crop-catalogue_v0.4.md) · [S03](POT-S03_rules-and-calculations_v0.13.md) · [P01](../prototypes/POT-P01_iso-rendering_v0.2/README.md) · [D01](../design/POT-D01_key-screens_v1.2/README.md) · [D02](../design/POT-D02_additional-screens_v0.2/README.md)
-> v0.13 adds the error code `base_unreadable` and the behaviour of a damaged database (section 3 and section 7). v0.12 is the English translation of v0.11. The code, the files, the message keys, the JSON fields and the crop ids are in English; the names below are the ones of the code. A database or an export written by app versions 0.1 and 0.2 (French names) is upgraded when it is read (section 5, "Storage"). History: v0.4 introduced Rust + Tauri, v0.5 aligned the model on S01 and S03, v0.6 replaced htmx by a Svelte + TypeScript interface that calls Tauri commands, v0.7 to v0.11 carried what the app skeleton, the plan editor, the timeline, the settings and the export settled (section 11 and following).
+> Version: 0.14 (draft) · Date: 2026-11-16 · Author: Tim
+> References: [S01](POT-S01_functional-spec_v1.6.md) · [S02](POT-S02_crop-catalogue_v0.4.md) · [S03](POT-S03_rules-and-calculations_v0.14.md) · [P01](../prototypes/POT-P01_iso-rendering_v0.2/README.md) · [D01](../design/POT-D01_key-screens_v1.2/README.md) · [D02](../design/POT-D02_additional-screens_v0.2/README.md)
+> v0.14 aligns the read-only rule, the error codes and a file name with the code (audit). v0.13 adds the error code `base_unreadable` and the behaviour of a damaged database (section 3 and section 7). v0.12 is the English translation of v0.11. The code, the files, the message keys, the JSON fields and the crop ids are in English; the names below are the ones of the code. A database or an export written by app versions 0.1 and 0.2 (French names) is upgraded when it is read (section 5, "Storage"). History: v0.4 introduced Rust + Tauri, v0.5 aligned the model on S01 and S03, v0.6 replaced htmx by a Svelte + TypeScript interface that calls Tauri commands, v0.7 to v0.11 carried what the app skeleton, the plan editor, the timeline, the settings and the export settled (section 11 and following).
 
 ## 1. Principles
 
@@ -98,7 +98,7 @@ Plan
 
 - 10 beds at most per year.
 - The length of a bed is a whole number of cells; its width is free to the centimetre. A segment is the size of a cell (S03, §4).
-- Past years are read-only.
+- Past years: the layouts and the annotations are read-only; the plantings and the bed names stay editable (S03 §17).
 - A planting references a bed by its `id`, which stays stable from one year to the next.
 
 The app checks all these rules. The computed dates (transplanting, planting out, harvest, end not edited by hand) are not stored: they are recomputed at each view from the durations copied into the planting. A catalogue update therefore shifts no planting.
@@ -194,6 +194,7 @@ Lot 3 adds the sync commands, to detail with the lot.
 - the app: `plot_absent`, `plot_existing`, `case_invalid`;
 - `plan` for annotations (S03 §16): `annotation_unknown`, `text_invalid`, `annotation_dates_invalid` (with `year_past` and `bed_unknown`);
 - storage: `saving` (reading or writing impossible: the only case where the interface offers "Retry"), `version_stale`, `base_too_recent`, `base_unreadable` (the interface then offers Retry and the settings, whose "Erase the app data" recovers);
+- validation: `planting_unknown`, `bed_existing`, `planting_existing`, `crop_unknown`, `zone_invalid`, `length_invalid`, `out_of_range`;
 - files: `file`, `import_invalid`, `import_too_recent`, `svg_invalid`, `rendering_impossible`.
 
 The complete list is the `ErrorCode` type of `bindings.ts`; a code without a translation breaks `pnpm check`.
@@ -215,7 +216,7 @@ front/                  Svelte + TypeScript interface (Vite, pnpm)
   src/lib/diorama/      Garden tab: SVG diorama and season playback
   src/lib/timeline/     crop timeline, standalone SVG, bar drag
   src/lib/planting/     planting form (E07), catalogue (E09)
-  src/lib/temps.ts      position in time, shared (cursor)
+  src/lib/time.ts       position in time, shared (cursor)
   src/lib/editor/       Plan tab: plan editor, drag and drop
   src/lib/settings/     settings, export and import, clear the plan, list of inconsistencies (E10)
   src/lib/notes/        note or period form, standalone (timeline to come)

@@ -53,6 +53,16 @@ impl Plan {
     /// Operations call it after changing a layout; the command then does not
     /// save when it fails.
     pub fn check_placements(&self, from_year: i32) -> Result<(), PlanError> {
+        match self.placement_errors(from_year).into_iter().next() {
+            Some(error) => Err(error),
+            None => Ok(()),
+        }
+    }
+
+    /// Every placement problem from `from_year` on, not only the first one: the
+    /// "to resolve" list of an import shows them all (S03 §13).
+    pub fn placement_errors(&self, from_year: i32) -> Vec<PlanError> {
+        let mut errors = Vec::new();
         let last = self
             .beds
             .values()
@@ -63,15 +73,15 @@ impl Plan {
         for year in from_year..=last {
             let beds = self.beds_in(year);
             for (id, _, geometry) in &beds {
-                self.check_inside(*id, geometry, year)?;
+                errors.extend(self.check_inside(*id, geometry, year).err());
             }
             for (i, (a_id, _, a)) in beds.iter().enumerate() {
                 for (b_id, _, b) in &beds[i + 1..] {
-                    self.check_apart(*a_id, a, *b_id, b, year)?;
+                    errors.extend(self.check_apart(*a_id, a, *b_id, b, year).err());
                 }
             }
         }
-        Ok(())
+        errors
     }
 
     fn check_inside(&self, id: BedId, g: &Geometry, year: i32) -> Result<(), PlanError> {
@@ -120,7 +130,8 @@ impl Plan {
 impl Plan {
     /// Changes the dimensions and the aisle width; the case size stays (S03 §4).
     /// Refused, with the plan untouched, if the new plot is invalid or no
-    /// longer holds the beds of the current year and the following ones.
+    /// longer holds the beds of any year: the plot is one for the whole garden
+    /// and a past layout cannot be repaired, so a plot that breaks one is refused.
     pub fn set_plot(
         &mut self,
         length_cm: u32,
@@ -136,7 +147,14 @@ impl Plan {
             ..self.plot.clone()
         };
         after.plot.validate()?;
-        after.check_placements(chrono::Datelike::year(&today))?;
+        let first = self
+            .beds
+            .values()
+            .flat_map(|b| b.layouts.keys().copied())
+            .min()
+            .unwrap_or(chrono::Datelike::year(&today))
+            .min(chrono::Datelike::year(&today));
+        after.check_placements(first)?;
         *self = after;
         Ok(())
     }

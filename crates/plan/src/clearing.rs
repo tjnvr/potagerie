@@ -5,7 +5,7 @@ use chrono::{Datelike, NaiveDate};
 use crate::days::january_first;
 use crate::error::PlanError;
 use crate::ids::{AnnotationId, BedId, PlantingId};
-use crate::model::Plan;
+use crate::model::{Layout, Plan};
 
 /// What [`Plan::clear_from`] removed.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -16,7 +16,7 @@ pub struct Cleared {
 }
 
 impl Plan {
-    /// Empties the plan from `year` on: every bed that exists in `year`
+    /// Empties the plan from `year` on: every bed that exists in `year` or later
     /// is deleted as `delete_bed` does (with its plantings that touch `year`
     /// or later), and so are the annotations attached to those beds that
     /// end on or after January 1st of `year`. The plot, past years, plantings
@@ -26,7 +26,17 @@ impl Plan {
             return Err(PlanError::PastYear { year, today });
         }
         let mut cleared = Cleared::default();
-        let ids: Vec<BedId> = self.beds_in(year).iter().map(|(id, _, _)| *id).collect();
+        // Every bed that exists in `year`, and those created in a later year only.
+        let mut ids: Vec<BedId> = self.beds_in(year).iter().map(|(id, _, _)| *id).collect();
+        for (id, bed) in &self.beds {
+            let later = bed
+                .layouts
+                .iter()
+                .any(|(y, l)| *y > year && !matches!(l, Layout::Absent));
+            if later && !ids.contains(id) {
+                ids.push(*id);
+            }
+        }
         for id in ids {
             cleared.plantings.extend(self.delete_bed(id, year, today)?);
             cleared.beds.push(id);
