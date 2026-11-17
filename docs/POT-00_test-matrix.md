@@ -35,6 +35,7 @@ against the Vite dev server with the in-memory fake of the Tauri commands (`?exa
 | A11Y | Axe audit (WCAG A and AA) of plan, garden, settings and catalogue | all | No serious or critical violation | automated (`front/e2e/a11y.spec.ts`) |
 | UC-24 | Damaged database: Retry / settings / erase | storage | Explanation screen, then a fresh garden | Rust: `src-tauri/src/tests.rs`; screen not automated |
 | UC-25 | Delete a bed that has plantings | F-PLN-7 | Warning shows the count of plantings deleted; Cancel keeps the bed | automated (e2e) |
+| UC-26 | Planting form: change the start date | F-PLA-2 | The end stays within a year of the start and follows the new date | automated (e2e) |
 | UC-30 | Real Tauri window, touch, installed build | all | — | **manual** (never automated yet) |
 
 ## First analysis of the navigation (17 November 2026, done once)

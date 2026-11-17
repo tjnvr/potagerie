@@ -170,6 +170,30 @@ test("UC-25 plan: deleting a bed that has plantings warns with their count", asy
   await expect(counter).toHaveText(before!);
 });
 
+test("UC-26 planting form: the end of a planting follows a changed start date", async ({ page }) => {
+  await open(page);
+  await toGarden(page);
+  const slot = page.locator("[data-slot]").first();
+  await slot.scrollIntoViewIfNeeded();
+  await slot.click({ force: true });
+  const dialog = page.getByRole("dialog");
+  const start = dialog.locator("input[type=date]").first();
+  const end = dialog.getByLabel("End of the planting");
+  await expect(end).toBeVisible();
+  const day = 86_400_000;
+  const gap = async () =>
+    (Date.parse(await end.inputValue()) - Date.parse(await start.inputValue())) / day;
+  const before = await gap();
+  expect(before).toBeGreaterThan(0);
+  expect(before).toBeLessThan(366);
+  const moved = new Date(Date.parse(await start.inputValue()) + 10 * day).toISOString().slice(0, 10);
+  await start.fill(moved);
+  await start.dispatchEvent("change");
+  const after = await gap();
+  expect(after).toBeGreaterThan(0);
+  expect(after).toBeLessThan(366);
+});
+
 test("UC-22 settings: clearing the plan asks, then empties the beds", async ({ page }) => {
   await open(page);
   await page.getByRole("button", { name: "Settings" }).first().click();
