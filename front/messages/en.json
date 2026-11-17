@@ -274,7 +274,6 @@
   "shorten_text": "Plantings that will no longer fit in the bed: {count}. They will be flagged as conflicts until you move them.",
   "shorten_button": "Shorten anyway",
   "bed_aria": "{name}, {length} × {width} m",
-  "handle_aria": "Resize the bed",
   "error_plot_invalid": "The plot dimensions are not valid: 1 to 100 m per side.",
   "error_aisle_invalid": "The aisle width must be 30, 50 or 80 cm.",
   "error_width_invalid": "A bed must be at least 10 cm wide.",

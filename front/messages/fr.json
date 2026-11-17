@@ -274,7 +274,6 @@
   "shorten_text": "Séries qui ne tiendront plus dans la planche : {count}. Elles seront signalées en conflit tant que tu ne les as pas déplacées.",
   "shorten_button": "Raccourcir quand même",
   "bed_aria": "{name}, {length} × {width} m",
-  "handle_aria": "Redimensionner la planche",
   "error_plot_invalid": "Les dimensions du terrain ne sont pas valables : de 1 à 100 m par côté.",
   "error_aisle_invalid": "La largeur d’allée doit être 30, 50 ou 80 cm.",
   "error_width_invalid": "La largeur d’une planche doit faire au moins 10 cm.",

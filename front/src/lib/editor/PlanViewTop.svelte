@@ -367,7 +367,6 @@
             cy={g.y + h.fy * g.width_cm}
             r={18 * scale}
             style:cursor={h.cursor}
-            aria-label={m.handle_aria()}
             onpointerdown={(e) => start(e, active, "resize", h.name)}
           />
           <circle

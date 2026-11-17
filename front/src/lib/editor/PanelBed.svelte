@@ -414,7 +414,7 @@
     padding: 0;
     border: 0;
     background: none;
-    color: var(--green);
+    color: #25684a; /* --green is 4.2:1 on --bg, under AA */
     font-size: 13px;
     font-weight: 600;
     text-decoration: underline;

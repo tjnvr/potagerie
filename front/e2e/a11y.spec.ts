@@ -16,6 +16,11 @@ const SCREENS: Record<string, (p: Page, l: Labels) => Promise<void>> = {
     await p.getByRole("button", { name: l.garden, exact: true }).click();
     await p.getByRole("button", { name: l.exportTl }).click();
   },
+  "bed panel": async (p, l) => {
+    await p.getByRole("button", { name: l.plan, exact: true }).click();
+    await p.mouse.click(640, 340);
+    await p.locator("input[type=number]").first().waitFor();
+  },
   planting: async (p, l) => {
     await p.getByRole("button", { name: l.garden, exact: true }).click();
     const slot = p.locator("[data-slot]").first();
