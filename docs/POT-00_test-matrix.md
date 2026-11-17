@@ -34,6 +34,7 @@ against the Vite dev server with the in-memory fake of the Tauri commands (`?exa
 | UC-23 | Export and import a garden file | F-CPT-3 | Round trip, "older file" warning, "to resolve" list | Rust: `garden.rs` tests; the file dialog needs the real window |
 | A11Y | Axe audit (WCAG A and AA) of plan, garden, settings and catalogue | all | No serious or critical violation | automated (`front/e2e/a11y.spec.ts`) |
 | UC-24 | Damaged database: Retry / settings / erase | storage | Explanation screen, then a fresh garden | Rust: `src-tauri/src/tests.rs`; screen not automated |
+| UC-25 | Delete a bed that has plantings | F-PLN-7 | Warning shows the count of plantings deleted; Cancel keeps the bed | automated (e2e) |
 | UC-30 | Real Tauri window, touch, installed build | all | — | **manual** (never automated yet) |
 
 ## First analysis of the navigation (17 November 2026, done once)

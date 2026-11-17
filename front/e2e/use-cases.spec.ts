@@ -157,6 +157,19 @@ test("UC-21 plan: deleting a bed asks for confirmation, then removes it", async 
   await expect(counter).not.toHaveText(before!);
 });
 
+test("UC-25 plan: deleting a bed that has plantings warns with their count", async ({ page }) => {
+  await open(page);
+  await page.getByRole("button", { name: "Plan", exact: true }).click();
+  const counter = page.locator(".counter").first();
+  const before = await counter.textContent();
+  await page.mouse.click(640, 340);
+  await page.getByRole("button", { name: "Delete", exact: true }).first().click();
+  const warning = page.getByText(/Plantings deleted: \d+/);
+  await expect(warning).toBeVisible();
+  await page.getByRole("button", { name: "Cancel" }).click();
+  await expect(counter).toHaveText(before!);
+});
+
 test("UC-22 settings: clearing the plan asks, then empties the beds", async ({ page }) => {
   await open(page);
   await page.getByRole("button", { name: "Settings" }).first().click();
