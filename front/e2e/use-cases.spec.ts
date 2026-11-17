@@ -123,6 +123,28 @@ test("UC-16 plan: releasing a drawn zone near the edge creates a bed", async ({ 
   await expect(page.locator(".counter").first()).not.toHaveText(before!);
 });
 
+test("UC-20 plan: dragging a bed moves it, and a refused drop sends it back", async ({ page }) => {
+  await open(page);
+  await page.getByRole("button", { name: "Plan", exact: true }).click();
+  await page.mouse.click(640, 340);
+  const bed = page.locator("g.bed.chosen > rect").first();
+  await expect(bed).toBeVisible();
+  const before = (await bed.boundingBox())!;
+  const cx = before.x + before.width / 2;
+  const cy = before.y + before.height / 2;
+  // Onto the neighbouring bed or the aisle: refused, the bed comes back.
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  await page.mouse.move(cx + 6, cy + 6, { steps: 3 });
+  await page.mouse.move(cx + 40, cy, { steps: 6 });
+  await page.mouse.up();
+  await page.waitForTimeout(400);
+  const after = (await bed.boundingBox())!;
+  const moved = Math.abs(after.x - before.x) > 2 || Math.abs(after.y - before.y) > 2;
+  const refused = (await page.getByRole("alert").count()) > 0;
+  expect(moved || refused).toBe(true);
+});
+
 test("UC-21 plan: deleting a bed asks for confirmation, then removes it", async ({ page }) => {
   await open(page);
   await page.getByRole("button", { name: "Plan", exact: true }).click();

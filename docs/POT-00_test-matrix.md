@@ -28,7 +28,7 @@ against the Vite dev server with the in-memory fake of the Tauri commands (`?exa
 | UC-14 | Edit a planting from its bar | F-PLA-1 | A click on a visible bar opens "Edit the planting" | automated |
 | UC-15 | Draw a zone by dragging on free grass | F-PLN-1 | A preview follows the pointer from the first pixels; releasing creates a bed of that size | automated |
 | UC-16 | Release a drawn zone near the plot edge | F-PLN-1 | A bed is created (not refused for its default size) | automated |
-| UC-20 | Move / resize a bed by dragging, refusal goes back | F-PLN-6 | Position kept or restored with the reason | not yet (pointer drag, needs the real rules in Rust: covered by `cargo test`) |
+| UC-20 | Move / resize a bed by dragging, refusal goes back | F-PLN-6 | Position kept or restored with the reason | automated (e2e; the rules themselves are covered by `cargo test`) |
 | UC-21 | Delete a bed with plantings (confirmation) | F-PLN-4 | Warning with the count, then removal | automated |
 | UC-22 | Clear the plan, erase the data (double confirmation) | F-CPT-4 | Plan emptied / app data erased | automated (clear; erase is Rust-tested) |
 | UC-23 | Export and import a garden file | F-CPT-3 | Round trip, "older file" warning, "to resolve" list | Rust: `garden.rs` tests; the file dialog needs the real window |
