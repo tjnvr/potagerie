@@ -162,6 +162,18 @@ export function simulerTauri(): void {
       { id: "n3", annotation_type: "note", date_start: `${Y}-04-10`, date_end: null, bed_id: null, text: tr("Last frosts?", "Dernières gelées ?"), hidden: false },
     ];
     version = 4;
+    if (parameters.has("dense")) {
+      // Test-only (`/?example&dense`): 10 beds fully planted at once, to stress the diorama.
+      beds.push(bed("Dense A", "square", 700, 390, 100, 100), bed("Dense B", "square", 850, 250, 100, 100));
+      plantings = [];
+      history = [];
+      const crops = ["lettuce", "tomato", "carrot", "zucchini", "leek", "green-bean", "lettuce", "leek", "tomato", "carrot"];
+      beds.forEach((p, i) => {
+        plantings.push(
+          createPlanting(context, entree(p, crops[i % crops.length]!, 1, i === 7 ? 4 : p.segments, "plants", `${Y}-05-${String(2 + (i % 5)).padStart(2, "0")}`)),
+        );
+      });
+    }
   }
 
 

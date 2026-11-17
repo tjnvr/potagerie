@@ -3,7 +3,7 @@
 // in Chromium and in WebKit (the engine of the macOS app).
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 5320;
+const PORT = Number(process.env.E2E_PORT ?? 5320);
 
 export default defineConfig({
   testDir: "./e2e",
