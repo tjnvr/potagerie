@@ -150,7 +150,9 @@
     padding: 0 14px;
     font-size: 14px;
     color: var(--muted);
-    height: 36px;
+    height: 40px;
+    min-width: 40px;
+    justify-content: center;
   }
 
   .mode.active,

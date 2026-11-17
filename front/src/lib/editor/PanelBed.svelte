@@ -285,8 +285,8 @@
     flex: none;
     display: grid;
     place-items: center;
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border: 0;
     border-radius: 50%;
     background: var(--bg);
@@ -389,6 +389,7 @@
   }
 
   .fallback {
+    min-height: 40px;
     padding: 0;
     border: 0;
     background: none;
@@ -411,6 +412,7 @@
   }
 
   .link {
+    min-height: 40px;
     padding: 0;
     border: 0;
     background: none;

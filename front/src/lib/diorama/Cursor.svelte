@@ -194,7 +194,7 @@
 
   .speed button {
     min-width: 40px;
-    min-height: 36px;
+    min-height: 40px;
     border: 0;
     border-radius: var(--pill);
     background: transparent;

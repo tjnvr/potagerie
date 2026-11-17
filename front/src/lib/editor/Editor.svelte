@@ -186,7 +186,7 @@
         <strong>{m.plan_consultation({ year: view.year })}</strong>
       {:else}
         <strong>{m.plan_title({ year: view.year })}</strong>
-        <span class="scope">· {m.plan_scope({ year: view.year })}</span>
+        <span class="scope"><span class="dot">· </span>{m.plan_scope({ year: view.year })}</span>
       {/if}
     </span>
     <span class="space"></span>
@@ -313,6 +313,15 @@
 
   .scope {
     color: var(--muted);
+  }
+
+  @media (max-width: 480px) {
+    .scope {
+      flex-basis: 100%;
+    }
+    .scope .dot {
+      display: none;
+    }
   }
 
   .space {
