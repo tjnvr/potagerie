@@ -75,3 +75,11 @@ fn deleting_or_clearing_in_an_absurd_year_is_refused() {
     // Nothing was stored, so the later operations still run at once.
     plan.incoherences();
 }
+
+#[test]
+fn touching_a_plan_at_the_maximum_version_does_not_overflow() {
+    let (mut plan, _) = plan_with_bed();
+    plan.version = u64::MAX;
+    plan.touch(now());
+    assert_eq!(plan.version, u64::MAX);
+}

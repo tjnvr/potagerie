@@ -170,7 +170,7 @@ impl Plan {
     /// Records a change: `version + 1` and a new UTC timestamp. Commands call
     /// it after each successful modification (S05 §7).
     pub fn touch(&mut self, now: DateTime<Utc>) {
-        self.version += 1;
+        self.version = self.version.saturating_add(1);
         self.updated_at = now;
     }
 }
