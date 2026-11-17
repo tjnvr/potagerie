@@ -36,6 +36,8 @@ against the Vite dev server with the in-memory fake of the Tauri commands (`?exa
 | UC-24 | Damaged database: Retry / settings / erase | storage | Explanation screen, then a fresh garden | Rust: `src-tauri/src/tests.rs`; screen not automated |
 | UC-25 | Delete a bed that has plantings | F-PLN-7 | Warning shows the count of plantings deleted; Cancel keeps the bed | automated (e2e) |
 | UC-26 | Planting form: change the start date | F-PLA-2 | The end stays within a year of the start and follows the new date | automated (e2e) |
+| UC-27 | Plan: type a bed length in the panel | F-PLN-3 | No error; a refused value goes back to the real one | automated (e2e) |
+| MONKEY | Seeded random clicks, drags and keys | all | No page error, no console error | automated (`front/e2e/monkey.spec.ts`) |
 | UC-30 | Real Tauri window, touch, installed build | all | — | **manual** (never automated yet) |
 
 ## First analysis of the navigation (17 November 2026, done once)

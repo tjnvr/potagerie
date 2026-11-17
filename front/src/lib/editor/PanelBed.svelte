@@ -69,9 +69,15 @@
   /** Dimensions typed in meters; Rust refuses a length that is not a whole
    *  number of cases, and the field goes back to the real value. */
   async function resize() {
-    const l = Math.round(Number(length.replace(",", ".")) * 100);
-    const h = Math.round(Number(width.replace(",", ".")) * 100);
-    if (!Number.isFinite(l) || !Number.isFinite(h) || l <= 0 || h <= 0) return;
+    // A number input bound with `bind:value` holds a number (or null when empty), not a string.
+    const meters = (typed: unknown) => Math.round(Number(String(typed ?? "").replace(",", ".")) * 100);
+    const l = meters(length);
+    const h = meters(width);
+    if (!Number.isFinite(l) || !Number.isFinite(h) || l <= 0 || h <= 0) {
+      length = String(bed.length_cm / 100);
+      width = String(bed.width_cm / 100);
+      return;
+    }
     const response = await onmodify(bed.id, { ...geo, length_cm: l, width_cm: h }, "resize");
     if (response !== "ok") {
       length = String(bed.length_cm / 100);

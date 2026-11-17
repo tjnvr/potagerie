@@ -194,6 +194,23 @@ test("UC-26 planting form: the end of a planting follows a changed start date", 
   expect(after).toBeLessThan(366);
 });
 
+test("UC-27 plan: typing a bed length in the panel never throws, a refusal restores the field", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await open(page);
+  await page.getByRole("button", { name: "Plan", exact: true }).click();
+  await page.mouse.click(640, 340);
+  const length = page.locator("input[type=number]").first();
+  await expect(length).toBeVisible();
+  await length.fill("3.1"); // not a whole number of cases: refused
+  await length.dispatchEvent("change");
+  await expect(length).not.toHaveValue("3.1");
+  await length.fill("");
+  await length.dispatchEvent("change");
+  await expect(length).not.toHaveValue("");
+  expect(errors).toEqual([]);
+});
+
 test("UC-22 settings: clearing the plan asks, then empties the beds", async ({ page }) => {
   await open(page);
   await page.getByRole("button", { name: "Settings" }).first().click();
