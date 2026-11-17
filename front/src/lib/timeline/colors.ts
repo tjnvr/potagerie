@@ -8,7 +8,7 @@ import { APPEARANCES } from "../appearances";
 export const PALETTE = {
   fond: "#FFFFFF",
   ink: "#1F3A2E",
-  muted: "#56705F",
+  muted: "#4e6858",
   trait: "#D3DECD",
   accent: "#F2A65A",
   accentInk: "#5A3410",
