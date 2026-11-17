@@ -108,6 +108,21 @@ test("UC-15 plan: dragging on free grass draws a zone as the pointer moves", asy
   await page.mouse.up();
 });
 
+test("UC-16 plan: releasing a drawn zone near the edge creates a bed", async ({ page }) => {
+  await open(page);
+  await page.getByRole("button", { name: "2027", exact: true }).click();
+  await page.getByRole("button", { name: "Plan", exact: true }).click();
+  const r = (await page.locator("rect.grass").boundingBox())!;
+  const x = r.x + r.width * 0.8;
+  const y = r.y + r.height * 0.8;
+  const before = await page.locator(".counter").first().textContent();
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + r.width * 0.15, y + r.height * 0.12, { steps: 6 });
+  await page.mouse.up();
+  await expect(page.locator(".counter").first()).not.toHaveText(before!);
+});
+
 test("UC-07 notes: empty text is refused, 80 characters at most, the note appears", async ({ page }) => {
   await open(page);
   await toGarden(page);

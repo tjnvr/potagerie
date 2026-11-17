@@ -84,7 +84,14 @@
   async function drawZone(zone: { x: number; y: number; length_cm: number; width_cm: number }) {
     if (!view.plot || complete) return;
     const type = scope ?? "bed";
-    await poser(type, zone.x, zone.y);
+    // Created on a free spot (its default size may not fit where the zone starts,
+    // near the edge), then moved and resized to the zone in one change.
+    const spot = positionFree(view.plot, view.beds, type);
+    if (!spot) {
+      app.informer(m.plan_no_free_space());
+      return;
+    }
+    await poser(type, spot.x, spot.y);
     const id = selectionId;
     const bed = id ? app.view?.beds.find((b) => b.id === id) : null;
     if (id && bed) {
