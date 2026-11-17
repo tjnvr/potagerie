@@ -9,6 +9,7 @@ const PHONES = [
 ];
 
 async function size(page: Page, selector: string) {
+  await page.locator(selector).first().waitFor();
   const boxes = await page.locator(selector).evaluateAll((els) =>
     els.map((e) => {
       const r = e.getBoundingClientRect();
