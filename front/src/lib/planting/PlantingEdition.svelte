@@ -100,6 +100,12 @@
     const id = edition?.id ?? null;
     if (!entree.crop_id) return;
     const mon = ++tokenPreview;
+    // No valid start date (the field was cleared): what was calculated for the
+    // previous one no longer holds, and nothing is saved until a date is typed.
+    if (!dateValid(f.date)) {
+      untrack(() => (preview = null));
+      return;
+    }
     const timer = setTimeout(async () => {
       const r = await call(() => commands.previewPlanting(id, entree));
       if (mon === tokenPreview && r.status === "ok") preview = r.data;

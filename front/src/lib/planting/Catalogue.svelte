@@ -4,6 +4,7 @@
   // of the V1, filtered by family and by « of season now », and the
   // read-only fiche. Names, families and months come from the messages and the
   // locale; the data only holds identifiers and numbers (S05 §4).
+  import { tick } from "svelte";
   import { commands } from "../bindings";
   import Icon from "../shell/Icon.svelte";
   import { modal } from "../shell/modal";
@@ -36,7 +37,17 @@
       (c) => (!family || c.family === family) && (!onlySeason || season.includes(c.id)),
     ),
   );
-  const fiche = $derived(catalogue.crop(chosen ?? list[0]?.id ?? ""));
+  // The sheet follows the cards shown: a crop filtered out no longer keeps its sheet.
+  const fiche = $derived(catalogue.crop(list.find((c) => c.id === chosen)?.id ?? list[0]?.id ?? ""));
+  let sheet = $state<HTMLElement>();
+
+  // On a phone the sheet sits under the 67 cards: bring it into view.
+  async function choose(id: string) {
+    chosen = id;
+    if (!window.matchMedia("(max-width: 900px)").matches) return;
+    await tick();
+    sheet?.scrollIntoView({ block: "start" });
+  }
 
   function close() {
     app.catalogueOpen = false;
@@ -90,7 +101,7 @@
 
       <div class="grille">
         {#each list as c (c.id)}
-          <button class="carte" class:active={fiche?.id === c.id} aria-pressed={fiche?.id === c.id} onclick={() => (chosen = c.id)}>
+          <button class="carte" class:active={fiche?.id === c.id} aria-pressed={fiche?.id === c.id} onclick={() => choose(c.id)}>
             <PlantIcon crop={c.id} stade={2} width={64} />
             <strong>{nameCrop(c.id)}</strong>
             <span>{nameFamily(c.family)}</span>
@@ -104,7 +115,7 @@
     </section>
 
     {#if fiche}
-      <aside class="fiche" aria-label={m.catalogue_sheet()}>
+      <aside class="fiche" bind:this={sheet} aria-label={m.catalogue_sheet()}>
         <div class="fiche-tete">
           <div>
             <p class="kicker">{m.catalogue_sheet()}</p>

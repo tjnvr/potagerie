@@ -382,7 +382,7 @@
   "catalogue_row": "Spacing between rows",
   "catalogue_spacing": "Spacing along the row",
   "catalogue_days": "{value} d",
-  "catalogue_read_only": "Read-only sheet, schema frozen for V1 (S02).",
+  "catalogue_read_only": "Read-only sheet.",
   "family_solanaceae": "Solanaceae",
   "family_asteraceae": "Asteraceae",
   "family_apiaceae": "Apiaceae",
