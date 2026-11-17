@@ -10,11 +10,7 @@
   let { opening }: { opening: OpeningNote } = $props();
 
   let reason = $state("");
-  let root: HTMLElement;
-
-  $effect(() => {
-    root.focus();
-  });
+  import { modal } from "../shell/modal";
 
   function close() {
     app.noteOpen = null;
@@ -43,7 +39,7 @@
 <svelte:window onkeydown={(e) => e.key === "Escape" && close()} />
 
 <div class="voile" role="presentation" onpointerdown={(e) => e.target === e.currentTarget && close()}>
-  <div class="box" role="dialog" aria-modal="true" aria-labelledby="note-title" tabindex="-1" bind:this={root}>
+  <div class="box" role="dialog" aria-modal="true" aria-labelledby="note-title" tabindex="-1" use:modal>
     <NoteForm
       beds={app.view?.beds ?? []}
       annotation={opening.type === "edition" ? opening.annotation : null}

@@ -10,6 +10,7 @@
   import { commands, type Mode, type ProblemView, type PlantingPreview } from "../bindings";
   import Confirmation from "../shell/Confirmation.svelte";
   import Icon from "../shell/Icon.svelte";
+  import { modal } from "../shell/modal";
   import Logo from "../shell/Logo.svelte";
   import { dateAbbreviated, dateComplete } from "../dates";
   import { translateError } from "../errors";
@@ -82,7 +83,6 @@
   /** The zone follows the first free shortcut until the user touches it. */
   let zoneAuto = $state(untrack(() => opening.type === "new" && !opening.slot));
   let cropChosen = $state(untrack(() => opening.type === "edition" || !!opening.suggestion));
-  let root: HTMLElement | undefined = $state();
 
   const bed = $derived(view.beds.find((p) => p.id === f.bedId));
   const countSegments = $derived(bed?.segments ?? Math.max(f.zone.end, 1));
@@ -258,10 +258,6 @@
     }
   }
 
-  $effect(() => {
-    root?.focus();
-  });
-
   const MODES: { mode: Mode; title: () => string; help: () => string }[] = [
     { mode: "indoor", title: m.planting_mode_indoor, help: m.planting_mode_indoor_help },
     { mode: "plants", title: m.planting_mode_plants, help: m.planting_mode_plants_help },
@@ -281,7 +277,7 @@
   }}
 />
 
-<div class="screen" role="dialog" aria-modal="true" aria-labelledby="planting-title" tabindex="-1" bind:this={root}>
+<div class="screen" role="dialog" aria-modal="true" aria-labelledby="planting-title" tabindex="-1" use:modal>
   <header class="header">
     <Logo />
     <div class="titles">

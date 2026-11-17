@@ -37,6 +37,7 @@ against the Vite dev server with the in-memory fake of the Tauri commands (`?exa
 | UC-25 | Delete a bed that has plantings | F-PLN-7 | Warning shows the count of plantings deleted; Cancel keeps the bed | automated (e2e) |
 | UC-26 | Planting form: change the start date | F-PLA-2 | The end stays within a year of the start and follows the new date | automated (e2e) |
 | UC-27 | Plan: type a bed length in the panel | F-PLN-3 | No error; a refused value goes back to the real one | automated (e2e) |
+| KBD-01..07 | Keyboard only: focus trap and focus return in the five windows, Enter/Space/Escape on beds, Escape in a confirmation | accessibility | Tab never leaves a window; Escape returns focus to the opener | automated (`front/e2e/keyboard.spec.ts`) |
 | MONKEY | Seeded random clicks, drags and keys | all | No page error, no console error | automated (`front/e2e/monkey.spec.ts`) |
 | UC-30 | Real Tauri window, touch, installed build | all | — | **manual** (never automated yet) |
 

@@ -6,6 +6,7 @@
   // locale; the data only holds identifiers and numbers (S05 §4).
   import { commands } from "../bindings";
   import Icon from "../shell/Icon.svelte";
+  import { modal } from "../shell/modal";
   import Logo from "../shell/Logo.svelte";
     import { call, app, dateLong } from "../state.svelte";
   import IconTimeline from "../timeline/IconTimeline.svelte";
@@ -21,17 +22,12 @@
   let onlySeason = $state(false);
   let family = $state<string | null>(null);
   let chosen = $state<string | null>(null);
-  let root: HTMLElement | undefined = $state();
 
   $effect(() => {
     const date = today;
     void call(() => isOk(commands.cropsOfSeason(date))).then((r) => {
       if (r.status === "ok") season = r.data;
     });
-  });
-
-  $effect(() => {
-    root?.focus();
   });
 
   const families = $derived([...new Set(catalogue.crops.map((c) => c.family))].sort((a, b) => nameFamily(a).localeCompare(nameFamily(b), localeTag())));
@@ -62,7 +58,7 @@
 
 <svelte:window onkeydown={(e) => e.key === "Escape" && close()} />
 
-<div class="screen" role="dialog" aria-modal="true" aria-labelledby="catalogue-title" tabindex="-1" bind:this={root}>
+<div class="screen" role="dialog" aria-modal="true" aria-labelledby="catalogue-title" tabindex="-1" use:modal>
   <header class="header">
     <Logo />
     <span class="name">{m.app_name()}</span>
