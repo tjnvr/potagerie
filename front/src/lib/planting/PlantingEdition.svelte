@@ -12,7 +12,7 @@
   import Icon from "../shell/Icon.svelte";
   import { modal } from "../shell/modal";
   import Logo from "../shell/Logo.svelte";
-  import { dateAbbreviated, dateComplete } from "../dates";
+  import { dateAbbreviated, dateComplete, lastDay } from "../dates";
   import { translateError } from "../errors";
   import { call, app, type OpeningPlanting } from "../state.svelte";
   import IconTimeline from "../timeline/IconTimeline.svelte";
@@ -32,7 +32,8 @@
     toggleTransplanting,
     changeDate,
     resetManualEnd,
-    endInput,
+    endFromLastDay,
+    conflictText,
     formSincePlanting,
     formEmpty,
     sameZone,
@@ -201,12 +202,16 @@
       text: f.mode === "plants" ? m.planting_step_planting() : f.mode === "indoor" ? m.planting_step_transplanting() : m.planting_step_sowing_ground(),
     });
     list.push({ date: dates.harvest_start, text: m.planting_step_harvest() });
-    list.push({ date: dates.end, text: dates.manual_end ? m.planting_step_manual_end() : m.planting_step_end(), fort: dates.manual_end });
+    list.push({
+      date: lastDay(dates.end),
+      text: !dates.manual_end ? m.planting_step_end() : f.endFromSlot ? m.planting_step_slot_end() : m.planting_step_manual_end(),
+      fort: dates.manual_end,
+    });
     return list;
   });
 
   function enterEnd(value: string) {
-    f.manualEnd = endInput(value, endComputed);
+    f = { ...f, manualEnd: endFromLastDay(value, endComputed), endFromSlot: false };
   }
 
   // ---------- Problems and saving ----------
@@ -218,12 +223,10 @@
   function textProblem(p: ProblemView): string {
     if (p.code === "conflict" && p.zone && p.start && p.end) {
       const other = [...view.plantings, ...view.history].find((s) => s.id === p.with);
-      return m.planting_problem_conflict({
+      return conflictText(versZone(p.zone), {
         crop: other ? nameCrop(other.crop_id) : m.planting_problem_other(),
-        start: p.zone.segment_start,
-        end: p.zone.segment_end,
         from: dateAbbreviated(p.start, view.year),
-        to: dateAbbreviated(p.end, view.year),
+        to: dateAbbreviated(lastDay(p.end), view.year),
       });
     }
     if (p.code === "zone_outside_bed" && p.segments !== null && p.year !== null) {
@@ -395,15 +398,15 @@
           <div class="end">
             <label>
               <span>{m.planting_end_label()}</span>
-              <input type="date" value={f.manualEnd ?? dates.end} onchange={(e) => enterEnd(e.currentTarget.value)} />
+              <input type="date" value={lastDay(f.manualEnd ?? dates.end)} onchange={(e) => enterEnd(e.currentTarget.value)} />
             </label>
             {#if dates.manual_end}
               <p class="manual">
                 <IconTimeline name="crayon" size={14} />
-                {m.planting_manual_end({ date: dateAbbreviated(dates.end, view.year) })}
+                {(f.endFromSlot ? m.planting_slot_end : m.planting_manual_end)({ date: dateAbbreviated(lastDay(dates.end), view.year) })}
               </p>
-              <button class="link" onclick={() => (f.manualEnd = null)}>
-                {m.planting_recompute({ date: dateAbbreviated(dates.default_end, view.year) })}
+              <button class="link" onclick={() => (f = { ...f, manualEnd: null, endFromSlot: false })}>
+                {m.planting_recompute({ date: dateAbbreviated(lastDay(dates.default_end), view.year) })}
               </button>
             {/if}
           </div>
@@ -489,7 +492,7 @@
         crop: nameCrop(edition.crop_id),
         bed: nameBed(),
         start: dateAbbreviated(edition.date, view.year),
-        end: dateAbbreviated(edition.end, view.year),
+        end: dateAbbreviated(lastDay(edition.end), view.year),
       })}
     </p>
   </Confirmation>

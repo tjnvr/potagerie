@@ -41,6 +41,10 @@ against the Vite dev server with the in-memory fake of the Tauri commands (`?exa
 | SER-02 | Catalogue: pick a crop, then filter by family | F-CAT-3 | The sheet always belongs to a card that is shown | automated (`front/e2e/series-form.spec.ts`) |
 | SER-03 | Catalogue on a phone (390 px): tap a crop card | F-CAT-3 | The sheet, under the cards, is scrolled into view | automated (`front/e2e/series-form.spec.ts`) |
 | SER-04 | Planting form: clear the start date, then type another | F-PLA-2 | No invented dates (1900), Save disabled until a date is typed, dates back after | automated (`front/e2e/series-form.spec.ts`) |
+| SER-05 | Planting form from a slot: the end field, the last step, the label and the slot all read the last occupied day (S03 §1) | F-PLA-2 | A slot "… → 9 May" proposes an end that reads 9 May; a typed end is stored one day later | automated (`front/e2e/series-form.spec.ts`, `front/src/lib/planting/series-form.test.ts`) |
+| SER-06 | Apply a suggestion, then type an end | F-PLA-2 | "End limited to the free slot" for a proposed end, "Edited by hand" only once the user typed it | automated (`front/e2e/series-form.spec.ts`, unit) |
+| SER-07 | Conflict on a single segment | F-PLA-1 | "on segment 4" (singular), "on segments 3–5" (plural), English and French | automated (unit, `series-form.test.ts`) |
+| SER-08 | Catalogue count and vocabulary | F-CAT-3 | The count follows the filter (total without), singular for one, "crops" / "cultures" everywhere, no "légume" | automated (`front/e2e/series-form.spec.ts`, unit) |
 | KBD-01..07 | Keyboard only: focus trap and focus return in the five windows, Enter/Space/Escape on beds, Escape in a confirmation | accessibility | Tab never leaves a window; Escape returns focus to the opener | automated (`front/e2e/keyboard.spec.ts`) |
 | MONKEY | Seeded random clicks, drags and keys | all | No page error, no console error | automated (`front/e2e/monkey.spec.ts`) |
 | UC-30 | Real Tauri window, touch, installed build | all | — | **manual** (never automated yet) |

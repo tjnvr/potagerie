@@ -16,7 +16,7 @@
   import { isOk } from "./call";
   import { catalogue } from "./crops.svelte";
   import PlantIcon from "./PlantIcon.svelte";
-  import { nameFamily, tri } from "./catalogue";
+  import { countText, nameFamily, tri } from "./catalogue";
 
   const today = $derived(app.view?.today ?? new Date().toISOString().slice(0, 10));
   let season = $state<string[]>([]);
@@ -111,7 +111,7 @@
           <p class="none">{m.catalogue_none()}</p>
         {/each}
       </div>
-      <p class="note">{m.catalogue_count({ count: catalogue.crops.length })}</p>
+      <p class="note">{countText(list.length)}</p>
     </section>
 
     {#if fiche}

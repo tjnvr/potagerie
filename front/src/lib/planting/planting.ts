@@ -13,7 +13,8 @@ import type {
   SuggestionView,
   ZoneView,
 } from "../bindings";
-import { dayOf, shiftDate } from "../dates";
+import { dayOf, endExclusive, shiftDate } from "../dates";
+import { m } from "../paraglide/messages.js";
 
 export type Zone = { start: number; end: number };
 
@@ -29,6 +30,9 @@ export type Form = {
   indoorDays: string;
   /** End modified by hand, or `null` to follow the calculation. */
   manualEnd: string | null;
+  /** The end comes from a suggestion (S03 §9), not from the user: shown as limited
+   *  by the free slot, not as « edited by hand ». */
+  endFromSlot?: boolean;
   zone: Zone;
 };
 
@@ -109,6 +113,7 @@ export function applySuggestion(
     date: s.date,
     transplanting: false,
     manualEnd: s.manual_end ?? null,
+    endFromSlot: !!s.manual_end,
     zone,
   };
 }
@@ -149,13 +154,13 @@ export function toPlantingInput(f: Form): PlantingInput {
 export function changeDate(f: Form, date: string): Form {
   if (!f.manualEnd || !f.date || !date || date === f.date) return { ...f, date };
   const days = dayOf(date) - dayOf(f.date);
-  return { ...f, date, manualEnd: shiftDate(f.manualEnd, days) };
+  return { ...f, date, manualEnd: shiftDate(f.manualEnd, days), endFromSlot: false };
 }
 
 /** Another crop, mode or number of days under cover changes what the planting is:
  *  an end edited by hand no longer means anything and the end is calculated again. */
 export function resetManualEnd(f: Form): Form {
-  return f.manualEnd ? { ...f, manualEnd: null } : f;
+  return f.manualEnd ? { ...f, manualEnd: null, endFromSlot: false } : f;
 }
 
 /** Toggling « I rather know the transplanting date »: the field shows the
@@ -171,6 +176,18 @@ export function toggleTransplanting(f: Form, preview: PlantingPreview | null): F
 /** Typing a date for the end: the one Rust would calculate is not « by hand ». */
 export function endInput(date: string, endComputed: string): string | null {
   return date === "" || date === endComputed ? null : date;
+}
+
+/** The end field shows the last occupied day: the stored (exclusive) end is the day
+ *  after what the user typed. Empty or incomplete input means « follow the calculation ». */
+export function endFromLastDay(last: string, endComputed: string): string | null {
+  return /^\d{4}-\d{2}-\d{2}$/.test(last) ? endInput(endExclusive(last), endComputed) : null;
+}
+
+/** « Conflict with … on segment 4 » for a single segment, « on segments 3–5 » otherwise. */
+export function conflictText(zone: Zone, a: { crop: string; from: string; to: string }): string {
+  const args = { ...a, start: zone.start, end: zone.end };
+  return zone.start === zone.end ? m.planting_problem_conflict_one(args) : m.planting_problem_conflict(args);
 }
 
 export type Segment = { phase: "pots" | "growth" | "harvest"; days: number };

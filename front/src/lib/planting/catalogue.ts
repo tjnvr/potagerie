@@ -24,3 +24,8 @@ export function nameFamily(family: string): string {
 export function tri(crops: readonly CropView[], name: (id: string) => string): CropView[] {
   return [...crops].sort((a, b) => name(a.id).localeCompare(name(b.id), localeTag()));
 }
+
+/** The count under the cards: the crops shown (filtered list), singular for one. */
+export function countText(shown: number): string {
+  return shown === 1 ? m.catalogue_count_one({ count: shown }) : m.catalogue_count({ count: shown });
+}

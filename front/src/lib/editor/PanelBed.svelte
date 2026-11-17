@@ -6,6 +6,7 @@
   import Confirmation from "../shell/Confirmation.svelte";
   import Icon from "../shell/Icon.svelte";
   import { app } from "../state.svelte";
+  import { lastDay } from "../dates";
   import { get } from "svelte/store";
   import { m } from "../paraglide/messages.js";
   import { cursor } from "../time";
@@ -169,7 +170,7 @@
           by_row: planting.plants_by_row,
         })}
       </p>
-      <p>{m.panel_planting_dates({ start: dateShort(planting.date, view.year), end: dateShort(planting.end, view.year) })}</p>
+      <p>{m.panel_planting_dates({ start: dateShort(planting.date, view.year), end: dateShort(lastDay(planting.end), view.year) })}</p>
       <button class="link" onclick={() => (app.plantingOpen = { type: "edition", planting })}>{m.planting_modify()}</button>
     </div>
   {:else}
@@ -206,7 +207,7 @@
       <div class="planting">
         <strong>{nameCrop(planting.crop_id)}</strong>
         <p>
-          {m.panel_planting_dates({ start: dateShort(planting.date), end: dateShort(planting.end) })} ·
+          {m.panel_planting_dates({ start: dateShort(planting.date), end: dateShort(lastDay(planting.end)) })} ·
           ≈ {planting.rows * planting.plants_by_row}
         </p>
       </div>
@@ -240,7 +241,7 @@
               {m.delete_bed_planting({
                 crop: nameCrop(planting.crop_id),
                 start: dateShort(planting.date),
-                end: dateShort(planting.end),
+                end: dateShort(lastDay(planting.end)),
               })}
             </li>
           {/each}

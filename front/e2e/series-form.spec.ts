@@ -55,6 +55,61 @@ for (const v of LANGS) {
       await expect(dialog.locator("ol.steps")).toContainText("10");
       await expect(dialog.locator("button.validate")).toBeEnabled();
     });
+
+    test(`SER-05/06 the end is the last free day, and its label says where it comes from (${v.locale})`, async ({ page }) => {
+      await page.goto("/?example");
+      await page.getByRole("button", { name: v.garden, exact: true }).click();
+      const dialog = page.getByRole("dialog");
+      const day = (iso: string) =>
+        new Date(`${iso}T12:00:00`).toLocaleDateString(v.locale === "fr-FR" ? "fr-FR" : "en-GB", { day: "numeric", month: "short" });
+      let found = false;
+      const count = await page.locator("[data-slot]").count();
+      for (let i = 0; i < count && !found; i++) {
+        await page.goto("/?example");
+        await page.getByRole("button", { name: v.garden, exact: true }).click();
+        const slot = page.locator("[data-slot]").nth(i);
+        await slot.scrollIntoViewIfNeeded();
+        await slot.click({ force: true });
+        const buttons = dialog.locator(".slot button");
+        for (let j = 0; j < (await buttons.count()) && !found; j++) {
+          await buttons.nth(j).click();
+          await expect(dialog.locator("ol.steps")).toBeVisible();
+          const manual = dialog.locator(".end .manual");
+          // Only a suggestion cut short by the slot has an end of its own.
+          await page.waitForTimeout(300);
+          if ((await manual.count()) === 0) continue;
+          found = true;
+          // Not « by hand »: the user has touched nothing.
+          await expect(manual).toHaveText(v.locale === "fr-FR" ? /créneau libre/ : /free slot/i);
+          // The end field, the label, the last step and the slot all read the same last day.
+          const last = day(await dialog.locator(".end input").inputValue());
+          await expect(dialog.locator(".slot-text")).toContainText(`→ ${last}`);
+          await expect(manual).toContainText(last);
+          await expect(dialog.locator("ol.steps li").last().locator("strong")).toContainText(last);
+          // Typed by the user: now it is by hand.
+          await dialog.locator(".end input").fill("2027-04-20");
+          await dialog.locator(".end input").dispatchEvent("change");
+          await expect(manual).toHaveText(v.locale === "fr-FR" ? /à la main/ : /by hand/);
+          await expect(manual).toContainText(day("2027-04-20"));
+          await expect(dialog.locator(".end input")).toHaveValue("2027-04-20");
+        }
+      }
+      expect(found).toBe(true);
+    });
+
+    test(`SER-08 the catalogue count follows the filter (${v.locale})`, async ({ page }) => {
+      await openCatalogue(page, v.catalogue);
+      const note = page.locator("p.note");
+      const total = await page.locator("button.carte").count();
+      await expect(note).toContainText(`${total} `);
+      const families = page.locator(".filters button.filter");
+      await families.nth(1).click();
+      const shown = await page.locator("button.carte").count();
+      expect(shown).toBeLessThan(total);
+      await expect(note).toContainText(`${shown} `);
+      await expect(note).not.toContainText(`${total} `);
+      await expect(note).toContainText(v.locale === "fr-FR" ? "culture" : "crop");
+    });
   });
 }
 

@@ -37,6 +37,18 @@ export function shiftDate(iso: string, days: number): string {
   return dateOf(dayOf(iso) + days);
 }
 
+/** The end of a planting is stored exclusive (S03 §1, `[planting out, end[`) but
+ *  everything the user reads or types is the LAST OCCUPIED DAY (S03 §1, display
+ *  convention): this is the day before. */
+export function lastDay(endExclusive: string): string {
+  return shiftDate(endExclusive, -1);
+}
+
+/** The stored (exclusive) end of a planting whose last occupied day is `last`. */
+export function endExclusive(last: string): string {
+  return shiftDate(last, 1);
+}
+
 /** A civil date as « 2 August », with the year when it is not `year`. */
 export function dateAbbreviated(iso: string, year?: number): string {
   const day = new Date(`${iso}T12:00:00`);
