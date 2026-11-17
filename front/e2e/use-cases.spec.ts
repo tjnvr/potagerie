@@ -97,8 +97,8 @@ test("UC-15 plan: dragging on free grass draws a zone as the pointer moves", asy
   await page.getByRole("button", { name: "Plan", exact: true }).click();
   const grass = page.locator("rect.grass");
   const r = (await grass.boundingBox())!;
-  const x = r.x + r.width * 0.55;
-  const y = r.y + r.height * 0.7;
+  const x = r.x + r.width * 0.8;
+  const y = r.y + r.height * 0.8;
   await page.mouse.move(x, y);
   await page.mouse.down();
   await page.mouse.move(x + 20, y + 20);
