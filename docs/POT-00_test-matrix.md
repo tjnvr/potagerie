@@ -48,11 +48,11 @@ Found and fixed: the catalogue footer said "6 crops in V1" (0.2.7); the catalogu
 bed names were cut in the timeline (0.2.7, 0.2.9); the Garden tab kept the date the cursor was left on (0.2.6);
 the header wrapped onto a third row on a phone in French (0.3.2); the export dialog announced "A4 or A3" while only A4 exists (0.3.5); emoji and symbols came out as empty boxes in the export (0.3.3).
 
-Still open (observations, no decision yet):
-1. The app opens on **Plan**, not on Garden; "See the garden" is the way across.
-2. On a desktop the right-hand card "A bed?" stays a tall empty white block until a bed is clicked.
-3. **Free slots that are entirely in the past** are offered (for example 7 June → 15 November seen on 16 November) and planting in the past is allowed; the specs say nothing about it.
-4. On the timeline, annotation labels can overlap the label of a bar underneath (the halo keeps them readable).
-5. The garden view is small at 390 px (a lot of empty margin around the isometric drawing).
-6. In the export dialog the preview includes the dotted free slots (arguably noise on a printed sheet): to decide.
-7. Not testable here: the real Tauri window, touch gestures, the installed build, the file dialogs.
+Observations, decided:
+1. The app opens on **Plan**: kept: no spec asks for another first screen and the garden is one tab away.
+2. The empty "A bed?" card on desktop: kept, it holds the place of the bed panel and avoids a layout jump on selection.
+3. **Free slots wholly in the past** stay offered: plantings of the past stay editable to record the history (S01 F-PLA-4, S03 §17), and a sowing proposed in the past is turned into plants (S03 §9).
+4. Annotation labels over a bar label: the halo keeps both readable; no change.
+5. Small garden view at 390 px: a drawing choice (P01); no change without a new design.
+6. Free slots in the export preview: not a spec point (the export crate draws no slot); no change without a design decision.
+7. Not testable here: the real Tauri window, touch gestures, the installed build, the file dialogs (UC-30, manual).
