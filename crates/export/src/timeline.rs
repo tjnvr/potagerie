@@ -20,6 +20,9 @@ const FONTS: &[&[u8]] = &[
 
 /// PNG pixels per SVG user unit: 2 gives a sharp image on high-density screens.
 const PNG_SCALE: f32 = 2.0;
+/// Upper bound of a PNG (about 400 MB of RGBA): beyond it the export is refused
+/// instead of exhausting the memory.
+const MAX_PNG_PIXELS: u64 = 100_000_000;
 
 /// Output format of the timeline export.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
@@ -66,7 +69,15 @@ fn is_drawable(c: char) -> bool {
 /// they would come out as empty boxes in the file. The markup of the SVG is
 /// ASCII, so only the texts of the garden are touched.
 pub(crate) fn drawable_only(svg: &str) -> String {
-    svg.chars().filter(|c| is_drawable(*c)).collect()
+    svg.chars()
+        .map(|c| match c {
+            // Typographic spaces (en/em/thin, narrow no-break, ...) become a
+            // plain space instead of vanishing: "12 kg" must not turn into "12kg".
+            '\u{2000}'..='\u{200A}' | '\u{202F}' | '\u{205F}' => ' ',
+            c => c,
+        })
+        .filter(|c| is_drawable(*c))
+        .collect()
 }
 
 /// Converts the SVG of the timeline to the bytes of a PNG or PDF file.
@@ -79,6 +90,9 @@ pub fn render_timeline(svg: &str, format: TimelineFormat) -> Result<Vec<u8>, Exp
                 .to_int_size()
                 .scale_by(PNG_SCALE)
                 .ok_or_else(|| ExportError::Render("the SVG is too large or has no size".into()))?;
+            if u64::from(size.width()) * u64::from(size.height()) > MAX_PNG_PIXELS {
+                return Err(ExportError::Render("the SVG is too large for a PNG".into()));
+            }
             let mut pixmap = tiny_skia::Pixmap::new(size.width(), size.height())
                 .ok_or_else(|| ExportError::Render("the SVG has no size".into()))?;
             resvg::render(
