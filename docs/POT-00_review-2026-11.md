@@ -30,6 +30,7 @@ Scope: the code of lot 1 after the move to English (`crates/`, `src-tauri/`, `fr
 - **0.4.0 / 0.4.1** — A bed is drawn on the plan by dragging over free grass: the band shows from the first pixels, snapped to cells. A zone near the edge is created on a free spot, then resized.
 - **0.4.2** — The muted text colour met no AA contrast (axe audit); darkened to `#4e6858`. Six unused messages removed.
 - **Tests added** (no app change): axe audit, console-error smoke test, 600 mutated garden files that never panic, en/fr message parity, UC-15/16/20/21/22/25 in e2e. The reference lines of S03 v0.15 and S05 v0.16 now point to the current S01 v1.7 and S05 v0.16.
+- **Diorama fluidity** (P01 criterion), measured once in headless Chromium on the example garden while "Play the season" runs (about 2,500 SVG nodes): 481 frames in 4 s, median 8.3 ms, 95th percentile 9.3 ms, worst 9.4 ms. Not measured with 132 plants nor on a real device.
 
 ## Known problems, not fixed
 
