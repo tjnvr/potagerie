@@ -135,6 +135,15 @@ test("UC-21 plan: deleting a bed asks for confirmation, then removes it", async 
   await expect(counter).not.toHaveText(before!);
 });
 
+test("UC-22 settings: clearing the plan asks, then empties the beds", async ({ page }) => {
+  await open(page);
+  await page.getByRole("button", { name: "Settings" }).first().click();
+  await page.getByRole("button", { name: "Clear", exact: true }).click();
+  await expect(page.getByText(/Clear the plan from/)).toBeVisible();
+  await page.getByRole("button", { name: "Clear the plan" }).click();
+  await expect(page.getByText("Plan cleared.")).toBeVisible();
+});
+
 test("UC-07 notes: empty text is refused, 80 characters at most, the note appears", async ({ page }) => {
   await open(page);
   await toGarden(page);
