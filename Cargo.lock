@@ -2646,7 +2646,7 @@ dependencies = [
 
 [[package]]
 name = "potagerie"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "catalogue",
  "chrono",
