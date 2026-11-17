@@ -123,6 +123,18 @@ test("UC-16 plan: releasing a drawn zone near the edge creates a bed", async ({ 
   await expect(page.locator(".counter").first()).not.toHaveText(before!);
 });
 
+test("UC-21 plan: deleting a bed asks for confirmation, then removes it", async ({ page }) => {
+  await open(page);
+  await page.getByRole("button", { name: "Plan", exact: true }).click();
+  const counter = page.locator(".counter").first();
+  const before = await counter.textContent();
+  await page.mouse.click(640, 340);
+  await page.getByRole("button", { name: "Delete", exact: true }).first().click();
+  await expect(page.getByText(/Delete .*\?/)).toBeVisible();
+  await page.getByRole("button", { name: "Delete the bed" }).click();
+  await expect(counter).not.toHaveText(before!);
+});
+
 test("UC-07 notes: empty text is refused, 80 characters at most, the note appears", async ({ page }) => {
   await open(page);
   await toGarden(page);
