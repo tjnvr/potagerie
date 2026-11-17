@@ -77,7 +77,7 @@ impl SqliteStore {
                 updated_at = excluded.updated_at,
                 document = excluded.document",
             params![
-                i64::try_from(plan.version).unwrap_or(i64::MAX),
+                i64::try_from(stored_form(plan.version)).unwrap_or(i64::MAX),
                 plan.updated_at.to_rfc3339(),
                 document
             ],
@@ -86,8 +86,21 @@ impl SqliteStore {
     }
 }
 
+/// The version as the `version` column keeps it (an SQLite integer is signed,
+/// so versions beyond `i64::MAX` are clamped): `save` compares in this form.
+fn stored_form(version: u64) -> u64 {
+    version.min(i64::MAX as u64)
+}
+
 fn migrate(conn: &mut Connection) -> Result<(), StoreError> {
     let current: i64 = conn.pragma_query_value(None, "user_version", |row| row.get(0))?;
+    if current < 0 {
+        // Not a version this app wrote: unreadable, not "already migrated".
+        return Err(StoreError::Database(rusqlite::Error::SqliteFailure(
+            rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_CORRUPT),
+            Some(format!("negative schema version {current}")),
+        )));
+    }
     if current > SCHEMA_VERSION {
         return Err(StoreError::SchemaTooNew {
             found: current,
@@ -122,7 +135,7 @@ impl Store for SqliteStore {
     fn save(&mut self, plan: &mut Plan, now: DateTime<Utc>) -> Result<(), StoreError> {
         match self.stored_version()? {
             None => self.write(plan),
-            Some(stored) if stored != plan.version => Err(StoreError::StaleVersion {
+            Some(stored) if stored != stored_form(plan.version) => Err(StoreError::StaleVersion {
                 given: plan.version,
                 stored,
             }),
