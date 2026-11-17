@@ -157,7 +157,13 @@
         const low = i < 0 ? heightTotal : top + positions[i]!.height;
         return { a, start, end, top, low, period: a.annotation_type === "period", ghost: a.hidden };
       })
-      .filter((n) => x(n.end) >= widthLabels && x(n.start) <= width),
+      .filter((n) => x(n.end) >= widthLabels && x(n.start) <= width)
+      .map((n, _, all) => {
+        // The label of a note stops where the next label of the same row starts, so two close notes never overprint.
+        const next = all.filter((o) => o !== n && o.top === n.top && (o.start > n.start || (o.start === n.start && o.a.id > n.a.id)));
+        const room = next.length ? Math.min(...next.map((o) => x(o.start))) - (n.period ? Math.max(x(n.start), widthLabels) + 6 : x(n.start) + 9) - 8 : Infinity;
+        return { ...n, room };
+      }),
   );
   function titleOfNote(a: AnnotationView): string {
     const when =
@@ -362,9 +368,10 @@
           <line x1={x(n.start)} x2={x(n.start)} y1={n.top + 4} y2={n.low} stroke={PALETTE.note} stroke-width="1.5" stroke-dasharray="3 3" />
           <circle cx={x(n.start)} cy={n.top + (n.a.bed_id === null ? 0 : 7)} r="5" fill={PALETTE.note} stroke={PALETTE.fond} stroke-width="1.5" />
         {/if}
+        <svg x={n.period ? gauche + 6 : x(n.start) + 9} y={n.top} width={Number.isFinite(n.room) ? Math.max(n.room, 0) : 4000} height="16" overflow="hidden">
         <text
-          x={n.period ? gauche + 6 : x(n.start) + 9}
-          y={n.top + 10}
+          x="0"
+          y="10"
           font-size="10"
           font-weight="600"
           fill={PALETTE.noteInk}
@@ -374,6 +381,7 @@
           paint-order="stroke"
           pointer-events="all">{n.a.text}</text
         >
+        </svg>
       </g>
     {/each}
     <!-- Today (background marker) and the cursor of the time (F-VIS-3). -->
