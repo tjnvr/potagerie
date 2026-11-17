@@ -26,6 +26,7 @@
   let effacement = $state<0 | 1 | 2>(0);
   let clearing = $state(false);
   let panel: HTMLElement;
+  import { modal } from "../shell/modal";
 
   const plot = $derived(app.view?.plot ?? null);
   const nbBeds = $derived(app.view?.beds.length ?? 0);
@@ -33,10 +34,6 @@
   const readOnly = $derived(app.view?.read_only ?? false);
   const aClear = $derived(nbBeds > 0 && !readOnly);
   const incoherences = $derived(importEnWaiting?.summary.incoherences ?? []);
-
-  $effect(() => {
-    panel.focus();
-  });
 
   function close() {
     app.settingsOpen = false;
@@ -116,6 +113,7 @@
   aria-labelledby="settings-title"
   tabindex="-1"
   bind:this={panel}
+  use:modal
   onkeydown={(e) => e.key === "Escape" && close()}
 >
   <div class="tete">

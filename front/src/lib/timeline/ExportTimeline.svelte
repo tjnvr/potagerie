@@ -9,6 +9,7 @@
   import { tick } from "svelte";
   import { commands, type AppError, type TimelineExportFormat, type YearView } from "../bindings";
   import Icon from "../shell/Icon.svelte";
+  import { modal } from "../shell/modal";
   import Logo from "../shell/Logo.svelte";
   import { todayLocal } from "../dates";
   import { call, app } from "../state.svelte";
@@ -33,7 +34,6 @@
   let enProgress = $state(false);
   /** Why the last export failed (ET01): shown in the panel, with « Retry ». */
   let failure = $state<AppError["code"] | null>(null);
-  let root: HTMLElement;
   let drawing: HTMLElement | undefined = $state();
   let svgText = $state("");
 
@@ -82,10 +82,6 @@
   });
   const preview = $derived(svgText ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgText)}` : "");
 
-  $effect(() => {
-    root.focus();
-  });
-
   function close() {
     app.exportOpen = false;
   }
@@ -121,7 +117,7 @@
 
 <svelte:window onkeydown={(e) => e.key === "Escape" && close()} />
 
-<div class="screen" role="dialog" aria-modal="true" aria-labelledby="export-title" tabindex="-1" bind:this={root}>
+<div class="screen" role="dialog" aria-modal="true" aria-labelledby="export-title" tabindex="-1" use:modal>
   <header class="header">
     <Logo />
     <button class="rond" aria-label={m.close()} title={m.close()} onclick={close}><Icon name="close" size={18} /></button>
