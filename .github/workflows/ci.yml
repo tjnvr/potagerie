@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -68,6 +71,14 @@ jobs:
           cache: pnpm
           cache-dependency-path: front/pnpm-lock.yaml
       - run: pnpm --dir front install --frozen-lockfile
+      - name: Cache the Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('front/pnpm-lock.yaml') }}
+          restore-keys: playwright-${{ runner.os }}-
+      # The system libraries are not cached: --with-deps installs them every time.
       - name: Install the browsers
         run: pnpm --dir front exec playwright install --with-deps chromium webkit
       - name: pnpm e2e

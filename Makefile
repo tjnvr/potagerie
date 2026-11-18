@@ -15,11 +15,13 @@ dev: install
 build: install
 	cargo tauri build
 
+# src-tauri embeds front/dist at compile time: build the interface first (as the CI does).
 test: install
+	pnpm --dir front build
 	cargo test --workspace
 	pnpm --dir front test
 
-# What the CI checks, without building the bundles.
+# Formatting, lints and type checks of the CI, without the tests (make test, make e2e) or the bundles.
 check: install
 	cargo fmt --all --check
 	pnpm --dir front build
