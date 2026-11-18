@@ -22,11 +22,11 @@ State of the requirements of S01 (§4) in the app at lot 1, read in the code on 
 | F-PLA-3 Successions | Done | Timeline, planting creation | Segment conflict flagged with the period |
 | F-PLA-4 Continuous time | Done | Garden, timeline | The diorama takes the layout of the cursor's year |
 | F-PLA-5 Quantity calculation | Done | Planting creation ("≈ n plants, rows × per row") | Calculation in `crates/plan` |
-| F-VIS-1 Isometric garden view | Done | Garden | Rotation, labels, "Free" signs |
+| F-VIS-1 Isometric garden view | Partial | Garden | Rotation, labels, "Free" signs, seasonal mood; no zoom (wheel, pinch) and no panning by dragging the background (corrected: marked Done before) |
 | F-VIS-2 Timeline view | Done | Garden, under the diorama | Merged with the diorama; continuous scroll between years |
 | F-VIS-3 Time cursor | Done | Garden | |
 | F-VIS-4 Season playback | Done | Garden, ×1 and ×2 | Measured at 60 frames/s (10 beds, normal density) |
-| F-VIS-5 Timeline annotations | Done | Timeline, "Annotate"; `create_annotation`, `modify_annotation`, `delete_annotation` | Notes and periods |
+| F-VIS-5 Timeline annotations | Partial | Timeline, "Annotate"; bed panel, "Add a note"; `create_annotation`, `modify_annotation`, `delete_annotation` | Notes and periods, edit, delete, hide. Absent: creation by double click / long press on a row, and moving an annotation by dragging it (corrected: marked Done before) |
 | F-VIS-6 Screen layout | Done | App shell | Checked at 360 and 1440 px |
 | F-VIS-7 Bed panel | Partial | Garden and Plan | Read-only history present; the families of the two previous seasons are not shown (after lot 1); the "Move" action of the panel is absent (moving is done in the editor) |
 | F-CRE-1 Free slots | Done | Timeline (dotted), diorama ("Free") | |
@@ -36,8 +36,8 @@ State of the requirements of S01 (§4) in the app at lot 1, read in the code on 
 
 | State | Count |
 |---|---|
-| Done | 26 |
-| Partial | 3 |
+| Done | 21 |
+| Partial | 8 |
 | Postponed | 0 |
 
 The requirements specific to lot 2 (mobile) and lot 3 (multi-device synchronisation) are not in the table.

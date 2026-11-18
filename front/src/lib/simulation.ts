@@ -355,6 +355,12 @@ export function simulerTauri(): void {
         modifiable(year);
         const target = beds.find((p) => p.id === args.id)!;
         const g = args.geometry as Geometry | null;
+        // Same rule as Rust (`names_have_1_to_30_characters`): the name is trimmed, 1 to 30 characters.
+        if (typeof args.name === "string") {
+          const trimmed = args.name.trim();
+          if (trimmed.length < 1 || [...trimmed].length > 30) refusal("name_invalid");
+          args.name = trimmed;
+        }
         if (g) {
           if (g.length_cm % plot!.cell_cm !== 0) refusal("length_invalid");
           verifier(target.id, g);

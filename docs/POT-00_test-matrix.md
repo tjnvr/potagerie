@@ -73,3 +73,64 @@ Observations, decided:
 5. Small garden view at 390 px: a drawing choice (P01); no change without a new design.
 6. Free slots in the export preview: not a spec point (the export crate draws no slot); no change without a design decision.
 7. Not testable here: the real Tauri window, touch gestures, the installed build, the file dialogs (UC-30, manual).
+
+## Coverage of the requirements
+
+Requirement → test, for the 29 requirements of S01 §4 listed in `POT-00_lot1-coverage.md` (reviewed 18 November 2026).
+"Behaviour" means a test asserts the expected result, not only that a screen exists. Rust = `cargo test`; unit = vitest;
+e2e = Playwright against the fake of the commands (`?example`), which does not run the Rust rules (those are covered by the Rust tests).
+
+| Requirement | Behaviour asserted by | Verdict |
+|---|---|---|
+| F-CPT-1 Sign-in | — (removed) | n/a |
+| F-CPT-2 Saving | Rust: `sqlite.rs` (versions, stale copy, reopening), `commands` tests (restart); unit `state.test.ts` ("Saving failed" keeps the change, Retry runs it again) | Covered. The header indicator itself (three states) is not asserted in a browser |
+| F-CPT-3 Export / import | Rust: `garden.rs`, `garden_stress.rs`, `hostile_import.rs`, `tests.rs` (older file, invalid, incoherent import) | Covered in Rust. **Gap**: the Settings screen (file dialog, confirmation before replacing, "to resolve" list) is manual only (UC-23, UC-30) |
+| F-CPT-4 Erase | Rust: `tests.rs` (damaged database erased), `store` `replace_and_clear`; e2e UC-22 (clear the plan only) | **Gap**: the double confirmation of "Erase the data" has no UI test |
+| F-TER-1 Plot creation | e2e UC-01 (defaults); Rust `placement.rs` (dimensions, aisle) | **Gap**: choosing 25 / 100 cm cells or a 30 / 80 cm aisle at creation, and the "cannot be changed" warning, are not asserted |
+| F-PLN-1 Beds | Rust: `eleventh_bed_refused`, `placement.rs`, `names_have_1_to_30_characters`, `length_not_a_multiple...`; e2e UC-02, UC-15, UC-16, **REQ-03** (tray greyed out at 10 with its message), **REQ-05** (rename, empty refused) | Covered. Partial requirement: the same-name warning does not exist |
+| F-PLN-2 Aisles | Rust: `the_aisle_width_is_kept_between_beds`, `a_larger_aisle_can_make_the_plan_invalid`; unit `beds.test.ts` | Covered for the enforced width. Changing the aisle in the Settings has no UI test |
+| F-PLN-4 Plan by season | Rust: `modification_holds_until_the_next_recorded_layout`, `past_year_is_read_only`, deletion tests, `t11`, clear tests; e2e UC-04, UC-21, UC-22, UC-25 | Covered |
+| F-PLN-5 Plan summary | unit `beds.test.ts` ("summary") | **Gap**: the right-hand panel is not asserted in a browser |
+| F-PLN-6 Place and size | unit `drag.test.ts`; Rust `placement.rs`, `t12`; e2e UC-03, UC-20, UC-27 | Covered for the lot 1 scope. Rotate, duplicate, Undo / Redo absent (Partial) |
+| F-CAT-1 Content | Rust: `catalogue` tests, `catalogue_wide.rs`; e2e UC-08 (67 crops) | Covered |
+| F-CAT-2 Crop sheet | Rust `tomato_matches_s02`, `v1_has_unique_ids_and_valid_sheets`; e2e SER-01..03 | Covered |
+| F-CAT-3 Browsing | e2e UC-08, UC-13, SER-02, SER-03, SER-08; Rust `crops_in_season_follow_the_planting_window` | **Gap**: the "in season now" checkbox is not clicked in any browser test |
+| F-PLA-1 Create a planting | Rust: `s03_cas` t01..t10, `edge_cases` (modes, durations copied); unit `planting.test.ts`; e2e UC-06, SER-04..06, REQ-04 | Covered. The three "How do you start?" cards and the transplanting-date link are only covered by unit tests |
+| F-PLA-2 Edit / delete | Rust: `dragging_shifts_the_date_and_the_manual_end`, `manual_end_is_not_recomputed`; unit `geometry.test.ts` (drag accepted / refused); e2e UC-14, UC-26, **REQ-01** (delete asks, Cancel keeps, confirm removes) | Covered. The drag of a bar in a browser is not asserted (unit only) |
+| F-PLA-3 Successions | Rust: `disjoint_zones_same_period_no_conflict`, `conflict_reports_shared_segments_and_period`, `t06`; unit SER-07, `geometry.test.ts` ("in conflict") | **Gap**: the conflict message in the form is not asserted in a browser (the fake accepts or refuses on its own rules) |
+| F-PLA-4 Continuous time | Rust: `a_planting_from_the_previous_year_occupies_the_start_of_the_year`; unit `geometry.test.ts` (straddling plantings shown once); e2e UC-04, UC-05 | Covered. The diorama taking the layout of a new year when the cursor crosses 1 January has no test |
+| F-PLA-5 Quantity | Rust: `quantities.rs`, `t04`, `t05`, `quantity_minimums`; unit `plants.test.ts`; e2e **REQ-04** (rows × per row = plants, follows the zone) | Covered |
+| F-VIS-1 Isometric view | unit `projection.test.ts`, `plants.test.ts`, `animation.test.ts`; Rust `stages.rs`; e2e DIO-01, **REQ-06** (rotate quarter by quarter) | Zoom and pan are not implemented (coverage doc corrected to Partial). The "Free" sign and the seasonal mood have no assertion |
+| F-VIS-2 Timeline | unit `geometry.test.ts` (rows, phases, stacking, zoom 3 months to 3 years, scroll); e2e UC-06, UC-14, TML-01, LAY-05 | Covered. Greyed row of a missing bed: unit only |
+| F-VIS-3 Time cursor | e2e UC-05 (Next week, Today); unit `geometry.test.ts` | Covered |
+| F-VIS-4 Season playback | unit `animation.test.ts` (15 s a year, ×2, reduced motion, bounce); e2e DIO-01 (plays, frame p95) | Covered. The pause button and the ×1 / ×2 buttons are only tested for their size (LAY-02) |
+| F-VIS-5 Annotations | e2e UC-07, TML-01, **REQ-02** (hide, edit window, delete); unit `note.test.ts`; Rust `annotations.rs` | Covered for what exists. Double click / long press creation and drag are absent (coverage doc corrected to Partial) |
+| F-VIS-6 Screen layout | e2e UC-12, UC-13, LAY-01..08, A11Y | Covered at 360 / 390 / 1440 px |
+| F-VIS-7 Bed panel | e2e UC-21, UC-25, **REQ-05** (rename in place); Rust `deletion_warning_quantities_and_history`, `families_of_the_two_previous_seasons`; LAY-03 | **Gap**: the plantings and the History section of the panel are not asserted in a browser |
+| F-CRE-1 Free slots | Rust: `slot_of_35_days_dropped_and_36_days_kept`, window 1 March – 15 November, `t07`; e2e UC-06, LAY-05 | Covered |
+| F-CRE-2 Suggestions | Rust: `t08`, `t10`, ranking tests, `catalogue_wide.rs`, `random_walk.rs`; unit `suggestions.test.ts`; e2e SER-05, SER-06 | Covered |
+| F-EXP-1 Timeline export | Rust: `timeline.rs`, `timeline_front.rs`, `tests.rs` (valid PNG and PDF); unit `exportPlan.test.ts`, `exportSvg.test.ts`; e2e UC-10, LAY-06 | **Gap**: choosing the beds / options in the dialog and writing the file are not run end to end (needs the native dialog) |
+| F-EXP-2 Content | unit `exportSvg.test.ts` (phases, fonts); Rust `timeline_stress.rs` | Partial requirement (no header, thumbnail, task calendar); `tasks.rs` is tested in Rust but has no screen |
+
+### Gaps closed in this review (REQ-01 to REQ-06, `front/e2e/requirements.spec.ts`)
+
+| Id | Requirement | Asserts |
+|---|---|---|
+| REQ-01 | F-PLA-2 | Deleting a planting asks first; Cancel keeps the bar, confirming removes exactly one |
+| REQ-02 | F-VIS-5 | "Show the annotations" hides and restores every note; a note opens for editing and is deleted |
+| REQ-03 | F-PLN-1 | At 10 beds the four tray items are disabled and "10 beds at most per season." appears |
+| REQ-04 | F-PLA-5 | The form shows "≈ n plants, r rows × p", n = r × p, the button says the same n, and a quarter zone follows |
+| REQ-05 | F-VIS-7, F-PLN-1 | Renaming a bed in place updates its panel; the field is capped at 30; an empty name is refused and the old name comes back |
+| REQ-06 | F-VIS-1 | "Rotate the view" moves the beds at each quarter turn and four turns come back |
+
+Found while writing them: the fake of the commands (`front/src/lib/simulation.ts`) accepted an empty bed name where Rust refuses
+(`name_invalid`); it now applies the same rule (trimmed, 1 to 30 characters). The application code was not changed.
+
+### Open gaps (not closed, by impact)
+
+1. Settings screen: import with confirmation and "to resolve" list, erase with double confirmation (F-CPT-3, F-CPT-4): Rust only.
+2. Plot creation options: cell size, aisle, warning (F-TER-1).
+3. The conflict message and the three "How do you start?" cards in a browser (F-PLA-1, F-PLA-3).
+4. Bed panel: plantings and History sections (F-VIS-7); plan summary panel (F-PLN-5).
+5. Catalogue "in season now" filter (F-CAT-3); pause and speed buttons of the playback (F-VIS-4).
+6. Export dialog: bed selection and options (F-EXP-1).
