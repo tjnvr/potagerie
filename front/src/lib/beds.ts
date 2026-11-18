@@ -1,3 +1,4 @@
+import { dateAbbreviated } from "./dates";
 import { localeTag } from "./locale";
 import type { BedView, PlotView, TypeBed } from "./bindings";
 import { m } from "./paraglide/messages.js";
@@ -115,10 +116,7 @@ export function summary(plot: PlotView, beds: readonly BedView[]) {
 
 /** A civil date `YYYY-MM-DD` as « 15 March », with the year when it is not `year`. */
 export function dateShort(date: string, year?: number): string {
-  const day = new Date(`${date}T12:00:00`);
-  const options: Intl.DateTimeFormatOptions =
-    day.getFullYear() === year ? { day: "numeric", month: "short" } : { day: "numeric", month: "short", year: "numeric" };
-  return day.toLocaleDateString(localeTag(), options);
+  return dateAbbreviated(date, year);
 }
 
 /** The French name of a crop of the catalogue (`catalogue()` sends none):

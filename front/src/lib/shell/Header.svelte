@@ -7,11 +7,11 @@
   import IconTimeline from "../timeline/IconTimeline.svelte";
   import { m } from "../paraglide/messages.js";
   import { yearsProposees } from "../beds";
-  import { goTo, allerToday, cursor } from "../time";
+  import { goTo, allerToday, cursor, today } from "../time";
   import Icon, { type NameIcon } from "./Icon.svelte";
   import Logo from "./Logo.svelte";
 
-  const yearInProgress = new Date().getFullYear();
+  const yearInProgress = $derived(Number($today.slice(0, 4)));
   /** A season of the selector: the cursor goes to the same day of that year. */
   function chooseYear(year: number) {
     goTo(sameDayYear(get(cursor), year));

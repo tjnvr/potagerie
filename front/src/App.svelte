@@ -6,6 +6,7 @@
   import Icon from "./lib/shell/Icon.svelte";
   import Garden from "./lib/diorama/Garden.svelte";
   import { app } from "./lib/state.svelte";
+  import { today } from "./lib/time";
   import { translateError } from "./lib/errors";
   import { m } from "./lib/paraglide/messages.js";
   import Settings from "./lib/settings/Settings.svelte";
@@ -19,6 +20,16 @@
   $effect(() => {
     app.load();
     catalogue.load();
+  });
+
+  // Past midnight, Rust computes « today » again: read-only years, suggestions,
+  // the appearance of the day. Without this the view would keep yesterday's.
+  $effect(() => {
+    let previous: string | null = null;
+    return today.subscribe((day) => {
+      if (previous !== null && day !== previous && app.view) void app.load();
+      previous = day;
+    });
   });
 
   $effect(() => {
