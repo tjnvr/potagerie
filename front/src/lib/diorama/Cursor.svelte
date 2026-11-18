@@ -133,8 +133,9 @@
 
   input[type="range"] {
     width: 100%;
-    height: 28px;
-    margin: 0;
+    /* 40 px tap target, layout unchanged (the extra height is cancelled by the margin). */
+    height: 40px;
+    margin: -6px 0;
     background: transparent;
     appearance: none;
     cursor: pointer;

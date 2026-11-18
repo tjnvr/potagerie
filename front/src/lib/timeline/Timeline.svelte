@@ -545,6 +545,9 @@
     gap: 6px;
     font-size: 14px;
     color: var(--muted);
+    /* 40 px tap target, layout unchanged (the extra height is cancelled by the margin). */
+    min-height: 40px;
+    margin: -10px 0;
   }
 
   .button {

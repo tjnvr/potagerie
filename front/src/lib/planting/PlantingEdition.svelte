@@ -619,7 +619,7 @@
   }
 
   .puce {
-    min-height: 36px;
+    min-height: 40px;
     padding: 0 14px;
     border: 1px solid var(--accent);
     border-radius: var(--pill);
@@ -782,7 +782,13 @@
 
   .link {
     align-self: flex-start;
+    /* 40 px tap target, layout unchanged (extra height cancelled by the negative margin). */
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    min-height: 40px;
     padding: 0;
+    margin: -10px 0;
     border: 0;
     background: none;
     color: var(--green);
@@ -845,7 +851,7 @@
   }
 
   .end input {
-    min-height: 36px;
+    min-height: 40px;
   }
 
   .manual {
@@ -887,7 +893,8 @@
   }
 
   .bed select {
-    min-height: 36px;
+    /* A fixed height: WebKit ignores min-height on a native menu button. */
+    height: 40px;
     background: var(--white);
   }
 
@@ -920,7 +927,7 @@
 
   .segment {
     flex: 1;
-    height: 38px;
+    height: 40px;
     min-width: 0;
     border: 2px solid var(--line);
     border-radius: 8px;
