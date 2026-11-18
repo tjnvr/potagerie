@@ -88,9 +88,14 @@ impl MonthDay {
     /// Places the month-day in year `year`. `02-29` becomes `02-28` in a
     /// non-leap year (S03 §1).
     pub fn in_year(&self, year: i32) -> NaiveDate {
+        // Outside the years `NaiveDate` can hold, saturate instead of panicking.
         NaiveDate::from_ymd_opt(year, self.month, self.day)
             .or_else(|| NaiveDate::from_ymd_opt(year, self.month, self.day - 1))
-            .expect("a valid MM-DD always exists in a year, up to 02-29")
+            .unwrap_or(if year < 0 {
+                NaiveDate::MIN
+            } else {
+                NaiveDate::MAX
+            })
     }
 
     /// Month-day of a civil date.
@@ -277,6 +282,13 @@ mod tests {
             d.in_year(2027),
             NaiveDate::from_ymd_opt(2027, 2, 28).unwrap()
         );
+    }
+
+    #[test]
+    fn month_day_in_year_saturates_outside_the_calendar() {
+        let d = MonthDay::new(2, 15).unwrap();
+        assert_eq!(d.in_year(i32::MAX), NaiveDate::MAX);
+        assert_eq!(d.in_year(i32::MIN), NaiveDate::MIN);
     }
 
     #[test]

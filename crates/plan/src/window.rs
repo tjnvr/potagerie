@@ -11,7 +11,7 @@ use chrono::{Datelike, NaiveDate};
 pub fn window_starting_in(crop: &Crop, year: i32) -> (NaiveDate, NaiveDate) {
     let period = &crop.planting_out;
     let end_year = if period.spans_two_years() {
-        year + 1
+        year.saturating_add(1)
     } else {
         year
     };
@@ -74,5 +74,19 @@ mod tests {
         assert!(in_window(&crop, d(2027, 2, 28)));
         assert!(!in_window(&crop, d(2027, 3, 1)));
         assert!(in_window(&crop, d(2028, 2, 29)));
+    }
+
+    #[test]
+    fn window_never_panics_at_the_bounds_of_the_calendar() {
+        let mut crop = Catalogue::reference().crop("tomato").unwrap().clone();
+        crop.planting_out = Period {
+            start: MonthDay::new(10, 15).unwrap(),
+            end: MonthDay::new(2, 15).unwrap(),
+        };
+        let _ = in_window(&crop, NaiveDate::MAX);
+        let _ = in_window(&crop, NaiveDate::MIN);
+        let _ = window_starting_in(&crop, NaiveDate::MAX.year());
+        let _ = window_starting_in(&crop, i32::MAX);
+        let _ = window_starting_in(&crop, i32::MIN);
     }
 }
