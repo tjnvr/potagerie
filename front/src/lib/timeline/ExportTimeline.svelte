@@ -375,6 +375,13 @@
     font: inherit;
     font-weight: 600;
     text-decoration: underline;
+    /* 40 px tap target, layout unchanged (extra height cancelled by the negative margin). */
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    min-height: 40px;
+    padding: 0;
+    margin: -10px 0;
   }
 
   .puces {
@@ -389,6 +396,7 @@
     align-items: center;
     gap: 8px;
     font-size: 14px;
+    min-height: 40px;
   }
 
   .puce {

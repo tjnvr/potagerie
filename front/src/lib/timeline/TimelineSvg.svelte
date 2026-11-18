@@ -5,6 +5,8 @@
   export const WIDTH_LABELS_NARROW = 84;
   export const HEIGHT_HEADER = 62;
   export const HEIGHT_LANE = 34;
+  /** Height of the invisible tap target of a bar or a free-slot chip. */
+  const HIT = 40;
   export const MARGE_ROW = 10;
 
   export function heightRow(lanes: number): number {
@@ -275,6 +277,8 @@
           tabindex={interactive ? 0 : undefined}
           aria-label={m.timeline_slot_aria({ bed: row.bed.name, days, start: dateAbbreviated(c.source.start, yearShown), end: dateAbbreviated(c.source.end, yearShown) })}
         >
+          <!-- Invisible tap target of 40 px (the chip is 26 px high). -->
+          <rect x={x(c.start) + 1} y={p.top + c.lane * HEIGHT_LANE + 1} width={Math.max(widthC - 2, 0)} height={HIT} fill="transparent" />
           <rect
             x={x(c.start) + 1}
             y={p.top + c.lane * HEIGHT_LANE + 8}
@@ -316,6 +320,8 @@
           aria-label={titleOfBar(b)}
         >
           <title>{titleOfBar(b)}</title>
+          <!-- Invisible tap target of 40 px (the bar is 26 px high). -->
+          <rect x={gauche} y={top - 7} width={widthB} height={HIT} fill="transparent" />
           <rect x={gauche} y={top + 1} width={widthB} height="26" rx="9" fill={PALETTE.ink} opacity={scope === b.id ? 0.25 : 0.12} />
           <g clip-path="url(#timeline-bar-{b.id})" transform="translate(0 0)">
             {#each b.segments as s (s.phase)}
