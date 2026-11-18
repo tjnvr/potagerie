@@ -1,3 +1,4 @@
+import { formatCivil } from "./dates";
 import { localeTag } from "./locale";
 import { commands, type AnnotationView, type AppError, type SlotView, type IncoherenceView, type BedId, type PlantingView, type SuggestionView, type YearView } from "./bindings";
 import { isFailureSaving, translateError } from "./errors";
@@ -130,7 +131,9 @@ export const app = new App();
 
 /** A civil date `YYYY-MM-DD` or a UTC timestamp, as “2 November 2026”. */
 export function dateLong(date: string): string {
-  const day = /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(`${date}T12:00:00`) : new Date(date);
-  return day.toLocaleDateString(localeTag(), { day: "numeric", month: "long", year: "numeric" });
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return new Date(date).toLocaleDateString(localeTag(), { day: "numeric", month: "long", year: "numeric" });
+  }
+  return formatCivil(date, { day: "numeric", month: "long", year: "numeric" });
 }
 

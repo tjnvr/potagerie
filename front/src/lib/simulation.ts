@@ -9,7 +9,7 @@
 // (« Error d'saving »), `?export=failure` makes the export fail.
 import { mockIPC } from "@tauri-apps/api/mocks";
 import type { AnnotationInput, AnnotationView, ErrorCode, IncoherenceView, BedView, PlantingInput, PlantingView, PlotView, TypeBed, YearView } from "./bindings";
-import { dayOf, premierJanuary } from "./dates";
+import { dayOf, premierJanuary, todayLocal } from "./dates";
 import { NON_HANDLES, createPlanting, slots, gerer, type Context } from "./simulation.plantings";
 import { getLocale } from "./paraglide/runtime.js";
 
@@ -35,7 +35,7 @@ function refusal(code: ErrorCode): never {
 export function simulerTauri(): void {
   const parameters = new URLSearchParams(location.search);
   // `?date=2027-06-20` pretends today is that day (screenshots, D01 shows 20 june 2027).
-  const today = parameters.get("date") ?? new Date().toISOString().slice(0, 10);
+  const today = parameters.get("date") ?? todayLocal();
   const annee0 = Number(today.slice(0, 4));
   let plot: PlotView | null = null;
   let beds: BedView[] = [];

@@ -6,6 +6,7 @@ import {
   changeDate,
   resetManualEnd,
   endInput,
+  endFromLastDay,
   formSincePlanting,
   formEmpty,
   sameZone,
@@ -146,5 +147,28 @@ describe("the end edited by hand follows the planting (S03 §2)", () => {
   it("is calculated again when the crop, the mode or the days under cover change", () => {
     expect(resetManualEnd(base).manualEnd).toBeNull();
     expect(resetManualEnd({ ...base, manualEnd: null }).manualEnd).toBeNull();
+  });
+});
+
+describe("planting dates around 29 February and the new year", () => {
+  const base = { ...formEmpty(tomato, "p1", 6, "2028-02-28"), manualEnd: "2028-03-02" };
+
+  it("shifts the end by the same number of days over 29 February", () => {
+    const f = changeDate(base, "2028-02-29");
+    expect(f.manualEnd).toBe("2028-03-03");
+    expect(changeDate({ ...base, date: "2027-02-28", manualEnd: "2027-03-02" }, "2027-03-01").manualEnd).toBe("2027-03-03");
+  });
+
+  it("shifts the end over the new year", () => {
+    const f = changeDate({ ...base, date: "2027-12-30", manualEnd: "2028-01-05" }, "2028-01-01");
+    expect(f.manualEnd).toBe("2028-01-07");
+  });
+
+  it("stores the end the day after the last occupied day, and recognises the calculated one", () => {
+    expect(endFromLastDay("2027-12-31", "2027-06-01")).toBe("2028-01-01");
+    expect(endFromLastDay("2028-02-29", "2027-06-01")).toBe("2028-03-01");
+    expect(endFromLastDay("2028-02-28", "2028-02-29")).toBeNull();
+    expect(endFromLastDay("2028-02-29", "2028-03-01")).toBeNull();
+    expect(endFromLastDay("2028-02-2", "2028-03-01")).toBeNull();
   });
 });

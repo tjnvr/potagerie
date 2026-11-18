@@ -2,6 +2,7 @@
   // Settings (E10, D02): aisle width, export and import of the garden
   // (F-CPT-3), empty the plan (F-PLN-4), erase the data (F-CPT-4). A side
   // panel on a computer, the full screen on a phone.
+  import { todayLocal } from "../dates";
   import { open, save } from "@tauri-apps/plugin-dialog";
   import { commands, type AppError, type ImportSummaryView } from "../bindings";
   import Confirmation from "../shell/Confirmation.svelte";
@@ -58,7 +59,7 @@
 
   async function exportNow() {
     failureFile = null;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayLocal();
     const path = await save({ defaultPath: m.export_garden_file_name({ date: today }), filters: FILTERS });
     if (!path) return;
     const result = await call(() => commands.exportGarden(path));

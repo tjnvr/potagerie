@@ -13,12 +13,13 @@
   import IconTimeline from "../timeline/IconTimeline.svelte";
   import { m } from "../paraglide/messages.js";
   import { nameCrop } from "../beds";
+  import { today as todayStore } from "../time";
   import { isOk } from "./call";
   import { catalogue } from "./crops.svelte";
   import PlantIcon from "./PlantIcon.svelte";
   import { countText, nameFamily, tri } from "./catalogue";
 
-  const today = $derived(app.view?.today ?? new Date().toISOString().slice(0, 10));
+  const today = $derived(app.view?.today ?? $todayStore);
   let season = $state<string[]>([]);
   let onlySeason = $state(false);
   let family = $state<string | null>(null);
