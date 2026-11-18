@@ -42,7 +42,7 @@ for (const v of VIEWPORTS) {
       await page.goto("/?example");
       await expect(page.getByRole("button", { name: "Plan", exact: true })).toBeVisible();
       await SCREENS[name](page, v.labels);
-      await page.waitForTimeout(600);
+      await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => null))).then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))));
       const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
       for (const x of violations) console.log(`[${name} ${v.name}] ${x.impact} ${x.id}: ${x.nodes.length} nodes — ${x.help} — ${x.nodes[0]?.target.join(" ")}`);
       await context.close();

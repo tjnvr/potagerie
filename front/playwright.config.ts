@@ -8,6 +8,8 @@ const PORT = Number(process.env.E2E_PORT ?? 5320);
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
+  timeout: 45_000,
+  workers: process.env.CI ? 2 : undefined,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["list"], ["github"]] : "list",
   use: {

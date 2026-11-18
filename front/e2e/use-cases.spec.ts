@@ -138,11 +138,13 @@ test("UC-20 plan: dragging a bed moves it, and a refused drop sends it back", as
   await page.mouse.move(cx + 6, cy + 6, { steps: 3 });
   await page.mouse.move(cx + 40, cy, { steps: 6 });
   await page.mouse.up();
-  await page.waitForTimeout(400);
-  const after = (await bed.boundingBox())!;
-  const moved = Math.abs(after.x - before.x) > 2 || Math.abs(after.y - before.y) > 2;
-  const refused = (await page.getByRole("alert").count()) > 0;
-  expect(moved || refused).toBe(true);
+  await expect
+    .poll(async () => {
+      const after = (await bed.boundingBox())!;
+      const moved = Math.abs(after.x - before.x) > 2 || Math.abs(after.y - before.y) > 2;
+      return moved || (await page.getByRole("alert").count()) > 0;
+    })
+    .toBe(true);
 });
 
 test("UC-21 plan: deleting a bed asks for confirmation, then removes it", async ({ page }) => {
@@ -281,7 +283,7 @@ for (const [name, tab] of [["garden", "Garden"], ["plan", "Plan"]] as const) {
     await page.setViewportSize({ width: 390, height: 844 });
     await open(page);
     await page.getByRole("button", { name: tab, exact: true }).click();
-    await page.waitForTimeout(500);
+    await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => null))).then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))));
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(1);
   });

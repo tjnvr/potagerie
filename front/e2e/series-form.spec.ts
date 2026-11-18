@@ -76,7 +76,7 @@ for (const v of LANGS) {
           await expect(dialog.locator("ol.steps")).toBeVisible();
           const manual = dialog.locator(".end .manual");
           // Only a suggestion cut short by the slot has an end of its own.
-          await page.waitForTimeout(300);
+          await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => null))).then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))));
           if ((await manual.count()) === 0) continue;
           found = true;
           // Not « by hand »: the user has touched nothing.
