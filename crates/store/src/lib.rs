@@ -44,3 +44,18 @@ pub enum StoreError {
     #[error("stale plan: version {given} was saved over version {stored}")]
     StaleVersion { given: u64, stored: u64 },
 }
+
+impl StoreError {
+    /// The database file itself is damaged (`SQLITE_CORRUPT`, `SQLITE_NOTADB`)
+    /// or holds an unreadable document: retrying cannot help.
+    pub fn is_damaged(&self) -> bool {
+        use rusqlite::ErrorCode::{DatabaseCorrupt, NotADatabase};
+        match self {
+            Self::Document(_) => true,
+            Self::Database(rusqlite::Error::SqliteFailure(e, _)) => {
+                matches!(e.code, DatabaseCorrupt | NotADatabase)
+            }
+            _ => false,
+        }
+    }
+}

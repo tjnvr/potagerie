@@ -53,12 +53,10 @@ impl AppState {
         let (store, error) = match SqliteStore::open(db_path) {
             Ok(store) => (Some(store), None),
             Err(error) => {
-                let code = if matches!(error, store::StoreError::SchemaTooNew { .. }) {
-                    ErrorCode::BaseTooRecent
-                } else {
-                    ErrorCode::BaseUnreadable
-                };
-                (None, Some((code, error.to_string())))
+                // A busy or unreachable file is not a damaged one: it must
+                // never lead to "erase the data".
+                let message = error.to_string();
+                (None, Some((AppError::from(error).code, message)))
             }
         };
         Self {
@@ -71,9 +69,15 @@ impl AppState {
     fn store(&self) -> Result<StoreGuard<'_>, AppError> {
         // A panic while holding the lock cannot leave a half-written plan:
         // every write is one SQL statement.
-        let guard = self.store.lock().unwrap_or_else(|e| e.into_inner());
+        let mut guard = self.store.lock().unwrap_or_else(|e| e.into_inner());
         if guard.is_none() {
-            return Err(self.open_failure());
+            // A transient failure (file busy, folder unreachable) is retried.
+            if self.open_failure().code == ErrorCode::Saving {
+                *guard = Some(SqliteStore::open(&self.db_path)?);
+                *self.open_error.lock().unwrap_or_else(|e| e.into_inner()) = None;
+            } else {
+                return Err(self.open_failure());
+            }
         }
         Ok(StoreGuard(guard))
     }
@@ -91,10 +95,12 @@ impl AppState {
 
     /// Deletes every stored data. A database that could not be opened is removed
     /// (with its `-wal` and `-shm` files) and created again, except one written by
-    /// a newer version of the app: it holds valid data and is never erased.
+    /// a newer version of the app or one that is only busy or unreachable (`saving`):
+    /// it holds valid data and is never erased.
     fn erase(&self) -> Result<(), AppError> {
         let mut guard = self.store.lock().unwrap_or_else(|e| e.into_inner());
-        if guard.is_none() && self.open_failure().code == ErrorCode::BaseTooRecent {
+        if guard.is_none() && self.open_failure().code != ErrorCode::BaseUnreadable {
+            // Newer database, or one that is only busy or unreachable.
             return Err(self.open_failure());
         }
         if let Some(store) = guard.as_mut() {

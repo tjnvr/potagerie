@@ -119,6 +119,9 @@ impl From<PlanError> for AppError {
 impl From<StoreError> for AppError {
     fn from(error: StoreError) -> Self {
         let code = match &error {
+            // Busy or locked (another instance), disk full, read-only, I/O:
+            // all transient or fixable by the user, hence the retry.
+            StoreError::Database(_) if error.is_damaged() => ErrorCode::BaseUnreadable,
             StoreError::Database(_) => ErrorCode::Saving,
             StoreError::Document(_) => ErrorCode::BaseUnreadable,
             StoreError::StaleVersion { .. } => ErrorCode::VersionStale,
@@ -161,6 +164,44 @@ mod tests {
             let expected = error.code();
             let json = serde_json::to_value(AppError::from(error)).unwrap();
             assert_eq!(json["code"], expected);
+        }
+    }
+
+    fn sqlite(code: std::ffi::c_int) -> StoreError {
+        StoreError::Database(rusqlite::Error::SqliteFailure(
+            rusqlite::ffi::Error::new(code),
+            None,
+        ))
+    }
+
+    /// Busy, locked, full disk, read-only and I/O failures are retryable
+    /// `saving`; a damaged file is `base_unreadable`.
+    #[test]
+    fn sqlite_failures_get_understandable_codes() {
+        use rusqlite::ffi::{
+            SQLITE_BUSY, SQLITE_CANTOPEN, SQLITE_CORRUPT, SQLITE_FULL, SQLITE_IOERR, SQLITE_LOCKED,
+            SQLITE_NOTADB, SQLITE_READONLY,
+        };
+        for code in [
+            SQLITE_BUSY,
+            SQLITE_LOCKED,
+            SQLITE_FULL,
+            SQLITE_READONLY,
+            SQLITE_IOERR,
+            SQLITE_CANTOPEN,
+        ] {
+            assert_eq!(
+                AppError::from(sqlite(code)).code,
+                ErrorCode::Saving,
+                "{code}"
+            );
+        }
+        for code in [SQLITE_CORRUPT, SQLITE_NOTADB] {
+            assert_eq!(
+                AppError::from(sqlite(code)).code,
+                ErrorCode::BaseUnreadable,
+                "{code}"
+            );
         }
     }
 }
