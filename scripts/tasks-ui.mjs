@@ -26,6 +26,13 @@ function fetchOrigin(force = false) {
   lastFetch = Date.now();
 }
 
+// An agent is alive while its pid file names a live process (written by tasks.sh run).
+function alive(id) {
+  const p = join(HOME, "pids", `${id}.pid`);
+  if (!existsSync(p)) return false;
+  try { process.kill(Number(readFileSync(p, "utf8").trim()), 0); return true; } catch { return false; }
+}
+
 const field = (text, name) => (text.match(new RegExp(`^- ${name}: *(.*)$`, "m"))?.[1] ?? "").trim();
 const list = (v) => v.split(",").map((s) => s.trim()).filter((s) => /^T\d+$/.test(s));
 
@@ -60,6 +67,7 @@ function readTasks() {
       refs: field(text, "Refs"),
       from: field(text, "From"),
       hasLog: existsSync(log),
+      alive: alive(id),
     };
   }).sort((a, b) => a.num - b.num);
 
@@ -67,7 +75,8 @@ function readTasks() {
   for (const t of tasks) {
     t.waitsFor = t.deps.filter((d) => byId[d]?.status !== "Done");
     t.unblocks = tasks.filter((o) => o.deps.includes(t.id)).map((o) => o.id);
-    t.runnable = t.pushed && t.owner === "agent" && (
+    t.stalled = t.status === "Running" && !t.alive;
+    t.runnable = !t.alive && t.pushed && t.owner === "agent" && (
       (t.status === "Ready" && t.waitsFor.length === 0) || t.status === "Blocked" || t.status === "Running");
   }
   // Depth in the dependency graph, for the order view.
@@ -83,7 +92,7 @@ function readTasks() {
   const queue = tasks.filter((t) => t.pushed && t.status === "Ready" && t.owner === "agent" && !t.branch && t.waitsFor.length === 0)
     .map((t) => t.id);
   const unpushed = tasks.filter((t) => !t.pushed).length;
-  const running = tasks.filter((t) => t.branch && t.status === "Running").length;
+  const running = tasks.filter((t) => t.alive).length;
   return { tasks, queue, running, unpushed, max: MAX, base: BASE, fetchedAt: lastFetch, order: ORDER };
 }
 
@@ -241,7 +250,7 @@ function questions(t){const m=t.text.split(/^## Questions\s*$/m)[1];if(!m)return
 function card(t){
   const q=questions(t);
   return '<div class="card'+(sel===t.id?" sel":"")+'" style="--c:'+C[t.status]+'" data-id="'+t.id+'"><div class="id">'+t.id+
-  (t.owner==="Tim"?' <span class="chip tim">Tim</span>':"")+(!t.pushed?' <span class="chip tim">not pushed</span>':t.edited?' <span class="chip">edited</span>':"")+(t.status!=="Done"&&q?' <span class="chip q">'+q+" ?</span>":"")+
+  (t.owner==="Tim"?' <span class="chip tim">Tim</span>':"")+(t.alive?' <span class="chip q">agent running</span>':"")+(t.stalled?' <span class="chip tim">stalled</span>':"")+(!t.pushed?' <span class="chip tim">not pushed</span>':t.edited?' <span class="chip">edited</span>':"")+(t.status!=="Done"&&q?' <span class="chip q">'+q+" ?</span>":"")+
   '</div><div class="t">'+esc(t.title)+"</div>"+
   (t.waitsFor.length&&t.status!=="Done"?'<div class="sub">after '+t.waitsFor.join(", ")+"</div>":"")+
   (t.branch&&(t.status==="Ready")?'<div class="sub">started, see the log</div>':"")+(data.queue.includes(t.id)?'<div class="sub">next #'+(data.queue.indexOf(t.id)+1)+"</div>":"")+"</div>";
@@ -324,12 +333,13 @@ async function answer(t,n,resume){
 async function detail(){
   const t=data&&data.tasks.find(x=>x.id===sel);if(!t){$("#detail").innerHTML='<p class="empty">Select a task</p>';return}
   let why="";
-  if(!t.pushed)why="Not on "+data.base+" yet: commit and push it, the agent starts from there.";
+  if(t.alive)why="An agent is working on it: follow the log below.";
+  else if(!t.pushed)why="Not on "+data.base+" yet: commit and push it, the agent starts from there.";
   else if(t.owner==="Tim")why="For Tim: no agent will take it.";
   else if(t.status==="Draft")why="Draft: answer its questions and set it Ready first.";
   else if(t.status==="Done")why="Done.";
   else if(t.waitsFor.length)why="Waits for "+t.waitsFor.join(", ")+".";
-  const label=t.status==="Blocked"?"Resume":t.status==="Running"?"Restart":"Start";
+  const label=t.status==="Blocked"?"Resume":t.stalled?"Restart":"Start";
   let h='<div class="actions"><button class="btn primary" id="run" '+(t.runnable?"":"disabled")+">"+label+" "+t.id+'</button><span class="hint">'+(t.runnable?(t.branch?"branch "+t.branch:"new worktree from "+data.base):why)+"</span></div>";
   const qp=qparse(t.text);
   h+='<div class="doc">'+(qp?md(qp.before)+qform(t,qp)+md(qp.after):md(t.text))+"</div>";

@@ -13,6 +13,10 @@ STATUSES="Draft Ready Running Blocked Done"
 
 die() { echo "tasks: $*" >&2; exit 1; }
 
+# An agent is alive while its pid file names a live process.
+pid_file() { echo "$HOME_DIR/pids/$1.pid"; }
+alive() { local p; p=$(pid_file "$1"); [ -f "$p" ] && kill -0 "$(cat "$p")" 2>/dev/null; }
+
 # Value of "- <Field>: <value>" in the text on stdin.
 field() { sed -n "s/^- $1: *//p" | head -n 1 | sed 's/[[:space:]]*$//'; }
 
@@ -45,10 +49,9 @@ deps_done() {
 }
 
 running_count() {
-  local n=0 f id
-  for f in $(files); do
-    id=$(id_of "$f")
-    [ -n "$(branch_of "$id")" ] && [ "$(text "$id" "$f" | field Status)" = "Running" ] && n=$((n + 1))
+  local n=0 f
+  for f in "$HOME_DIR"/pids/*.pid; do
+    [ -f "$f" ] && kill -0 "$(cat "$f")" 2>/dev/null && n=$((n + 1))
   done
   echo "$n"
 }
@@ -71,6 +74,7 @@ board() {
       line="  $id  $title"
       [ "$owner" = "Tim" ] && line="$line  [Tim]"
       case "$deps" in —|-|"") ;; *) line="$line  (after $deps)" ;; esac
+      [ "$s" = "Running" ] && ! alive "$id" && line="$line  ** stalled: no agent running, use run $id **"
       echo "$line"
       if [ "$s" = "Blocked" ]; then
         text "$id" "$(file_of "$id")" | awk '/^## Questions/{on=1;next} /^## /{on=0} on && NF && !/^<!--/{print "      " $0}'
@@ -88,6 +92,7 @@ board() {
 run() {
   local id=$1 f st b wt topic log
   git fetch -q origin || true
+  alive "$id" && die "$id is already running (pid $(cat "$(pid_file "$id")")): see scripts/tasks.sh log $id"
   f=$(file_of "$id"); [ -n "$f" ] || die "$id is not on $BASE: commit and push it first"
   st=$(status_of "$id")
   case "$st" in
@@ -105,17 +110,22 @@ run() {
     else git worktree add -q -b "task/$id-$topic" "$wt" "$BASE"; fi
   fi
   log="$HOME_DIR/logs/$id.log"
+  mkdir -p "$HOME_DIR/pids"
   echo "=== $(date '+%Y-%m-%d %H:%M') run $id" >> "$log"
-  (
-    cd "$wt"
+  export TASKS_CLAUDE_ARGS="${TASKS_CLAUDE_ARGS:-}"
+  cd "$wt"
+  # The wrapper writes the exit code in the log and frees the lock, even when claude fails.
+  nohup bash -c '
     # shellcheck disable=SC2086
-    nohup claude -p "Run task $id ($f). Follow skills/run-task/SKILL.md." \
-      --permission-mode acceptEdits \
+    claude -p "$1" --permission-mode acceptEdits \
       --allowedTools "Read" "Edit" "Write" "Glob" "Grep" \
         "Bash(cargo:*)" "Bash(pnpm:*)" "Bash(make:*)" "Bash(git:*)" "Bash(gh:*)" \
         "Bash(ls:*)" "Bash(cat:*)" "Bash(grep:*)" "Bash(find:*)" "Bash(sed:*)" "Bash(mkdir:*)" \
-      ${TASKS_CLAUDE_ARGS:-} >> "$log" 2>&1 < /dev/null &
-  )
+      $TASKS_CLAUDE_ARGS >> "$2" 2>&1 < /dev/null
+    rc=$?; printf "\n=== exit %s %s\n" "$rc" "$(date "+%Y-%m-%d %H:%M")" >> "$2"
+    rm -f "$3"' _ "Run task $id ($f). Follow skills/run-task/SKILL.md." "$log" "$(pid_file "$id")" > /dev/null 2>&1 &
+  echo $! > "$(pid_file "$id")"
+  cd "$ROOT"
   echo "$id started in $wt (log: scripts/tasks.sh log $id)"
 }
 

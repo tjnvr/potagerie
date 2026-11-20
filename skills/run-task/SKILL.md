@@ -27,7 +27,7 @@ Unclear or contradictory spec, missing decision, a path outside `Scope`, a gate 
 
 ## Ship
 1. Full local gate green (`spec-driven-delivery` step 5).
-2. `git fetch origin && git rebase origin/main`. If the rebase brought commits, run the full gate again. If a task you created now has an id already used on `origin/main`, renumber it (file name and title).
+2. `git fetch origin && git rebase origin/main`. If the rebase brought commits, run the full gate again. If an id you added is now taken on `origin/main` (a task `T<NN>`, a use case `UC-xx` or another test id in `POT-00_test-matrix.md`), renumber yours to the next free one, everywhere you used it.
 3. Version bump per `spec-driven-delivery` step 7, computed from `origin/main`.
 4. Set `- Status: Done`, fill `Log` (in English): date, what changed, version, spec versions, what was checked, what was NOT.
 5. `git push origin HEAD:main`. Rejected: back to 2, at most 3 times, then Blocked.
@@ -37,4 +37,5 @@ Unclear or contradictory spec, missing decision, a path outside `Scope`, a gate 
 - Commit messages cite the task: `feat(front): aisle bubble (S01 F-PLN-2, T01)`.
 - No `Co-Authored-By`, no "generated with", anywhere.
 - Never edit another existing task file, never delete branches or worktrees, never force-push.
+- Another agent may be running at the same time on another task: pick new ids (`UC-xx`, task numbers) from `origin/main` and expect to renumber at step 2.
 - Report in French at the end of your output: done or blocked, and why.
