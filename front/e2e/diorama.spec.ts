@@ -1,18 +1,25 @@
 // The diorama under load: a dense garden (`/?example&dense`: 10 beds fully planted)
-// opens, plays the whole season and keeps its frame times reasonable.
+// opens, plays the whole season and keeps its frame times reasonable, at full
+// view and zoomed in (S01 F-VIS-1, F-VIS-4).
 // Frame times are measured in the page with requestAnimationFrame, Chromium only
 // (WebKit timings in CI are too noisy to assert on).
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const P95_LIMIT_MS = 50;
 
-test("DIO-01 the dense garden opens, plays the season and keeps frame p95 under 50 ms", async ({ page, browserName }) => {
-  test.skip(browserName !== "chromium", "frame times are only asserted in Chromium");
+async function playAndMeasure(page: Page, id: string, zoomed: boolean) {
   const problems: string[] = [];
   page.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
   await page.goto("/?example&dense&fps");
   await page.getByRole("button", { name: "Garden", exact: true }).click();
   await expect(page.getByRole("button", { name: "Play the season" })).toBeVisible();
+  if (zoomed) {
+    const svg = page.locator("svg.diorama");
+    const box = (await svg.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    for (let i = 0; i < 3; i++) await page.mouse.wheel(0, -200);
+    await expect(svg).not.toHaveAttribute("data-zoom", "1.00");
+  }
   await page.evaluate(() => {
     const w = window as unknown as { __frames: number[] };
     w.__frames = [];
@@ -39,10 +46,20 @@ test("DIO-01 the dense garden opens, plays the season and keeps frame p95 under 
   const sorted = [...frames].sort((a, b) => a - b);
   const q = (p: number) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))]!;
   console.log(
-    `DIO-01 frames=${sorted.length} plants=${plants} median=${q(0.5).toFixed(1)} p95=${q(0.95).toFixed(1)} max=${sorted.at(-1)!.toFixed(1)}`,
+    `${id} frames=${sorted.length} plants=${plants} median=${q(0.5).toFixed(1)} p95=${q(0.95).toFixed(1)} max=${sorted.at(-1)!.toFixed(1)}`,
   );
   expect(plants).toBeGreaterThan(100);
   expect(sorted.length).toBeGreaterThan(30);
   expect(q(0.95)).toBeLessThan(P95_LIMIT_MS);
   expect(problems).toEqual([]);
+}
+
+test("DIO-01 the dense garden opens, plays the season and keeps frame p95 under 50 ms", async ({ page, browserName }) => {
+  test.skip(browserName !== "chromium", "frame times are only asserted in Chromium");
+  await playAndMeasure(page, "DIO-01", false);
+});
+
+test("DIO-02 zoomed in, the dense garden plays the season with frame p95 under 50 ms", async ({ page, browserName }) => {
+  test.skip(browserName !== "chromium", "frame times are only asserted in Chromium");
+  await playAndMeasure(page, "DIO-02", true);
 });

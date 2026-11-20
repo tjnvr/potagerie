@@ -296,3 +296,47 @@ test("UC-13 phone: the catalogue shows two crops a row", async ({ page }) => {
   const [a, b] = await page.locator("button.carte").evaluateAll((els) => els.slice(0, 2).map((e) => e.getBoundingClientRect().top));
   expect(Math.abs(a! - b!)).toBeLessThan(4);
 });
+
+test("UC-28 garden: the wheel zooms, dragging the background pans, a bed still opens", async ({ page }) => {
+  await open(page);
+  await toGarden(page);
+  const svg = page.locator("svg.diorama");
+  const viewBox = async () => (await svg.getAttribute("viewBox"))!.split(" ").map(Number);
+  const home = await viewBox();
+  const box = (await svg.boundingBox())!;
+  // Near the top-left corner: sky, not a bed, before and after the zoom.
+  const at = { x: box.x + box.width * 0.1, y: box.y + box.height * 0.1 };
+  const onBed = () => page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest(".bed"), at);
+
+  await page.mouse.move(at.x, at.y);
+  for (let i = 0; i < 3; i++) await page.mouse.wheel(0, -200);
+  await expect.poll(async () => (await viewBox())[2]!).toBeLessThan(home[2]! * 0.6);
+  const zoomed = await viewBox();
+  expect(await onBed()).toBe(false);
+
+  // Dragging the background up and to the left shows more of the bottom right.
+  await page.mouse.down();
+  await page.mouse.move(at.x - 120, at.y - 80, { steps: 8 });
+  await page.mouse.up();
+  const panned = await viewBox();
+  expect(panned[0]!).toBeGreaterThan(zoomed[0]!);
+  expect(panned[1]!).toBeGreaterThan(zoomed[1]!);
+  expect(panned[2]!).toBeCloseTo(zoomed[2]!, 6);
+  await expect(page.locator(".bed[aria-pressed=true]")).toHaveCount(0);
+
+  // Back to the whole garden; scrolling down further scrolls the page, not the zoom.
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  for (let i = 0; i < 3; i++) await page.mouse.wheel(0, 200);
+  await expect(svg).toHaveAttribute("data-zoom", "1.00");
+  const isHome = async () => (await viewBox()).every((v, i) => Math.abs(v - home[i]!) < 1e-6);
+  expect(await isHome()).toBe(true);
+  const scrolled = await page.evaluate(() => scrollY);
+  await page.mouse.wheel(0, 200);
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(scrolled);
+  expect(await isHome()).toBe(true);
+
+  // A bed opens on a click as before.
+  const roots = page.getByRole("button", { name: /^Roots, / }).first();
+  await roots.click();
+  await expect(roots).toHaveAttribute("aria-pressed", "true");
+});
