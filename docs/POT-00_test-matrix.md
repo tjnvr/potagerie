@@ -84,11 +84,11 @@ e2e = Playwright against the fake of the commands (`?example`), which does not r
 |---|---|---|
 | F-CPT-1 Sign-in | — (removed) | n/a |
 | F-CPT-2 Saving | Rust: `sqlite.rs` (versions, stale copy, reopening), `commands` tests (restart); unit `state.test.ts` ("Saving failed" keeps the change, Retry runs it again) | Covered. The header indicator itself (three states) is not asserted in a browser |
-| F-CPT-3 Export / import | Rust: `garden.rs`, `garden_stress.rs`, `hostile_import.rs`, `tests.rs` (older file, invalid, incoherent import) | Covered in Rust. **Gap**: the Settings screen (file dialog, confirmation before replacing, "to resolve" list) is manual only (UC-23, UC-30) |
-| F-CPT-4 Erase | Rust: `tests.rs` (damaged database erased), `store` `replace_and_clear`; e2e UC-22 (clear the plan only) | **Gap**: the double confirmation of "Erase the data" has no UI test |
-| F-TER-1 Plot creation | e2e UC-01 (defaults); Rust `placement.rs` (dimensions, aisle) | **Gap**: choosing 25 / 100 cm cells or a 30 / 80 cm aisle at creation, and the "cannot be changed" warning, are not asserted |
+| F-CPT-3 Export / import | Rust: `garden.rs`, `garden_stress.rs`, `hostile_import.rs`, `tests.rs` (older file, invalid, incoherent import) | Covered in Rust. Settings screen: e2e **SET-02..05** (confirmation with summary, cautious button for an older file, issue list, "to resolve" band, unreadable / too recent / file refusals). The native file dialog itself is not driven (UC-23, UC-30 manual) |
+| F-CPT-4 Erase | Rust: `tests.rs` (damaged database erased), `store` `replace_and_clear`; e2e UC-22, **SET-06** (clear the plan), **SET-07** (erase: each of the two steps can be cancelled, the second erases) | Covered |
+| F-TER-1 Plot creation | e2e UC-01 (defaults), **SET-09..13** (defaults, "cannot be changed" warning, cell size in the preview, side under 1 m refused, 25 / 100 cm cells and 30 / 80 cm aisle kept); Rust `placement.rs` (dimensions, aisle) | Covered |
 | F-PLN-1 Beds | Rust: `eleventh_bed_refused`, `placement.rs`, `names_have_1_to_30_characters`, `length_not_a_multiple...`; e2e UC-02, UC-15, UC-16, **REQ-03** (tray greyed out at 10 with its message), **REQ-05** (rename, empty refused) | Covered. Partial requirement: the same-name warning does not exist |
-| F-PLN-2 Aisles | Rust: `the_aisle_width_is_kept_between_beds`, `a_larger_aisle_can_make_the_plan_invalid`; unit `beds.test.ts` | Covered for the enforced width. Changing the aisle in the Settings has no UI test |
+| F-PLN-2 Aisles | Rust: `the_aisle_width_is_kept_between_beds`, `a_larger_aisle_can_make_the_plan_invalid`; unit `beds.test.ts` | Covered for the enforced width. Changing the aisle in the Settings: e2e **SET-01** (30 cm kept, 80 cm refused with the reason) |
 | F-PLN-4 Plan by season | Rust: `modification_holds_until_the_next_recorded_layout`, `past_year_is_read_only`, deletion tests, `t11`, clear tests; e2e UC-04, UC-21, UC-22, UC-25 | Covered |
 | F-PLN-5 Plan summary | unit `beds.test.ts` ("summary") | **Gap**: the right-hand panel is not asserted in a browser |
 | F-PLN-6 Place and size | unit `drag.test.ts`; Rust `placement.rs`, `t12`; e2e UC-03, UC-20, UC-27 | Covered for the lot 1 scope. Rotate, duplicate, Undo / Redo absent (Partial) |
@@ -126,10 +126,16 @@ e2e = Playwright against the fake of the commands (`?example`), which does not r
 Found while writing them: the fake of the commands (`front/src/lib/simulation.ts`) accepted an empty bed name where Rust refuses
 (`name_invalid`); it now applies the same rule (trimmed, 1 to 30 characters). The application code was not changed.
 
+### Gaps closed (SET-01 to SET-13, `front/e2e/settings-plot.spec.ts`, English and French, Chromium and WebKit)
+
+SET-01 aisle; SET-02..05 import; SET-06 clear the plan; SET-07 erase with double confirmation; SET-08 language (the page reloads, the choice is kept); SET-09..13 plot creation.
+The fake of the commands now follows Rust on `create_plot` (plot once, cell 25 / 50 / 100, sides 1 to 100 m and at least one cell, aisle 30 / 50 / 80) and `modify_plot` (`Plan::set_plot`: valid plot, cell kept, refused when the beds no longer fit the aisle).
+The `?example` plan had "Leek square" 30 cm from "Shed side" with a 50 cm aisle, which Rust refuses; it moved 20 cm down.
+
 ### Open gaps (not closed, by impact)
 
-1. Settings screen: import with confirmation and "to resolve" list, erase with double confirmation (F-CPT-3, F-CPT-4): Rust only.
-2. Plot creation options: cell size, aisle, warning (F-TER-1).
+1. ~~Settings screen~~ closed by SET-01..08 (`front/e2e/settings-plot.spec.ts`).
+2. ~~Plot creation options~~ closed by SET-09..13.
 3. The conflict message and the three "How do you start?" cards in a browser (F-PLA-1, F-PLA-3).
 4. Bed panel: plantings and History sections (F-VIS-7); plan summary panel (F-PLN-5).
 5. Catalogue "in season now" filter (F-CAT-3); pause and speed buttons of the playback (F-VIS-4).

@@ -112,7 +112,7 @@ export function simulerTauri(): void {
       bed(tr("The tomatoes", "Les tomates"), "bed", 50, 220, 400, 100),
       bed(tr("Shed side", "Côté cabane"), "bed", 500, 220, 300, 120),
       bed(tr("The zucchinis", "Les courgettes"), "bed", 50, 370, 300, 120),
-      bed(tr("Leek square", "Carré poireaux"), "square", 400, 370, 100, 100),
+      bed(tr("Leek square", "Carré poireaux"), "square", 400, 390, 100, 100),
       bed(tr("Salad square", "Carré salades"), "square", 550, 390, 100, 100),
       bed(tr("End of the aisle", "Bout de l’allée"), "mound", 750, 50, 300, 120),
     ];
@@ -191,6 +191,12 @@ export function simulerTauri(): void {
       if (dx < 0 && dy < 0) refusal("bed_overlaps");
       if (dx < t.aisle_cm && dy < t.aisle_cm) refusal("aisle_too_narrow");
     }
+  }
+
+  function checkPlot(t: PlotView): void {
+    const side = (n: number) => n >= Math.max(100, t.cell_cm) && n <= 10000;
+    if (!side(t.length_cm) || !side(t.width_cm)) refusal("plot_invalid");
+    if (![30, 50, 80].includes(t.aisle_cm)) refusal("aisle_invalid");
   }
 
   function view(year: number): YearView {
@@ -322,17 +328,31 @@ export function simulerTauri(): void {
         return view(year);
       case "create_plot": {
         const t = args.plot as PlotView;
-        if (t.length_cm < 100 || t.width_cm < 100 || t.length_cm > 10000 || t.width_cm > 10000) {
-          refusal("plot_invalid");
-        }
+        // Same rules as Rust (`create_plot`, `Plot::validate`): the plot is created once,
+        // the cell is 25, 50 or 100 cm, each side is 1 to 100 m and at least one cell, the aisle 30, 50 or 80 cm.
+        if (plot) refusal("plot_existing");
+        if (![25, 50, 100].includes(t.cell_cm)) refusal("case_invalid");
+        checkPlot(t);
         plot = t;
         version = 1;
         return view(year);
       }
-      case "modify_plot":
-        plot = { ...plot!, ...(args.plot as Partial<PlotView>) };
+      case "modify_plot": {
+        // Same rules as Rust (`Plan::set_plot`): the cell stays, the new plot must be valid and
+        // still hold the beds with the new aisle, otherwise nothing changes.
+        const next = { ...plot!, ...(args.plot as Partial<PlotView>), cell_cm: plot!.cell_cm };
+        checkPlot(next);
+        const before = plot;
+        plot = next;
+        try {
+          for (const b of beds) verifier(b.id, b);
+        } catch (e) {
+          plot = before;
+          throw e;
+        }
         version++;
         return view(year);
+      }
       case "create_bed": {
         modifiable(year);
         const type = args.bedType as TypeBed;
