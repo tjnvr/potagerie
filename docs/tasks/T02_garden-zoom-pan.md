@@ -1,6 +1,6 @@
 # T02 · Zoom and pan the garden view
 
-- Status: Ready
+- Status: Running
 - Owner: agent
 - Depends on: —
 - Refs: S01 F-VIS-1 · lot1-coverage
