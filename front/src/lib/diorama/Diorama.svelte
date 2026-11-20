@@ -13,6 +13,7 @@
   import FrameCounter from "./FrameCounter.svelte";
   import Cursor from "./Cursor.svelte";
   import { ETIQUETTE_SVG } from "./etiquette";
+  import { CAMERA_HOME, pan, viewBox, wheelFactor, zoomAt, type Camera } from "./camera";
   import { bornesYear, dateInWords, isoSince, daySince } from "./days";
   import { framesPerSecond, measure, type Measure } from "./measure";
   import PanelDiorama from "./PanelDiorama.svelte";
@@ -237,6 +238,110 @@
     quarter = ((quarter + 1) % 4) as Quarter;
   }
 
+  // ---- Zoom and pan (camera.ts) ----
+  let camera = $state<Camera>(CAMERA_HOME);
+  const box = $derived(scene ? viewBox(scene.cadre, camera) : null);
+  /** Pointers down on the drawing; a single one pans only if it started on the background. */
+  const pointers = new Map<number, { x: number; y: number; background: boolean }>();
+  let dragging = $state(false);
+  let moved = 0;
+  let swallowClick = false;
+
+  /** The point of the frame under a screen point, as a fraction of the frame. */
+  function fraction(clientX: number, clientY: number): [number, number] {
+    const ctm = svgEl?.getScreenCTM();
+    if (!scene || !ctm) return [0.5, 0.5];
+    const p = new DOMPoint(clientX, clientY).matrixTransform(ctm.inverse());
+    const [x, y, w, h] = scene.cadre;
+    return [(p.x - x) / w, (p.y - y) / h];
+  }
+
+  function down(e: PointerEvent) {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    if (pointers.size === 0) {
+      moved = 0;
+      swallowClick = false;
+    }
+    const background = !(e.target as Element).closest(".bed");
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, background });
+    // A bed keeps its click; a background drag or a pinch keeps its pointers.
+    if (background || pointers.size > 1) {
+      for (const id of pointers.keys()) if (!svgEl?.hasPointerCapture(id)) svgEl?.setPointerCapture(id);
+      dragging = true;
+    }
+  }
+
+  function move(e: PointerEvent) {
+    const before = pointers.get(e.pointerId);
+    if (!before) return;
+    const after = { ...before, x: e.clientX, y: e.clientY };
+    if (pointers.size === 1) {
+      if (!before.background) return;
+      const a = fraction(before.x, before.y);
+      const b = fraction(after.x, after.y);
+      camera = pan(camera, a[0] - b[0], a[1] - b[1]);
+    } else {
+      const other = [...pointers].find(([id]) => id !== e.pointerId)![1];
+      const a0 = fraction((before.x + other.x) / 2, (before.y + other.y) / 2);
+      const a1 = fraction((after.x + other.x) / 2, (after.y + other.y) / 2);
+      const d0 = Math.hypot(before.x - other.x, before.y - other.y);
+      const d1 = Math.hypot(after.x - other.x, after.y - other.y);
+      const panned = pan(camera, a0[0] - a1[0], a0[1] - a1[1]);
+      camera = d0 > 0 ? zoomAt(panned, d1 / d0, a0) : panned;
+    }
+    moved += Math.hypot(after.x - before.x, after.y - before.y);
+    if (moved > 4) swallowClick = true;
+    pointers.set(e.pointerId, after);
+  }
+
+  function up(e: PointerEvent) {
+    pointers.delete(e.pointerId);
+    if (pointers.size === 0) dragging = false;
+  }
+
+  /** After a pan or a pinch, the click that ends it does not open a bed. */
+  function click(e: MouseEvent) {
+    if (!swallowClick) return;
+    swallowClick = false;
+    e.stopPropagation();
+  }
+
+  // Wheel, trackpad (Ctrl + wheel in Chromium) and Safari's trackpad gestures.
+  // Not passive: the page must not scroll or zoom under the garden.
+  $effect(() => {
+    const el = svgEl;
+    if (!el) return;
+    const wheel = (e: WheelEvent) => {
+      const factor = wheelFactor(e.deltaY, e.deltaMode, e.ctrlKey);
+      // Zooming out of the whole garden: let the page scroll instead.
+      if (factor < 1 && camera.k <= 1) return;
+      e.preventDefault();
+      camera = zoomAt(camera, factor, fraction(e.clientX, e.clientY));
+    };
+    type Gesture = UIEvent & { scale: number; clientX?: number; clientY?: number };
+    let scale = 1;
+    const gestureStart = (e: Event) => {
+      e.preventDefault();
+      scale = 1;
+    };
+    const gestureChange = (e: Event) => {
+      const g = e as Gesture;
+      e.preventDefault();
+      const r = el.getBoundingClientRect();
+      const at = fraction(g.clientX ?? r.left + r.width / 2, g.clientY ?? r.top + r.height / 2);
+      camera = zoomAt(camera, g.scale / scale, at);
+      scale = g.scale;
+    };
+    el.addEventListener("wheel", wheel, { passive: false });
+    el.addEventListener("gesturestart", gestureStart);
+    el.addEventListener("gesturechange", gestureChange);
+    return () => {
+      el.removeEventListener("wheel", wheel);
+      el.removeEventListener("gesturestart", gestureStart);
+      el.removeEventListener("gesturechange", gestureChange);
+    };
+  });
+
   const [vx, vy, vl, vh] = VIEWBOX_SYMBOL;
 </script>
 
@@ -263,7 +368,9 @@
         <svg
           bind:this={svgEl}
           class="diorama"
-          viewBox={scene.cadre.join(" ")}
+          class:zoomed={camera.k > 1}
+          class:dragging
+          viewBox={(box ?? scene.cadre).join(" ")}
           role="group"
           aria-label={m.diorama_aria({
             date: dateInWords(dayWhole),
@@ -274,6 +381,13 @@
           style:--grass-g={palette.grassGauche}
           style:--grass-d={palette.grassRight}
           data-season={season}
+          data-zoom={camera.k.toFixed(2)}
+          onpointerdown={down}
+          onpointermove={move}
+          onpointerup={up}
+          onpointercancel={up}
+          onpointerleave={up}
+          onclickcapture={click}
         >
           <defs>
             {#each Object.entries(SYMBOLES) as [id, drawing] (id)}
@@ -462,7 +576,18 @@
     margin: 0 auto;
     user-select: none;
     -webkit-user-select: none;
-    touch-action: manipulation;
+    /* At full view one finger still scrolls the page; zoomed in, every
+       gesture belongs to the garden. Two fingers always pinch it. */
+    touch-action: pan-y;
+  }
+
+  .diorama.zoomed {
+    touch-action: none;
+    cursor: grab;
+  }
+
+  .diorama.dragging {
+    cursor: grabbing;
   }
 
   .empty {
