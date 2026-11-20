@@ -95,9 +95,9 @@ e2e = Playwright against the fake of the commands (`?example`), which does not r
 | F-CAT-1 Content | Rust: `catalogue` tests, `catalogue_wide.rs`; e2e UC-08 (67 crops) | Covered |
 | F-CAT-2 Crop sheet | Rust `tomato_matches_s02`, `v1_has_unique_ids_and_valid_sheets`; e2e SER-01..03 | Covered |
 | F-CAT-3 Browsing | e2e UC-08, UC-13, SER-02, SER-03, SER-08; Rust `crops_in_season_follow_the_planting_window` | Covered. e2e **PAN-07**, **PAN-08** ("in season now" keeps the crops of the window, combines with the family, badge, count) |
-| F-PLA-1 Create a planting | Rust: `s03_cas` t01..t10, `edge_cases` (modes, durations copied); unit `planting.test.ts`; e2e UC-06, SER-04..06, REQ-04 | Covered. The three "How do you start?" cards and the transplanting-date link are only covered by unit tests |
+| F-PLA-1 Create a planting | Rust: `s03_cas` t01..t10, `edge_cases` (modes, durations copied); unit `planting.test.ts`; e2e UC-06, SER-04..06, REQ-04 | Covered. The three "How do you start?" cards and the days in pots: e2e EXP-03, EXP-04 (the transplanting-date link stays unit only) |
 | F-PLA-2 Edit / delete | Rust: `dragging_shifts_the_date_and_the_manual_end`, `manual_end_is_not_recomputed`; unit `geometry.test.ts` (drag accepted / refused); e2e UC-14, UC-26, **REQ-01** (delete asks, Cancel keeps, confirm removes) | Covered. The drag of a bar in a browser is not asserted (unit only) |
-| F-PLA-3 Successions | Rust: `disjoint_zones_same_period_no_conflict`, `conflict_reports_shared_segments_and_period`, `t06`; unit SER-07, `geometry.test.ts` ("in conflict") | **Gap**: the conflict message in the form is not asserted in a browser (the fake accepts or refuses on its own rules) |
+| F-PLA-3 Successions | Rust: `disjoint_zones_same_period_no_conflict`, `conflict_reports_shared_segments_and_period`, `t06`; unit SER-07, `geometry.test.ts` ("in conflict") | Conflict message in the form (singular / plural of the segments, period ending on the last busy day, a start on the day the other leaves is free): e2e EXP-01, EXP-02 |
 | F-PLA-4 Continuous time | Rust: `a_planting_from_the_previous_year_occupies_the_start_of_the_year`; unit `geometry.test.ts` (straddling plantings shown once); e2e UC-04, UC-05 | Covered. The diorama taking the layout of a new year when the cursor crosses 1 January has no test |
 | F-PLA-5 Quantity | Rust: `quantities.rs`, `t04`, `t05`, `quantity_minimums`; unit `plants.test.ts`; e2e **REQ-04** (rows × per row = plants, follows the zone) | Covered |
 | F-VIS-1 Isometric view | unit `projection.test.ts`, `plants.test.ts`, `animation.test.ts`; Rust `stages.rs`; e2e DIO-01, **REQ-06** (rotate quarter by quarter) | Zoom and pan are not implemented (coverage doc corrected to Partial). The "Free" sign and the seasonal mood have no assertion |
@@ -109,7 +109,7 @@ e2e = Playwright against the fake of the commands (`?example`), which does not r
 | F-VIS-7 Bed panel | e2e UC-21, UC-25, **REQ-05** (rename in place); Rust `deletion_warning_quantities_and_history`, `families_of_the_two_previous_seasons`; LAY-03 | Covered. e2e **PAN-02..06** (plantings of the year, empty bed, History folded / open / empty, past planting read only, "Plant here", same panel from the garden) |
 | F-CRE-1 Free slots | Rust: `slot_of_35_days_dropped_and_36_days_kept`, window 1 March – 15 November, `t07`; e2e UC-06, LAY-05 | Covered |
 | F-CRE-2 Suggestions | Rust: `t08`, `t10`, ranking tests, `catalogue_wide.rs`, `random_walk.rs`; unit `suggestions.test.ts`; e2e SER-05, SER-06 | Covered |
-| F-EXP-1 Timeline export | Rust: `timeline.rs`, `timeline_front.rs`, `tests.rs` (valid PNG and PDF); unit `exportPlan.test.ts`, `exportSvg.test.ts`; e2e UC-10, LAY-06 | **Gap**: choosing the beds / options in the dialog and writing the file are not run end to end (needs the native dialog) |
+| F-EXP-1 Timeline export | Rust: `timeline.rs`, `timeline_front.rs`, `tests.rs` (valid PNG and PDF); unit `exportPlan.test.ts`, `exportSvg.test.ts`; e2e UC-10, LAY-06 | Beds (select / deselect all, one bed) and options (phases, today marker, annotations) of the dialog: e2e EXP-05 to EXP-07, read on the SVG of the preview. **Gap**: writing the file is not run end to end (needs the native dialog) |
 | F-EXP-2 Content | unit `exportSvg.test.ts` (phases, fonts); Rust `timeline_stress.rs` | Partial requirement (no header, thumbnail, task calendar); `tasks.rs` is tested in Rust but has no screen |
 
 ### Gaps closed in this review (REQ-01 to REQ-06, `front/e2e/requirements.spec.ts`)
@@ -158,3 +158,22 @@ Chromium and WebKit, English and French, with `?date=2027-06-20` so the example 
 | PAN-10 | F-VIS-4 | ×1 by default, ×2 exclusive and at least 1.4 times faster over one second |
 
 The fake of the commands already followed Rust on the cases tested (`crops_of_season` copies `plan::in_window`); neither the fake nor the application was changed.
+
+
+### Gaps closed (EXP-01 to EXP-07, `front/e2e/export-form.spec.ts`)
+
+| Id | Requirement | Asserts |
+|---|---|---|
+| EXP-01 | F-PLA-3 | Zone 3-5 over a tomato on 1-4 and a lettuce on 5-8: "segments 3–4" (plural) and "segment 5" (singular), period from the start to the last busy day; the button is disabled |
+| EXP-02 | F-PLA-3 | The period ends on the last busy day (26 Sep, not 27); starting on the day the other leaves (27 Sep) gives no conflict |
+| EXP-03 | F-PLA-1 | Tomato: under cover (sowing, transplanting +56, harvest +131, end), bought plants (planting, harvest +75), open ground (harvest +131); question and steps follow the card |
+| EXP-04 | F-PLA-1 | A crop without pots started under cover asks for the days in pots and moves the transplanting; they do not leak into the ground start |
+| EXP-05 | F-EXP-1 | Deselect all (button, message, export disabled), one bed (only its bars), select all |
+| EXP-06 | F-EXP-1 | Phases, today marker and annotations off / on change the drawing of the preview |
+| EXP-07 | F-EXP-1 | The annotations of a deselected bed leave the drawing, those of the whole garden stay |
+
+Found while writing them: no defect in the application. The fake of the commands kept the days typed for the pots in an open-ground
+start of a crop without pots, where Rust (`pot_days_for`) keeps the catalogue's value; it now applies the Rust rule (the form never
+sent that case, so no test depended on it). In the English tests the engines do not abbreviate September alike ("Sep" in WebKit, "Sept" in Chromium), so the dates are compared loosely.
+
+### Open gaps (not closed, by impact)
