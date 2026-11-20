@@ -1,6 +1,6 @@
 # T03 · Annotations: create on a row, move by dragging
 
-- Status: Ready
+- Status: Running
 - Owner: agent
 - Depends on: —
 - Refs: S01 F-VIS-5 · lot1-coverage
