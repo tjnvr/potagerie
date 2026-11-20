@@ -3,7 +3,7 @@
 // No dependency: node scripts/tasks-ui.mjs, then http://localhost:4321 (TASKS_PORT to change).
 import { createServer } from "node:http";
 import { execFile, execFileSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 const ROOT = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
@@ -87,6 +87,47 @@ function readTasks() {
   return { tasks, queue, running, unpushed, max: MAX, base: BASE, fetchedAt: lastFetch, order: ORDER };
 }
 
+// Writes "Answer: …" under question n of the Questions section (replaces a previous answer).
+function setAnswer(text, n, answer) {
+  const lines = text.split("\n");
+  const qs = lines.findIndex((l) => /^## Questions\s*$/.test(l));
+  if (qs < 0) throw new Error("no Questions section");
+  let qe = lines.findIndex((l, i) => i > qs && /^## /.test(l));
+  if (qe < 0) qe = lines.length;
+  const start = lines.findIndex((l, i) => i > qs && i < qe && new RegExp(`^\\s*${n}\\.\\s`).test(l));
+  if (start < 0) throw new Error(`no question ${n}`);
+  let end = lines.findIndex((l, i) => i > start && i < qe && /^\s*\d+\.\s/.test(l));
+  if (end < 0) end = qe;
+  const block = lines.slice(start, end).filter((l, i) => i === 0 || !/^\s*Answer:/.test(l));
+  while (block.length > 1 && block[block.length - 1].trim() === "") block.pop();
+  block.push(`   Answer: ${answer.replace(/\s*\n\s*/g, " ").trim()}`, "");
+  return [...lines.slice(0, start), ...block, ...lines.slice(end)].join("\n");
+}
+
+function answerTask(id, n, answer) {
+  const t = readTasks().tasks.find((x) => x.id === id);
+  if (!t) throw new Error(`unknown task ${id}`);
+  if (t.branch) {
+    // Blocked or running: the answer goes on the task branch, in its worktree, committed.
+    const wt = join(HOME, id);
+    if (!existsSync(wt)) throw new Error(`${id} has a branch but no worktree in ${HOME}`);
+    const p = join(wt, t.file);
+    writeFileSync(p, setAnswer(readFileSync(p, "utf8"), n, answer));
+    execFileSync("git", ["-C", wt, "add", t.file]);
+    execFileSync("git", ["-C", wt, "commit", "-q", "-m", `docs(tasks): answer ${id} question ${n}`]);
+    return `answered on ${t.branch}`;
+  }
+  // Not started: the answer goes in your working tree, for you to commit.
+  const p = join(ROOT, t.file);
+  if (!existsSync(p)) throw new Error(`${t.file} is not on your disk`);
+  writeFileSync(p, setAnswer(readFileSync(p, "utf8"), n, answer));
+  return `answered in ${t.file} (commit it with your next push)`;
+}
+
+const body = (req) => new Promise((ok, ko) => {
+  let b = ""; req.on("data", (c) => (b += c)); req.on("end", () => { try { ok(JSON.parse(b || "{}")); } catch (e) { ko(e); } });
+});
+
 const send = (res, code, body, type = "application/json") => {
   res.writeHead(code, { "content-type": `${type}; charset=utf-8`, "cache-control": "no-store" });
   res.end(type === "application/json" ? JSON.stringify(body) : body);
@@ -100,6 +141,17 @@ const server = createServer((req, res) => {
   if (req.method === "GET" && url.pathname === "/api/tasks") {
     fetchOrigin(url.searchParams.has("fetch"));
     return send(res, 200, readTasks());
+  }
+  const am = url.pathname.match(/^\/api\/answer\/(T\d+)$/);
+  if (am && req.method === "POST") {
+    body(req).then(({ n, answer, resume }) => {
+      if (!Number.isInteger(n) || typeof answer !== "string" || !answer.trim()) throw new Error("question number and answer required");
+      let out = answerTask(am[1], n, answer);
+      if (!resume) return send(res, 200, { ok: true, out });
+      execFile(join(ROOT, "scripts/tasks.sh"), ["run", am[1]], { cwd: ROOT }, (err, o, e) =>
+        send(res, err ? 409 : 200, { ok: !err, out: out + "\n" + (o + e).trim() }));
+    }).catch((e) => send(res, 400, { ok: false, out: String(e.message || e) }));
+    return;
   }
   if (m && m[1] === "log" && req.method === "GET") {
     const p = join(HOME, "logs", `${m[2]}.log`);
@@ -157,6 +209,7 @@ aside .empty{color:var(--muted);font-size:14px;margin-top:40px;text-align:center
 .doc p,.doc li{font-size:13.5px;line-height:1.5}.doc ul{padding-left:18px;margin:4px 0}.doc code{background:#efe9da;padding:1px 4px;border-radius:4px;font-size:12px}
 .doc li.task{list-style:none;margin-left:-18px}
 .actions{display:flex;gap:8px;align-items:center;margin:4px 0 12px;flex-wrap:wrap}.hint{font-size:12px;color:var(--muted)}
+textarea{width:100%;font:inherit;font-size:13px;border:1px solid var(--line);border-radius:8px;padding:8px;background:#fff;resize:vertical}.qa{margin-bottom:12px}.qa p{margin:0 0 6px}
 pre.log{background:#1f2a23;color:#d9e6dc;font-size:11.5px;padding:10px;border-radius:8px;max-height:300px;overflow:auto;white-space:pre-wrap}
 .queue{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 svg text{font-family:inherit}.sec{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 6px}.done-toggle{font-size:12px;color:var(--muted);cursor:pointer;background:none;border:none;padding:0}
@@ -246,6 +299,28 @@ function order(){
   const head='<div class="queue">Left to right: a task waits for the ones that point to it. <label><input type="checkbox" id="sd" '+(showDone?"checked":"")+"> Show done</label></div>";
   return head+(linked.length?'<h2 class="sec">Linked</h2>'+s:"")+(alone.length?'<h2 class="sec">Independent</h2>'+g:"");
 }
+function qparse(text){
+  const parts=text.split(/^## Questions\s*$/m);if(parts.length<2)return null;
+  const sec=parts[1].split(/^## /m)[0].replace(/<!--[\s\S]*?-->/g,"");const qs=[];let cur=null;
+  for(const l of sec.split("\n")){const m=l.match(/^\s*(\d+)\.\s+(.*)/);
+    if(m){cur={n:+m[1],q:m[2],a:""};qs.push(cur)}
+    else if(cur){const a=l.match(/^\s*Answer:\s*(.*)/);if(a)cur.a=a[1];else if(l.trim())cur.q+=" "+l.trim()}}
+  return {before:parts[0],after:parts[1].includes("\n## ")?"## "+parts[1].split(/^## /m).slice(1).join("## "):"",qs};
+}
+function qform(t,p){
+  if(!p.qs.length)return '<h2>Questions</h2><p class="hint">None.</p>';
+  const can=t.status==="Blocked"&&t.runnable;
+  return '<h2>Questions</h2>'+p.qs.map(q=>'<div class="qa"><p><b>'+q.n+'.</b> '+md(q.q).replace(/^<p>|<\/p>$/g,"")+'</p>'+
+    '<textarea data-n="'+q.n+'" rows="3" placeholder="Your answer">'+esc(q.a)+'</textarea><div class="actions">'+
+    '<button class="btn" data-save="'+q.n+'">'+(q.a?"Update":"Save")+'</button>'+
+    (can?'<button class="btn primary" data-resume="'+q.n+'">Save and resume '+t.id+'</button>':"")+
+    (q.a?'<span class="hint">answered</span>':"")+'</div></div>').join("");
+}
+async function answer(t,n,resume){
+  const ta=document.querySelector('textarea[data-n="'+n+'"]');if(!ta.value.trim())return alertBox("Write an answer first.");
+  const r=await fetch("/api/answer/"+t.id,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({n,answer:ta.value,resume})}).then(r=>r.json());
+  alertBox(r.out);await load(true);detail();
+}
 async function detail(){
   const t=data&&data.tasks.find(x=>x.id===sel);if(!t){$("#detail").innerHTML='<p class="empty">Select a task</p>';return}
   let why="";
@@ -256,22 +331,26 @@ async function detail(){
   else if(t.waitsFor.length)why="Waits for "+t.waitsFor.join(", ")+".";
   const label=t.status==="Blocked"?"Resume":t.status==="Running"?"Restart":"Start";
   let h='<div class="actions"><button class="btn primary" id="run" '+(t.runnable?"":"disabled")+">"+label+" "+t.id+'</button><span class="hint">'+(t.runnable?(t.branch?"branch "+t.branch:"new worktree from "+data.base):why)+"</span></div>";
-  h+='<div class="doc">'+md(t.text)+"</div>";
+  const qp=qparse(t.text);
+  h+='<div class="doc">'+(qp?md(qp.before)+qform(t,qp)+md(qp.after):md(t.text))+"</div>";
   if(t.unblocks.length)h+='<p class="hint">Unblocks: '+t.unblocks.join(", ")+"</p>";
   if(t.hasLog){const r=await fetch("/api/log/"+t.id).then(r=>r.json());h+='<h2 style="font-size:13px;color:#4e6858">Agent log</h2><pre class="log">'+esc(r.log||"(empty)")+"</pre>"}
   $("#detail").innerHTML=h;
+  document.querySelectorAll("[data-save]").forEach(b=>b.onclick=()=>answer(t,+b.dataset.save,false));
+  document.querySelectorAll("[data-resume]").forEach(b=>b.onclick=()=>answer(t,+b.dataset.resume,true));
   const b=$("#run");if(b)b.onclick=async()=>{b.disabled=true;const r=await fetch("/api/run/"+t.id,{method:"POST"}).then(r=>r.json());alertBox(r.out);load()};
 }
 function alertBox(msg){const d=document.createElement("div");d.textContent=msg;Object.assign(d.style,{position:"fixed",bottom:"16px",left:"22px",background:"#26342b",color:"#fff",padding:"10px 14px",borderRadius:"8px",fontSize:"13px",maxWidth:"520px"});document.body.append(d);setTimeout(()=>d.remove(),5000)}
 function render(){
   $("#view").innerHTML=view==="board"?board():order();
-  document.querySelectorAll("[data-id]").forEach(e=>e.onclick=()=>{sel=e.dataset.id;render();detail()});
+  document.querySelectorAll("[data-id]").forEach(e=>e.onclick=()=>{if(typing()&&!confirm("Drop the answer you are writing?"))return;sel=e.dataset.id;render();detail()});
   const dt=$("#dt");if(dt)dt.onclick=()=>{showDone=true;render()};
   const sd=$("#sd");if(sd)sd.onchange=()=>{showDone=sd.checked;render()};
   const nx=$("#next");if(nx)nx.onclick=async()=>{nx.disabled=true;const r=await fetch("/api/next",{method:"POST"}).then(r=>r.json());alertBox(r.out);load()};
   $("#stamp").textContent=data.fetchedAt?"fetched "+new Date(data.fetchedAt).toLocaleTimeString():"";
 }
-async function load(force){data=await fetch("/api/tasks"+(force?"?fetch":"")).then(r=>r.json());render();if(sel)detail()}
+const typing=()=>[...document.querySelectorAll("#detail textarea")].some(x=>x.value!==x.defaultValue||x===document.activeElement);
+async function load(force){data=await fetch("/api/tasks"+(force?"?fetch":"")).then(r=>r.json());render();if(sel&&!typing())detail()}
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{view=b.dataset.v;document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-pressed",x===b));render()});
 $("#refresh").onclick=()=>load(true);
 load();setInterval(load,10000);

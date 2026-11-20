@@ -46,13 +46,13 @@ Draft ───────▶ Ready ──(agent)──▶ Running ──▶ Do
 
 - **Agents running a task** never widen it: what they find outside its scope (a bug, a missing rule, a follow-up) becomes a new task, pushed with their work (skill `new-task`).
 - **Chat sessions** turn a discussion into tasks before it ends, so the next session starts from the file, not from memory.
-- **Tim** launches tasks, answers the `Blocked` and `Draft` questions (`Answer: …` under each; for a blocked task, in its worktree, then `run` again), and reads the Logs.
+- **Tim** launches tasks, answers the `Blocked` and `Draft` questions (in the board: an answer to a blocked task is committed on its branch and can resume it; an answer to a task not started is written in the working tree, to commit), and reads the Logs.
 
 ## Commands
 
 | Command | Role |
 |---|---|
-| `scripts/tasks.sh ui` | Local board on http://localhost:4321: columns by status, dependency order, task details and agent log, Start / Resume buttons |
+| `scripts/tasks.sh ui` | Local board on http://localhost:4321: columns by status, dependency order, task details and agent log, Start / Resume buttons, answers to the questions |
 | `scripts/tasks.sh` or `board` | Tasks by status, open questions of the blocked ones, worktrees left over |
 | `scripts/tasks.sh run T07` | Starts (or resumes) an agent on T07, in the background, in its own worktree |
 | `scripts/tasks.sh next` | Starts the first `Ready` agent task whose dependencies are `Done`, if fewer than 2 are running |
