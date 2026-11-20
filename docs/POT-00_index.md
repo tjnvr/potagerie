@@ -8,6 +8,7 @@ docs/
 ├── POT-00_lot1-coverage.md                 ← state of the F-… requirements at lot 1
 ├── POT-00_review-2026-11.md                ← edge cases and bugs found in a review
 ├── POT-00_test-matrix.md                   ← use cases and their automated tests (e2e), first navigation analysis
+├── tasks/                                  ← work handed to agents, one file per task (see tasks/README.md)
 ├── specs/
 │   ├── POT-S01_functional-spec_v1.7.md     ← current versions
 │   ├── POT-S02_crop-catalogue_v0.4.md
@@ -41,6 +42,7 @@ Common rules:
 - **A single current version** of each document in `specs/`, `design/` or `prototypes/`. At each new version, the previous one is moved as is into the neighbouring `archives/` folder.
 - **Header**: each spec, and the `README.md` of each design or prototype folder, starts with `Version · Date · Author`, consistent with the name.
 - **Index**: this file is updated at each creation, renaming or new version.
+- **Tasks**: `tasks/T<NN>_<topic>.md`, `NN` never reused, no version in the name; the task's `Log` keeps its history. Run and followed with `scripts/tasks.sh`.
 - **Language**: everything is written in English (documents, code, comments, commit messages). The archives keep the language they were written in.
 - The title of the canvas on claude.ai takes up the code: "POT-D01 · Key screens V1".
 

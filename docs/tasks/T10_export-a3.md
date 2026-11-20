@@ -1,0 +1,33 @@
+# T10 · A3 paper size in the timeline export
+
+- Status: Draft
+- Owner: agent
+- Depends on: —
+- Refs: S01 F-EXP-1 (after lot 1)
+- From: chat
+
+## Context
+
+Created on 2026-11-20 when the task system was set up, from what was still open: S01 F-EXP-1 (after lot 1).
+
+## Goal
+
+The PDF export offers A3 landscape next to A4.
+
+## Acceptance
+
+- [ ] A3 choice in the dialog; pagination tested in `crates/export/tests/`.
+- [ ] `UC-10` extended.
+
+## Scope
+
+- `crates/export/`
+- `src-tauri/src/`
+- `front/src/lib/settings/`
+- `front/messages/`
+- `front/e2e/`
+- `docs/POT-00_*`
+
+## Questions
+
+## Log
