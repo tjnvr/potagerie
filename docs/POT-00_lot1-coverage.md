@@ -22,7 +22,7 @@ State of the requirements of S01 (§4) in the app at lot 1, read in the code on 
 | F-PLA-3 Successions | Done | Timeline, planting creation | Segment conflict flagged with the period |
 | F-PLA-4 Continuous time | Done | Garden, timeline | The diorama takes the layout of the cursor's year |
 | F-PLA-5 Quantity calculation | Done | Planting creation ("≈ n plants, rows × per row") | Calculation in `crates/plan` |
-| F-VIS-1 Isometric garden view | Partial | Garden | Rotation, labels, "Free" signs, seasonal mood; no zoom (wheel, pinch) and no panning by dragging the background (corrected: marked Done before) |
+| F-VIS-1 Isometric garden view | Done | Garden | Rotation, labels, "Free" signs, seasonal mood; zoom with the wheel, the trackpad or a pinch (×1 to ×4, no button) and panning by dragging the background (T02) |
 | F-VIS-2 Timeline view | Done | Garden, under the diorama | Merged with the diorama; continuous scroll between years |
 | F-VIS-3 Time cursor | Done | Garden | |
 | F-VIS-4 Season playback | Done | Garden, ×1 and ×2 | Measured at 60 frames/s (10 beds, normal density) |
