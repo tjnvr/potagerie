@@ -76,7 +76,9 @@ type Calculation = { sowing: string | null; m: string; r: string; f: string; fDe
 
 /** S03 §2. Throws the code Rust would answer. */
 function compute(c: CropView, entree: PlantingInput, refusal: (code: ErrorCode) => never): Calculation {
-  const pots = c.indoor_days > 0 ? c.indoor_days : (entree.indoor_days ?? 0);
+  // Rust (`pot_days_for`): the days entered only count for an indoor start of a crop without pots;
+  // in every other mode the catalogue's time in pots is kept.
+  const pots = c.indoor_days > 0 || entree.mode !== "indoor" ? c.indoor_days : (entree.indoor_days ?? 0);
   if (entree.mode === "indoor" && pots < 1) refusal("pot_days_required");
   const A = entree.mode === "indoor" ? pots : 0;
   const stored = entree.mode === "indoor" && entree.date_is_transplanting ? iso(day(entree.date) - A) : entree.date;
