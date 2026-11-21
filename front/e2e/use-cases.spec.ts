@@ -457,3 +457,30 @@ test("UC-31 timeline: a period dragged into a past year is refused and goes back
   await expect(page.getByText(/Move refused\..*The annotation goes back to its place\./)).toBeVisible();
   await expect.poll(async () => (await label.boundingBox())!.x).toBeCloseTo(before.x, 0);
 });
+
+test("UC-32 garden: « Move » in the bed panel opens the plan on that bed; refused in a past season", async ({ page }) => {
+  await open(page);
+  await toGarden(page);
+  const year = page.locator("button[aria-pressed=true]").filter({ hasText: /^20\d\d$/ });
+  const current = await year.innerText();
+  await page.getByRole("button", { name: /^Roots, / }).first().click();
+  const panel = page.getByRole("complementary", { name: "Selected bed" });
+  await panel.getByRole("button", { name: "Move", exact: true }).click();
+
+  // The plan, same year, the bed selected with its handles and its panel.
+  await expect(page.getByRole("button", { name: "Plan", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(year).toHaveText(current);
+  await expect(page.locator("g.bed[aria-pressed=true]")).toHaveAccessibleName(/^Roots, /);
+  await expect(page.locator("circle.handle")).not.toHaveCount(0);
+  await expect(panel.getByRole("heading", { name: "Roots" })).toBeVisible();
+  // In the editor the bed already moves by dragging: no « Move » shortcut there.
+  await expect(page.getByRole("button", { name: "Move", exact: true })).toHaveCount(0);
+
+  // A past season is read only: the action is there, disabled, with its reason.
+  await toGarden(page);
+  await page.getByRole("button", { name: String(Number(current) - 1), exact: true }).click();
+  await page.getByRole("button", { name: /^Roots, / }).first().click();
+  const move = panel.getByRole("button", { name: "Move", exact: true });
+  await expect(move).toBeDisabled();
+  await expect(move).toHaveAccessibleDescription("Past season: the bed cannot be moved any more.");
+});
