@@ -1,6 +1,6 @@
 # T13 · Test the real app windows in CI (tauri-driver)
 
-- Status: Running
+- Status: Done
 - Owner: agent
 - Depends on: —
 - Refs: POT-00_review-2026-11 (known problem 2) · S05 §3 · POT-00_test-matrix.md
@@ -51,4 +51,11 @@ Every push runs a few use cases in the real built app, with the real Rust comman
 - 2026-11-21: replayed on `origin/main` (v0.9.0, T18), S05 bumped to v0.20; full local gate green (fmt, clippy, cargo test, front check, test, build, e2e 323 passed).
 - 2026-11-21: CI green on the replayed commit (run 44945943201, branch `task/T13-real-window-check-ci2`, all six jobs).
 - 2026-11-21: `main` moved again (T06, v0.10.0, S05 v0.20): replayed once more, S05 bumped to v0.21.
+- 2026-11-21: full local gate green again after the second replay (cargo fmt, clippy, cargo test, front check, test 219, build, e2e 325 passed); the last rebase only brought the T06 task file.
+
+### Done (2026-11-21)
+- What changed: CI job `app` (Linux WebKitGTK, Windows WebView2) builds the release app and runs `e2e-app/smoke.test.mjs` through `tauri-driver`: APP-01 first launch and plot, APP-02 a bed, APP-03 a planting from a free slot, APP-04 export, APP-05 restart (data kept), APP-06 clear then import. The app reads `POTAGERIE_DATA_DIR` (temporary data folder) and `POTAGERIE_DIALOG_FILE` (file windows answered by a stand-in), and passes msedgedriver's WebView2 arguments. `make e2e-app`, README, test matrix (APP-01..06, UC-23, UC-30, F-CPT-3) and the review's known problem 2 updated.
+- Version 0.10.1 (patch: tests and CI, nothing the user sees). Specs: S05 v0.21; S01 v1.9 and S03 v0.20 only get the new S05 link.
+- Checked: full local gate on macOS; both `app` jobs green in CI on the replayed code (run 44945943201).
+- NOT checked: `make e2e-app` run locally (this machine is macOS, which `tauri-driver` does not support); the macOS window (WKWebView), touch, the installed build and the native file windows themselves (UC-30, manual).
 - Extra paths outside `Scope`: `.gitignore` (`e2e-app/results/`), `docs/specs/` (S05 v0.21 and the cross-references in S01 v1.9, S03 v0.20), `docs/POT-00_index.md`.
