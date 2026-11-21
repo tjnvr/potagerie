@@ -1,6 +1,6 @@
-# T07 · Rotate and duplicate a bed
+# T07 · Rotate a bed
 
-- Status: Ready
+- Status: Draft
 - Owner: agent
 - Depends on: —
 - Refs: S01 F-PLN-6 (after lot 1) · S03 placement
@@ -12,7 +12,7 @@ Created on 2026-11-20 when the task system was set up, from what was still open:
 
 ## Goal
 
-A selected bed can be rotated by a quarter turn and duplicated, from its bar or its panel.
+A selected bed can be rotated by a quarter turn, from its bar or its panel.
 
 ## Acceptance
 
@@ -24,9 +24,11 @@ A selected bed can be rotated by a quarter turn and duplicated, from its bar or 
 
 ## Questions
 
-1. [functional] Build rotate and duplicate a bed now? S01 lists them for after lot 1.
+1. [functional] Build rotate a bed now? (Duplicate is now in T24.) S01 lists them for after lot 1.
    (a) Yes, now. (b) Later.
    Recommendation: (a).
    Answer: no
 
 ## Log
+
+- 2026-11-21 (chat): back to Draft: the answer is "no" (later), it had been set Ready by mistake. Duplicating a bed moved to T24 (copy and paste), which Tim asked for; this task keeps the rotation only.

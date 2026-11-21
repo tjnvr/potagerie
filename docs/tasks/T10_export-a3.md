@@ -1,6 +1,6 @@
 # T10 · A3 paper size in the timeline export
 
-- Status: Ready
+- Status: Draft
 - Owner: agent
 - Depends on: —
 - Refs: S01 F-EXP-1 (after lot 1)
@@ -36,3 +36,5 @@ The PDF export offers A3 landscape next to A4.
    Answer: b
 
 ## Log
+
+- 2026-11-21 (chat): back to Draft: the answer is "b" (later), it had been set Ready by mistake.

@@ -1,6 +1,6 @@
 # T09 · Families of the two previous seasons in the bed panel
 
-- Status: Ready
+- Status: Draft
 - Owner: agent
 - Depends on: —
 - Refs: S01 F-VIS-7 (after lot 1) · S03 §11
@@ -36,3 +36,5 @@ The bed panel reminds the families grown on the bed the two previous seasons.
    Answer: no
 
 ## Log
+
+- 2026-11-21 (chat): back to Draft: the answer is "no" (later), it had been set Ready by mistake.

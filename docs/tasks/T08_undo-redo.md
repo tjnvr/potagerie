@@ -17,6 +17,7 @@ Each action of the editor can be undone and redone from the header.
 ## Acceptance
 
 - [ ] Written by the agent from S01 once the question is answered.
+- [ ] Shortcuts: Cmd+Z / Ctrl+Z undoes, Shift+Cmd+Z / Ctrl+Y redoes, in the plan editor, ignored while typing in a field (Tim, 2026-11-21, see T25).
 
 ## Scope
 
@@ -30,3 +31,5 @@ Each action of the editor can be undone and redone from the header.
    Answer: a
 
 ## Log
+
+- 2026-11-21 (chat): keyboard shortcuts added to the acceptance, at Tim's request; T24 and T25 depend on this task. No longer waits for T07 (rotation postponed).

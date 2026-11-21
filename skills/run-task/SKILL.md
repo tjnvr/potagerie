@@ -12,6 +12,9 @@ You run unattended. Tim only decides **functional scope** (what the user can see
 - Read the task file, then every spec section in `Refs`. Read `skills/spec-driven-delivery` and `skills/docs-git-flow`: they apply in full, except the branch name and the push target below.
 - Resuming? Read `Questions` (answers), `Decisions` and `Log` first, and continue from there.
 
+## Before starting
+If a `[functional]` answer declines the task ("no", "later", or the "later" option), do not build it: set `- Status: Draft`, add a `Log` line, commit, push to `main` (it is only a task file), stop.
+
 ## Start
 Set `- Status: Running`, commit `docs(tasks): start T<NN>`.
 
