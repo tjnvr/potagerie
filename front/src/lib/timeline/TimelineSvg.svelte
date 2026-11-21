@@ -435,7 +435,7 @@
 <style>
   .bar,
   .note {
-    cursor: pointer;
+    cursor: grab;
   }
 
   .note:focus-visible text {
@@ -444,9 +444,6 @@
 
   .slot {
     outline: none;
-  }
-  .bar {
-    cursor: grab;
   }
   .bar.scope {
     cursor: grabbing;

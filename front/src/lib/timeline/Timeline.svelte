@@ -10,7 +10,8 @@
   import { untrack } from "svelte";
   import { get } from "svelte/store";
   import { ControllerDrag, type Response, type TypePointer } from "../editor/drag";
-  import { commands, type YearView } from "../bindings";
+  import { commands, type AnnotationView, type BedId, type YearView } from "../bindings";
+  import { isMove, movedInput } from "../notes/note";
   import { yearOf, dateOf, dayOf } from "../dates";
   import { translateError } from "../errors";
   import { call, app } from "../state.svelte";
@@ -18,7 +19,7 @@
   import { goTo, cursor, viewportTimeline, recentering } from "../time";
   import { shiftShown, deposerBar } from "./bar";
   import { PALETTE, colorCrop, melange } from "./colors";
-  import TimelineSvg, { WIDTH_LABELS, WIDTH_LABELS_NARROW } from "./TimelineSvg.svelte";
+  import TimelineSvg, { HEIGHT_HEADER, WIDTH_LABELS, WIDTH_LABELS_NARROW, heightRow } from "./TimelineSvg.svelte";
   import {
     DAYS_BY_DEFAULT_NARROW,
     THRESHOLD_DEFILEMENT_PX,
@@ -31,6 +32,8 @@
     dayUnderLePointer,
     daysVisible,
     zoomer,
+    rowAt,
+    shiftInDays,
     type Scale,
   } from "./geometry";
   import { rankSuggestions } from "../suggestions";
@@ -126,17 +129,38 @@
   // ---------- Gestures ----------
 
   type Geste =
-    | { type: "pan"; depart: Scale; x0: number; bouge: boolean; target: Element | null }
+    | { type: "pan"; depart: Scale; x0: number; y0: number; bouge: boolean; target: Element | null }
     | { type: "bar"; id: string; x0: number; dx: number; sending: boolean }
+    | { type: "annotation"; id: string; x0: number; sending: boolean }
     | { type: "cursor" };
 
   let geste: Geste | null = $state(null);
   let shifts = $state<Record<string, number>>({});
   let scope = $state<string | null>(null);
   let refusal = $state<string | null>(null);
+  /** The note or period being dragged: whole days and the row under the pointer (F-VIS-5). */
+  let moving = $state<{ id: string; days: number; row: BedId | null } | null>(null);
   const controller = new ControllerDrag({ onArmed: () => (scope = geste?.type === "bar" ? geste.id : null) });
+  // A long press of a finger on a row creates a note there, as a double click
+  // does with a mouse (F-VIS-5). A finger that moves first scrolls instead.
+  const controllerRow = new ControllerDrag({
+    onArmed: () => {
+      const courant = geste;
+      controllerRow.cancel();
+      if (courant?.type !== "pan") return;
+      geste = null;
+      createNoteAt(courant.x0, courant.y0);
+    },
+  });
   const pointers = new Map<number, { x: number; y: number }>();
   let distancePincement = 0;
+
+  /** The annotations as drawn: the dragged one already where it would land. */
+  const annotationsShown = $derived.by(() => {
+    if (!moving) return annotations;
+    const { id, days, row } = moving;
+    return annotations.map((a): AnnotationView => (a.id === id ? { ...a, ...movedInput(a, days, row) } : a));
+  });
 
   function gauche(): number {
     return (corps?.getBoundingClientRect().left ?? 0) + widthLabels;
@@ -146,14 +170,38 @@
     return e.clientX >= gauche();
   }
 
+  /** The bed of the row under a pointer, or `null` (header, below the rows). */
+  function bedUnder(clientY: number): BedId | null {
+    const y = clientY - (corps?.getBoundingClientRect().top ?? 0);
+    const i = rowAt(rows.map((l) => heightRow(l.lanes)), y, HEIGHT_HEADER);
+    return i < 0 ? null : rows[i]!.bed.id;
+  }
+
+  /** Opens a new note on the bed and the day under the pointer (F-VIS-5). */
+  function createNoteAt(clientX: number, clientY: number) {
+    const bedId = bedUnder(clientY);
+    if (!scale || !bedId || clientX < gauche()) return;
+    app.noteOpen = { type: "new", date: dateOf(dayUnderLePointer(scale, clientX, gauche())), bedId };
+  }
+
+  function doubleClick(e: MouseEvent) {
+    // The pointer is captured by the body: the element under it says what was hit.
+    // Not the cursor: the first click of the double click has just put it there.
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    if (under?.closest("[data-bar],[data-annotation],[data-slot]")) return;
+    createNoteAt(e.clientX, e.clientY);
+  }
+
   function low(e: PointerEvent) {
-    if (!scale || geste?.type === "bar" && geste.sending) return;
+    if (!scale || (geste?.type === "bar" || geste?.type === "annotation") && geste.sending) return;
     if (e.pointerType === "mouse" && e.button !== 0) return;
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     corps?.setPointerCapture(e.pointerId);
     if (pointers.size === 2) {
       controller.cancel();
+      controllerRow.cancel();
       geste = null;
+      moving = null;
       scope = null;
       const [a, b] = [...pointers.values()] as [{ x: number; y: number }, { x: number; y: number }];
       distancePincement = Math.hypot(a.x - b.x, a.y - b.y);
@@ -164,6 +212,13 @@
       geste = { type: "cursor" };
       return;
     }
+    // Notes are drawn over the bars: they are hit first.
+    const note = target.closest("[data-annotation]");
+    if (note && enZone(e)) {
+      geste = { type: "annotation", id: note.getAttribute("data-annotation")!, x0: e.clientX, sending: false };
+      controller.press(e.pointerType as TypePointer, { x: e.clientX, y: e.clientY });
+      return;
+    }
     const bar = target.closest("[data-bar]");
     if (bar && enZone(e)) {
       geste = { type: "bar", id: bar.getAttribute("data-bar")!, x0: e.clientX, dx: 0, sending: false };
@@ -171,7 +226,10 @@
       controller.press(e.pointerType as TypePointer, { x: e.clientX, y: e.clientY });
       return;
     }
-    geste = { type: "pan", depart: scale, x0: e.clientX, bouge: false, target };
+    geste = { type: "pan", depart: scale, x0: e.clientX, y0: e.clientY, bouge: false, target };
+    if (e.pointerType === "touch" && enZone(e) && !target.closest("[data-slot]")) {
+      controllerRow.press("touch", { x: e.clientX, y: e.clientY });
+    }
   }
 
   function bouge(e: PointerEvent) {
@@ -194,7 +252,7 @@
       const movement = controller.move({ x: e.clientX, y: e.clientY });
       if (movement === "abandon") {
         // A finger that moves before the long press scrolls the timeline.
-        geste = { type: "pan", depart: scale, x0: geste.x0, bouge: true, target: null };
+        geste = { type: "pan", depart: scale, x0: geste.x0, y0: e.clientY, bouge: true, target: null };
         scope = null;
         scale = defiler(scale, e.clientX - geste.x0);
       } else if (movement === "start" || movement === "dragged") {
@@ -202,7 +260,17 @@
         geste.dx = e.clientX - geste.x0;
         shifts = { [geste.id]: shiftShown(geste.dx, scale.pxByDay) };
       }
+    } else if (geste.type === "annotation") {
+      if (geste.sending) return;
+      const movement = controller.move({ x: e.clientX, y: e.clientY });
+      if (movement === "abandon") {
+        geste = { type: "pan", depart: scale, x0: geste.x0, y0: e.clientY, bouge: true, target: null };
+        scale = defiler(scale, e.clientX - geste.x0);
+      } else if (movement === "start" || movement === "dragged") {
+        moving = { id: geste.id, days: shiftInDays(e.clientX - geste.x0, scale.pxByDay), row: bedUnder(e.clientY) };
+      }
     } else {
+      if (controllerRow.state !== "rest") controllerRow.move({ x: e.clientX, y: e.clientY });
       const dx = e.clientX - geste.x0;
       if (!geste.bouge && Math.abs(dx) <= THRESHOLD_DEFILEMENT_PX) return;
       geste.bouge = true;
@@ -214,6 +282,7 @@
     pointers.delete(e.pointerId);
     if (corps?.hasPointerCapture(e.pointerId)) corps.releasePointerCapture(e.pointerId);
     distancePincement = 0;
+    controllerRow.cancel();
     const courant = geste;
     if (!courant || !scale) return;
     if (courant.type === "cursor") {
@@ -222,15 +291,24 @@
     }
     if (courant.type === "pan") {
       geste = null;
-      if (courant.bouge || !enZone(e) && !courant.target?.closest("[data-slot],[data-annotation]")) return;
+      if (courant.bouge || !enZone(e) && !courant.target?.closest("[data-slot]")) return;
       const slot = courant.target?.closest("[data-slot]");
-      const note = courant.target?.closest("[data-annotation]");
-      if (note) openAnnotation(note.getAttribute("data-annotation")!);
-      else if (slot) openSlot(slot.getAttribute("data-slot")!);
+      if (slot) openSlot(slot.getAttribute("data-slot")!);
       else goTo(dateOf(dayUnderLePointer(scale, e.clientX, gauche())));
       return;
     }
     if (courant.sending) return;
+    if (courant.type === "annotation") {
+      const end = controller.release();
+      if (end === "click") openAnnotation(courant.id);
+      if (end === "end" && moving) {
+        courant.sending = true;
+        await move(moving.id, moving.days, moving.row);
+      }
+      moving = null;
+      geste = null;
+      return;
+    }
     const end = controller.release();
     scope = null;
     if (end === "click") {
@@ -251,12 +329,25 @@
   function cancelled(e: PointerEvent) {
     pointers.delete(e.pointerId);
     controller.cancel();
+    controllerRow.cancel();
     scope = null;
-    if (geste?.type === "bar" && !geste.sending) {
+    if ((geste?.type === "bar" || geste?.type === "annotation") && !geste.sending) {
       geste = null;
       shifts = {};
-    } else if (geste?.type !== "bar") {
+      moving = null;
+    } else if (geste?.type !== "bar" && geste?.type !== "annotation") {
       geste = null;
+    }
+  }
+
+  /** Drops a note or a period: Rust accepts the new dates (and bed), or
+   *  refuses and the annotation stays where it was, with the reason (S03 §16). */
+  async function move(id: string, days: number, row: BedId | null) {
+    const annotation = annotations.find((a) => a.id === id);
+    if (!annotation || !isMove(annotation, days, row)) return;
+    const ok = await app.modify((year) => commands.modifyAnnotation(year, id, movedInput(annotation, days, row)));
+    if (!ok && app.lastRefusal) {
+      app.message = { text: m.note_move_refusal({ reason: translateError(app.lastRefusal) }), tone: "error" };
     }
   }
 
@@ -451,6 +542,7 @@
         onpointermove={bouge}
         onpointerup={raised}
         onpointercancel={cancelled}
+        ondblclick={doubleClick}
         onkeydown={key}
       >
         {#if scale}
@@ -464,11 +556,11 @@
             {refusal}
             {scope}
             yearShown={view.year}
-            annotations={showAnnotations ? annotations : []}
+            annotations={showAnnotations ? annotationsShown : []}
           />
         {/if}
       </div>
-      <p class="help">{m.timeline_help_bar()}</p>
+      <p class="help">{m.timeline_help_bar()} {m.timeline_help_note()}</p>
     {/if}
   {/if}
 </section>

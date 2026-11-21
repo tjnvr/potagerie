@@ -305,6 +305,8 @@
   "timeline_empty_beds": "Aucune planche à cette date. Ajoute une planche dans l’atelier, puis plante-la.",
   "timeline_refusal": "Déplacement refusé. {reason} La série revient à sa place.",
   "timeline_help_bar": "Clique une barre pour la modifier, glisse-la pour la décaler (appui long sur téléphone). Clique un créneau en pointillés pour planter.",
+  "timeline_help_note": "Double-clique une ligne pour y ajouter une note à ce jour (appui long sur téléphone) ; glisse une note ou une période pour la déplacer.",
+  "note_move_refusal": "Déplacement refusé. {reason} L’annotation revient à sa place.",
   "planting_title_new": "Nouvelle série",
   "planting_title_edition": "Modifier la série",
   "planting_q_crop": "Quelle culture ?",

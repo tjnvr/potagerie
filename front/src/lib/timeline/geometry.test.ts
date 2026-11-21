@@ -21,6 +21,7 @@ import {
   monthVisible,
   xOf,
   zoomer,
+  rowAt,
 } from "./geometry";
 
 const scale = { startDay: dayOf("2027-01-01"), pxByDay: 2, width: 730 };
@@ -303,5 +304,21 @@ describe("rows", () => {
       2027,
     );
     expect(rows[0]!.bars[0]!.enConflict).toBe(true);
+  });
+});
+
+describe("row under the pointer", () => {
+  // Rows of 44 and 78 px under a 62 px header, with a 1 px line between them.
+  const heights = [44, 78];
+  it("finds the row a y falls in", () => {
+    expect(rowAt(heights, 62, 62)).toBe(0);
+    expect(rowAt(heights, 105, 62)).toBe(0);
+    expect(rowAt(heights, 107, 62)).toBe(1);
+    expect(rowAt(heights, 184, 62)).toBe(1);
+  });
+  it("is none in the header and below the last row", () => {
+    expect(rowAt(heights, 10, 62)).toBe(-1);
+    expect(rowAt(heights, 186, 62)).toBe(-1);
+    expect(rowAt([], 70, 62)).toBe(-1);
   });
 });

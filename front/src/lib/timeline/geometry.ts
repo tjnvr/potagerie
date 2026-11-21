@@ -189,6 +189,18 @@ export function stack(
   return lanes;
 }
 
+/** The index of the row under `y` (pixels from the top of the drawing), or
+ *  -1 in the header or below the rows. The rows have the given `heights`,
+ *  start at `top`, and are one pixel apart, as `TimelineSvg` draws them. */
+export function rowAt(heights: readonly number[], y: number, top: number): number {
+  let start = top;
+  for (const [i, height] of heights.entries()) {
+    if (y >= start && y < start + height + 1) return i;
+    start += height + 1;
+  }
+  return -1;
+}
+
 export type Row = {
   bed: BedView;
   bars: (Bar & { lane: number })[];

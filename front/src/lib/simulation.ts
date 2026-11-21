@@ -232,6 +232,8 @@ export function simulerTauri(): void {
 
   function verifierAnnotation(year: number, a: AnnotationInput): void {
     modifiable(year);
+    // As Rust (S03 §16): an annotation that ends before the year of today is past.
+    modifiable(Number((a.annotation_type === "period" && a.date_end ? a.date_end : a.date_start).slice(0, 4)));
     if (a.text.trim() === "" || a.text.trim().length > 80) refusal("text_invalid");
     if (a.annotation_type === "period" && (!a.date_end || a.date_end < a.date_start)) refusal("annotation_dates_invalid");
     if (a.bed_id && !beds.some((p) => p.id === a.bed_id)) refusal("bed_unknown");

@@ -340,3 +340,120 @@ test("UC-28 garden: the wheel zooms, dragging the background pans, a bed still o
   await roots.click();
   await expect(roots).toHaveAttribute("aria-pressed", "true");
 });
+
+// ---------- Annotations: create on a row, move by dragging (F-VIS-5) ----------
+
+/** Today is 1 March 2027: the timeline shows September 2026 to September 2027. */
+const MARCH = "/?example&date=2027-03-01";
+
+/** A free point of the row of `bed` in 2027 (after the cursor, on today): the middle
+ *  of a gap of at least 24 px with nothing (bar, slot, note, cursor) under it. */
+async function freePoint(page: Page, bed: string): Promise<{ x: number; y: number }> {
+  await page.locator(".corps").scrollIntoViewIfNeeded();
+  const zone = (await page.locator(".corps").boundingBox())!;
+  const cursor = (await page.locator("[data-cursor] line").boundingBox())!;
+  // The y of the label from the drawing itself (WebKit gives a wrong box to a clipped text).
+  const y = await page.locator("svg[data-timeline] text", { hasText: bed }).first().evaluate((t: SVGTextElement) => {
+    const b = t.getBBox();
+    return t.ownerSVGElement!.getBoundingClientRect().top + b.y + b.height / 2;
+  });
+  const x = await page.evaluate(
+    ({ y, from, to }) => {
+      let start: number | null = null;
+      for (let x = from; x < to; x += 2) {
+        const under = document.elementFromPoint(x, y);
+        const free = under?.closest(".corps") && !under.closest("[data-bar],[data-slot],[data-annotation],[data-cursor]");
+        if (free && start === null) start = x;
+        if (!free && start !== null) {
+          if (x - start >= 24) return Math.round((start + x) / 2);
+          start = null;
+        }
+      }
+      return null;
+    },
+    { y, from: cursor.x + 12, to: zone.x + zone.width - 20 },
+  );
+  expect(x).not.toBeNull();
+  return { x: x!, y };
+}
+
+/** The centre of the marker of a note. */
+async function marker(page: Page, text: string): Promise<{ x: number; y: number }> {
+  const box = (await page.locator("g.note", { hasText: text }).locator("circle").boundingBox())!;
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+}
+
+/** Pixels per day of the timeline, from two notes of the example 53 days apart. */
+async function pxByDay(page: Page): Promise<number> {
+  return ((await marker(page, "Stake the tomatoes")).x - (await marker(page, "Last frosts?")).x) / 53;
+}
+
+test("UC-29 timeline: a double click on a row creates a note on that bed, on that day", async ({ page }) => {
+  await open(page, MARCH);
+  await toGarden(page);
+  const spot = await freePoint(page, "Shed side");
+  await page.mouse.dblclick(spot.x, spot.y);
+  await expect(page.getByRole("heading", { name: "New note" })).toBeVisible();
+  await expect(page.locator(".note select option:checked")).toHaveText("Shed side");
+  await page.locator(".note input[type=text]").fill("Sow the green manure");
+  await page.getByRole("button", { name: "Save" }).click();
+  // The note stands where the double click was: on that row, on that day.
+  const placed = await marker(page, "Sow the green manure");
+  expect(Math.abs(placed.x - spot.x)).toBeLessThanOrEqual((await pxByDay(page)) + 1);
+  // The double click also put the time cursor over the note: open it with the keyboard.
+  await page.locator("g.note", { hasText: "Sow the green manure" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { name: "Edit the note" })).toBeVisible();
+  await expect(page.locator(".note select option:checked")).toHaveText("Shed side");
+});
+
+test.describe("UC-29 timeline on a touch screen", () => {
+  test.use({ hasTouch: true });
+  test("a long press on a row creates a note on that bed", async ({ page, browserName }) => {
+    test.skip(browserName !== "chromium", "touch events are sent through the Chromium protocol");
+    await open(page, MARCH);
+    await toGarden(page);
+    const spot = await freePoint(page, "Shed side");
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: spot.x, y: spot.y }] });
+    await expect(page.getByRole("heading", { name: "New note" })).toBeVisible();
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await expect(page.locator(".note select option:checked")).toHaveText("Shed side");
+  });
+});
+
+test("UC-31 timeline: dragging a note moves its date and its bed", async ({ page }) => {
+  await open(page, MARCH);
+  await toGarden(page);
+  const target = await freePoint(page, "Shed side");
+  const start = await marker(page, "Stake the tomatoes");
+  const dx = 10 * (await pxByDay(page));
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  await page.mouse.move(start.x + 6, start.y, { steps: 2 });
+  await page.mouse.move(start.x + dx, target.y, { steps: 6 });
+  await page.mouse.up();
+  await expect.poll(async () => (await marker(page, "Stake the tomatoes")).x).toBeGreaterThan(start.x + dx - 4);
+  await page.locator("g.note", { hasText: "Stake the tomatoes" }).locator("circle").click();
+  await expect(page.getByRole("heading", { name: "Edit the note" })).toBeVisible();
+  await expect(page.locator(".note select option:checked")).toHaveText("Shed side");
+  await expect(page.locator(".note input[type=date]").first()).toHaveValue("2027-06-12");
+});
+
+test("UC-31 timeline: a period dragged into a past year is refused and goes back", async ({ page }) => {
+  await open(page, MARCH);
+  await toGarden(page);
+  await page.locator(".corps").scrollIntoViewIfNeeded();
+  const label = page.locator("g.note", { hasText: "Mulching" }).locator("text");
+  const before = (await label.boundingBox())!;
+  // 5 May to 10 June, moved back 180 days: it would end in December 2026.
+  const dx = 180 * (await pxByDay(page));
+  const y = before.y + before.height / 2;
+  await page.mouse.move(before.x + 4, y);
+  await page.mouse.down();
+  await page.mouse.move(before.x - 2, y, { steps: 2 });
+  await page.mouse.move(before.x + 4 - dx, y, { steps: 8 });
+  await page.mouse.up();
+  await expect(page.getByText(/Move refused\..*The annotation goes back to its place\./)).toBeVisible();
+  await expect.poll(async () => (await label.boundingBox())!.x).toBeCloseTo(before.x, 0);
+});

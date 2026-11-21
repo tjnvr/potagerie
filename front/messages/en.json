@@ -305,6 +305,8 @@
   "timeline_empty_beds": "No bed on this date. Add a bed in the editor, then plant it.",
   "timeline_refusal": "Move refused. {reason} The planting goes back to its place.",
   "timeline_help_bar": "Click a bar to edit it, drag it to shift it (long press on a phone). Click a dotted slot to plant.",
+  "timeline_help_note": "Double-click a row to add a note on that day (long press on a phone); drag a note or a period to move it.",
+  "note_move_refusal": "Move refused. {reason} The annotation goes back to its place.",
   "planting_title_new": "New planting",
   "planting_title_edition": "Edit the planting",
   "planting_q_crop": "Which crop?",
