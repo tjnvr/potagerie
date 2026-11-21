@@ -34,7 +34,8 @@
   const account = $derived(view.plot ? summary(view.plot, view.beds) : null);
 
   let top: PlanViewTop | undefined = $state();
-  let selectionId = $state<string | null>(null);
+  // « Move » from the garden's bed panel opens the editor on that bed (F-VIS-7).
+  let selectionId = $state<string | null>(app.takeBedToSelect());
   let ghost = $state<Ghost | null>(null);
   let scope = $state<TypeBed | null>(null);
   let shortening = $state<{ bed: BedView; count: number; answer: (ok: boolean) => void } | null>(null);

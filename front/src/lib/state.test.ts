@@ -41,3 +41,13 @@ test("a first load that fails is kept for the shell, not left as an endless « L
   expect(app.view).toBeNull();
   expect(app.loadFailure).not.toBeNull();
 });
+
+test("« Move » from the garden opens the plan with the bed waiting to be selected, once (F-VIS-7)", () => {
+  app.tab = "garden";
+  const year = app.year;
+  app.moveBed("bed-1");
+  expect(app.tab).toBe("plan");
+  expect(app.year).toBe(year);
+  expect(app.takeBedToSelect()).toBe("bed-1");
+  expect(app.takeBedToSelect()).toBeNull();
+});

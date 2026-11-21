@@ -54,6 +54,22 @@ class App {
   saving = $state<Saving>("saved");
   message = $state<Message | null>(null);
   #retry: (() => Promise<void>) | null = null;
+  /** The bed the editor selects when it opens (« Move » of the bed panel). */
+  #bedToSelect: BedId | null = null;
+
+  /** « Move » of the bed panel (F-VIS-7): the plan editor, in the same year,
+   *  with this bed already selected. */
+  moveBed(id: BedId): void {
+    this.#bedToSelect = id;
+    this.tab = "plan";
+  }
+
+  /** The bed the editor opens with, given once. */
+  takeBedToSelect(): BedId | null {
+    const id = this.#bedToSelect;
+    this.#bedToSelect = null;
+    return id;
+  }
 
   /** Opens a year. */
   async load(year: number = this.year): Promise<void> {

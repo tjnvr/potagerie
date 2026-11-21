@@ -2,7 +2,7 @@
   // The bed panel (E06) opened from the garden view. Same panel as in the
   // editor; here it only edits through its fields (no drag), so the move and
   // resize go straight to the commands, with the same warning before a
-  // shorter bed drops plantings (S03 §4).
+  // shorter bed drops plantings (S03 §4). « Move » opens the editor on the bed.
   import { commands, type BedView, type YearView } from "../bindings";
   import PanelBed from "../editor/PanelBed.svelte";
   import type { Geo, Response } from "../editor/drag";
@@ -35,7 +35,7 @@
   }
 </script>
 
-<PanelBed {view} {bed} {onclose} onmodify={modify} />
+<PanelBed {view} {bed} {onclose} onmodify={modify} onmove={() => app.moveBed(bed.id)} />
 
 {#if shortening}
   {@const request = shortening}

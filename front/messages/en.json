@@ -252,6 +252,8 @@
   "field_length_help": "The length moves cell by cell ({case} cm). The width is set to the centimetre.",
   "panel_follow": "The crops and notes of the bed follow it when it is moved.",
   "panel_read_only": "Past season: the bed can be viewed, not changed.",
+  "panel_move": "Move",
+  "panel_move_past": "Past season: the bed cannot be moved any more.",
   "panel_dimensions": "{length} × {width} m",
   "panel_surface": "{value} m²",
   "panel_plantings": "Plantings of {year}",

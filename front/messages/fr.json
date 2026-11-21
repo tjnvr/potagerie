@@ -252,6 +252,8 @@
   "field_length_help": "La longueur avance case par case ({case} cm). La largeur se règle au centimètre.",
   "panel_follow": "Les cultures et les notes de la planche la suivent quand on la déplace.",
   "panel_read_only": "Saison passée : la planche se consulte, elle ne se modifie plus.",
+  "panel_move": "Déplacer",
+  "panel_move_past": "Saison passée : la planche ne se déplace plus.",
   "panel_dimensions": "{length} × {width} m",
   "panel_surface": "{value} m²",
   "panel_plantings": "Séries de {year}",

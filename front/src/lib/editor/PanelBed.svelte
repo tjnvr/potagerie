@@ -18,11 +18,14 @@
     bed,
     onclose,
     onmodify,
+    onmove,
   }: {
     view: YearView;
     bed: BedView;
     onclose: () => void;
     onmodify: (id: string, geo: Geo, nature: "move" | "resize") => Promise<Response>;
+    /** « Move » (F-VIS-7): only from the garden, the editor already moves the bed. */
+    onmove?: () => void;
   } = $props();
 
   const TYPES: TypeBed[] = ["bed", "square", "mound", "planter"];
@@ -214,6 +217,20 @@
     {:else}
       <p class="help">{m.panel_history_empty()}</p>
     {/each}
+  {/if}
+
+  {#if onmove}
+    <button
+      class="button"
+      disabled={view.read_only}
+      aria-describedby={view.read_only ? "move-reason" : undefined}
+      onclick={onmove}
+    >
+      <Icon name="edit" size={16} />{m.panel_move()}
+    </button>
+    {#if view.read_only}
+      <p class="help" id="move-reason">{m.panel_move_past()}</p>
+    {/if}
   {/if}
 
   {#if !view.read_only}
