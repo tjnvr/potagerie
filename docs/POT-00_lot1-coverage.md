@@ -10,7 +10,7 @@ State of the requirements of S01 (§4) in the app at lot 1, read in the code on 
 | F-CPT-4 Erase the data | Done | Settings; `erase_data` | Double confirmation |
 | F-TER-1 Plot creation | Done | Plan, "Create my plot"; `create_plot`, `modify_plot` | Minimum aisle adjustable in the settings |
 | F-PLN-1 Beds | Partial | Plan; `create_bed`, `modify_bed`, `delete_bed` | Four models (bed, square, mound, planter), limit of 10 beds; no warning for two beds with the same name |
-| F-PLN-2 Aisles | Partial | Plan | The width is adjustable and enforced, but a position that is too close is refused (error message) instead of the "Keep here" / "Go back" bubble |
+| F-PLN-2 Aisles | Done | Plan and garden; `create_bed`, `move_bed`, `modify_bed` (`keep_close`) | The width is adjustable; a bed placed, moved or resized closer than the aisle asks "Keep here" or "Go back" (T01, S03 v0.18 §15) |
 | F-PLN-4 A plan that evolves by season | Done | Plan, "read only" banner; `view_year`, `clear_plan` | Carry-over to the following years, past seasons read-only |
 | F-PLN-5 Plan summary | Done | Plan, right-hand panel | Plot, workable, aisles, beds |
 | F-PLN-6 Place and size | Partial | Plan; `move_bed` | Drag, handles and add by tap present; no rotate, no duplicate, no Undo / Redo (after lot 1) |
@@ -36,8 +36,8 @@ State of the requirements of S01 (§4) in the app at lot 1, read in the code on 
 
 | State | Count |
 |---|---|
-| Done | 21 |
-| Partial | 8 |
+| Done | 22 |
+| Partial | 7 |
 | Postponed | 0 |
 
 The requirements specific to lot 2 (mobile) and lot 3 (multi-device synchronisation) are not in the table.
