@@ -6,7 +6,8 @@
 // The app gets a fresh temporary data folder (POTAGERIE_DATA_DIR), never the
 // real potagerie.db, and its "Open" and "Save as" windows answer one file of
 // that folder (POTAGERIE_DIALOG_FILE): WebDriver cannot drive native windows.
-import { spawn, spawnSync } from "node:child_process";
+// On a failure, e2e-app/results/ keeps a screenshot and the page source.
+import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -38,31 +39,13 @@ let app;
 
 /** Starts the app and waits for its interface (the first screen or the tabs). */
 async function launch() {
-  const start = Session.start(BASE, APP);
-  // Temporary: what WebView2 runs while msedgedriver waits for it.
-  if (WINDOWS) setTimeout(windowsProcesses, 20_000).unref();
-  app = await start;
+  app = await Session.start(BASE, APP);
   try {
     await app.find("//button", 60_000);
   } catch (e) {
     await keep("launch");
     throw e;
   }
-}
-
-/** Temporary: the WebView2 processes, their flags, and a screenshot of the desktop. */
-function windowsProcesses() {
-  mkdirSync(RESULTS, { recursive: true });
-  const script = `
-    Get-CimInstance Win32_Process | Where-Object { $_.Name -match 'potagerie|msedge' } | ForEach-Object { "$($_.ProcessId) $($_.ParentProcessId) $($_.Name) $($_.CommandLine)" }
-    Get-ChildItem Env: | Where-Object { $_.Name -match 'WEBVIEW2' } | ForEach-Object { "env $($_.Name)=$($_.Value)" }
-    Add-Type -AssemblyName System.Windows.Forms, System.Drawing
-    $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-    $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
-    [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
-    $bmp.Save("${join(RESULTS, "desktop.png")}")`;
-  const out = spawnSync("pwsh", ["-NoProfile", "-Command", script], { encoding: "utf8" });
-  console.log(`processes:\n${out.stdout}${out.stderr}`);
 }
 
 async function counter() {
@@ -168,8 +151,14 @@ describe("the real app", { concurrency: false }, () => {
       return document.activeElement === slot;`);
     assert.ok(focused, "the free slot cannot take the focus");
     await app.key(ENTER);
-    await app.click("//button[starts-with(normalize-space(),'Plant ·')]");
-    await until(async () => (await bars()) === 1, "one bar");
+    // A click while the form is still opening may land beside the button: click again.
+    const plant = "//button[starts-with(normalize-space(),'Plant ·')]";
+    await app.find(plant);
+    for (let i = 0; i < 3 && (await app.findAll(plant)).length > 0; i++) {
+      await app.click(plant).catch(() => {});
+      await until(async () => (await bars()) === 1, "one bar", 5_000).catch(() => {});
+    }
+    assert.equal(await bars(), 1);
   });
 
   step("APP-04 settings: the garden is exported to a JSON file", async () => {
