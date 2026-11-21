@@ -1,6 +1,6 @@
 # T06 · Flag two beds with the same name
 
-- Status: Running
+- Status: Done
 - Owner: agent
 - Depends on: —
 - Refs: S01 F-PLN-1 (after lot 1)
@@ -16,11 +16,11 @@ Two beds with the same name are allowed but flagged.
 
 ## Acceptance
 
-- [ ] Two beds of the same season with the same name (case aside) are accepted, never refused.
-- [ ] The panel of each of them says that another bed of the season has the same name, in English and French; renamed apart, the warning goes.
-- [ ] Spec first: S01 moves the warning into lot 1, S03 states the rule with a §12 case, S05 the field of the year view.
-- [ ] New row and `UC-xx` e2e test in `POT-00_test-matrix.md`; `POT-00_lot1-coverage.md`: F-PLN-1 → Done.
-- [ ] Full local gate green (`skills/spec-driven-delivery`, step 5).
+- [x] Two beds of the same season with the same name (case aside) are accepted, never refused.
+- [x] The panel of each of them says that another bed of the season has the same name, in English and French; renamed apart, the warning goes.
+- [x] Spec first: S01 moves the warning into lot 1, S03 states the rule with a §12 case, S05 the field of the year view.
+- [x] New row and `UC-xx` e2e test in `POT-00_test-matrix.md`; `POT-00_lot1-coverage.md`: F-PLN-1 → Done.
+- [x] Full local gate green (`skills/spec-driven-delivery`, step 5).
 
 ## Scope
 
@@ -47,3 +47,5 @@ Two beds with the same name are allowed but flagged.
 - Names are compared trimmed and without regard to case: "Tomatoes" and "tomatoes" read as the same bed, which is what the warning is for.
 - Only the beds that exist in the viewed year count, as the view only shows those; a bed deleted earlier or created later does not flag.
 - The warning is a line in the bed panel (editor and garden, past seasons included), for each of the two beds; no marker on the plan labels or the timeline, to keep the change small. S01 F-PLN-1 now says where it is shown.
+
+- 2026-11-21: Done. v0.10.0. Specs: S01 v1.9 (F-PLN-1, out of the "after lot 1" list), S03 v0.20 (§15 same name, §12 T20), S05 v0.20 (§5 `name_shared`). Rust: `Plan::name_shared`, `BedView.name_shared`, tests T20 and `two_beds_with_the_same_name_are_flagged_not_refused`. Front: warning line in `PanelBed.svelte`, `panel_name_shared` in `en.json` and `fr.json`, simulation, e2e UC-35. Checked: full local gate green (fmt, clippy, cargo test, check, 219 unit tests, build, 325 e2e); screenshots of the panel in headless WebKit at 1440 and 360 px, English and French. NOT checked: the real Tauri window, touch, an installed build. The landing page says nothing about bed names, so it is unchanged.
