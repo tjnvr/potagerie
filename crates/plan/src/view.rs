@@ -69,6 +69,9 @@ pub struct BedView {
     /// The plantings deleted with this bed if it is deleted from this year
     /// on (S03 §5): the interface warns before confirming.
     pub plantings_deleted: Vec<PlantingId>,
+    /// Another bed of this year has the same name (S03 §15): the bed panel
+    /// flags it.
+    pub name_shared: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -281,6 +284,7 @@ impl YearView {
                 width_cm: geometry.width_cm,
                 segments: geometry.segments(plan.plot.cell_cm),
                 plantings_deleted: plan.plantings_deleted_by(id, year),
+                name_shared: plan.name_shared(id, year),
             })
             .collect();
 

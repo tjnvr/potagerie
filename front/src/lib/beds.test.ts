@@ -5,7 +5,7 @@ import { yearsProposees, summary, formatM2, formatMeters, letterOf, nameByDefaul
 const plot: PlotView = { length_cm: 1100, width_cm: 650, cell_cm: 50, aisle_cm: 50 };
 
 function bed(name: string, x: number, y: number, length_cm = 300, width_cm = 120): BedView {
-  return { id: name, name, bed_type: "bed", x, y, length_cm, width_cm, segments: length_cm / 50, plantings_deleted: [] };
+  return { id: name, name, bed_type: "bed", x, y, length_cm, width_cm, segments: length_cm / 50, plantings_deleted: [], name_shared: false };
 }
 
 describe("nameByDefault", () => {

@@ -1,4 +1,5 @@
-//! The test cases T1 to T14 of S03 §12. Expected values are copied as they are
+//! The test cases T1 to T14 and T20 of S03 §12 (T15 to T19 are in
+//! `perennials.rs`). Expected values are copied as they are
 //! in the spec.
 
 mod common;
@@ -353,4 +354,56 @@ fn t14_keep_a_bed_closer_than_the_aisle() {
         Err(PlanError::AisleTooNarrow { aisle_cm: 80, .. })
     ));
     assert_eq!(plan.set_plot(2000, 1000, 30, today()), Ok(()));
+}
+
+/// T20 · Plot 20 × 10 m, created in 2026: bed A "Tomatoes", bed B named
+/// " tomatoes ", bed C "Shed side", bed D "Tomatoes" deleted from 2027
+/// (S03 §15)
+/// → Accepted. Year 2027: A and B flagged `name_shared`, C not, D absent.
+/// Year 2026: A, B and D flagged, C not. B renamed "Leeks": in 2027 no bed is
+/// flagged, in 2026 A and D still are. B is saved trimmed by the commands
+/// (`bed_names_are_trimmed_when_saved`).
+#[test]
+fn t20_two_beds_with_the_same_name_are_flagged() {
+    use plan::{Geometry, Plan, TypeBed, YearView};
+    let at = |x, y| Geometry {
+        bed_type: TypeBed::Bed,
+        x,
+        y,
+        length_cm: 300,
+        width_cm: 120,
+    };
+    let (a, b, c, dd) = (bed_id(1), bed_id(2), bed_id(3), bed_id(4));
+    let mut plan = Plan::new(
+        plan::PlanId::from_uuid(uuid::Uuid::from_u128(1)),
+        plot(),
+        now(),
+    );
+    for (id, name, x) in [
+        (a, "Tomatoes", 0),
+        (b, " tomatoes ", 400),
+        (c, "Shed side", 800),
+        (dd, "Tomatoes", 1200),
+    ] {
+        plan.add_bed(id, name.into(), 2026, at(x, 0), today())
+            .unwrap();
+    }
+    plan.delete_bed(dd, 2027, today()).unwrap();
+
+    let flagged = |plan: &Plan, year| {
+        let mut ids: Vec<_> = YearView::build(Some(plan), year, today(), Catalogue::reference())
+            .beds
+            .into_iter()
+            .filter(|bed| bed.name_shared)
+            .map(|bed| bed.id)
+            .collect();
+        ids.sort();
+        ids
+    };
+    assert_eq!(flagged(&plan, 2027), vec![a, b]);
+    assert_eq!(flagged(&plan, 2026), vec![a, b, dd]);
+
+    plan.beds.get_mut(&b).unwrap().name = "Leeks".into();
+    assert_eq!(flagged(&plan, 2027), Vec::<plan::BedId>::new());
+    assert_eq!(flagged(&plan, 2026), vec![a, dd]);
 }

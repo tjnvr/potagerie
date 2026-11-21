@@ -72,6 +72,7 @@ export function simulerTauri(): void {
       width_cm: h,
       segments: l / 50,
       plantings_deleted: [],
+      name_shared: false,
     };
   }
 
@@ -228,6 +229,8 @@ export function simulerTauri(): void {
       beds: beds.map((p) => ({
         ...p,
         plantings_deleted: plantings.filter((x) => x.bed_id === p.id && dayOf(x.end) > start).map((x) => x.id),
+        // As Rust does (S03 §15): another bed with the same name, case aside.
+        name_shared: beds.some((o) => o.id !== p.id && o.name.trim().toLowerCase() === p.name.trim().toLowerCase()),
       })),
       plantings: plantings.filter(key),
       history: old,

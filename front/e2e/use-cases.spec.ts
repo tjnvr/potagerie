@@ -559,3 +559,28 @@ test("UC-34 red fruits: a raspberry planted in November is still on its bed the 
   // The timeline shows one bar for the whole life of the raspberry.
   await expect(page.locator(".bar")).toHaveCount(1);
 });
+
+test("UC-35 plan: two beds with the same name are allowed, and flagged in their panel", async ({ page }) => {
+  await open(page);
+  await page.getByRole("button", { name: "Plan", exact: true }).click();
+  await page.mouse.click(640, 340);
+  const name = page.getByLabel("Name", { exact: true });
+  const warning = page.getByText(/Another bed of this season is also named/);
+  await expect(name).toBeVisible();
+  await expect(warning).toHaveCount(0);
+  // The name of another bed, case aside: kept, and flagged.
+  await name.fill("the TOMATOES");
+  await name.dispatchEvent("change");
+  await expect(page.getByRole("heading", { name: "the TOMATOES" })).toBeVisible();
+  await expect(warning).toHaveText(`Another bed of this season is also named "the TOMATOES".`);
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  // The other bed says it too.
+  await page.getByRole("button", { name: /^The tomatoes, / }).click();
+  await expect(page.getByRole("heading", { name: "The tomatoes" })).toBeVisible();
+  await expect(warning).toBeVisible();
+  // Renamed apart: no more warning.
+  await name.fill("Herbs");
+  await name.dispatchEvent("change");
+  await expect(page.getByRole("heading", { name: "Herbs" })).toBeVisible();
+  await expect(warning).toHaveCount(0);
+});

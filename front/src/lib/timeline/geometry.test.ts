@@ -179,6 +179,7 @@ const BED: BedView = {
   width_cm: 120,
   segments: 6,
   plantings_deleted: [],
+  name_shared: false,
 };
 
 function planting(id: string, crop: string, over: Partial<PlantingView> = {}): PlantingView {

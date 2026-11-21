@@ -17,6 +17,7 @@ const bed: BedView = {
   width_cm: 120,
   segments: 6,
   plantings_deleted: [],
+  name_shared: false,
 };
 
 const tomato = {

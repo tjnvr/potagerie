@@ -1082,6 +1082,41 @@ fn bed_names_are_trimmed_when_saved() {
 }
 
 #[test]
+fn two_beds_with_the_same_name_are_flagged_not_refused() {
+    let dir = tempfile::tempdir().unwrap();
+    let (_app, window) = app(&dir.path().join(DB_FILE));
+    invoke(
+        &window,
+        "create_plot",
+        json!({
+            "year": year(),
+            "plot": { "length_cm": 1100, "width_cm": 650, "cell_cm": 50, "aisle_cm": 50 }
+        }),
+    )
+    .unwrap();
+    for (name, x) in [("Leeks", 50), (" leeks ", 450)] {
+        invoke(
+            &window,
+            "create_bed",
+            json!({ "year": year(), "bedType": "bed", "name": name, "x": x, "y": 50, "keepClose": false }),
+        )
+        .unwrap();
+    }
+    let view = invoke(&window, "view_year", json!({ "year": year() })).unwrap();
+    let beds = view["beds"].as_array().unwrap();
+    assert!(beds.iter().all(|bed| bed["name_shared"] == true));
+
+    let view = invoke(
+        &window,
+        "modify_bed",
+        json!({ "year": year(), "id": beds[0]["id"], "name": "Carrots", "keepClose": false }),
+    )
+    .unwrap();
+    let beds = view["beds"].as_array().unwrap();
+    assert!(beds.iter().all(|bed| bed["name_shared"] == false));
+}
+
+#[test]
 fn a_database_of_a_newer_version_is_reported_as_too_recent_and_never_erased() {
     let dir = tempfile::tempdir().unwrap();
     let db = dir.path().join(DB_FILE);

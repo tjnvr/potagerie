@@ -23,6 +23,19 @@ impl Plan {
             .collect()
     }
 
+    /// Whether another bed that exists in `year` has the same name as
+    /// `bed_id`, without regard to case (S03 §15). Allowed, only flagged.
+    pub fn name_shared(&self, bed_id: BedId, year: i32) -> bool {
+        let key = |bed: &Bed| bed.name.trim().to_lowercase();
+        let Some(bed) = self.beds.get(&bed_id) else {
+            return false;
+        };
+        let name = key(bed);
+        self.beds_in(year)
+            .into_iter()
+            .any(|(id, other, _)| id != bed_id && key(other) == name)
+    }
+
     /// Number of segments of a bed in `year`, if it exists then.
     pub fn segment_count(&self, bed_id: BedId, year: i32) -> Option<u32> {
         let geometry = self.beds.get(&bed_id)?.layout_in(year)?;

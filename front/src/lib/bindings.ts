@@ -170,6 +170,11 @@ export type BedView = {
 	 *  on (S03 §5): the interface warns before confirming.
 	 */
 	plantings_deleted: PlantingId[],
+	/**
+	 *  Another bed of this year has the same name (S03 §15): the bed panel
+	 *  flags it.
+	 */
+	name_shared: boolean,
 };
 
 export type ConflictView = {

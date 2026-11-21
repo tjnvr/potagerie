@@ -112,6 +112,10 @@
     <span class="puce">{m.panel_surface({ value: formatM2(bed.length_cm * bed.width_cm) })}</span>
   </div>
 
+  {#if bed.name_shared}
+    <p class="warning same-name" role="status">{m.panel_name_shared({ name: bed.name })}</p>
+  {/if}
+
   {#if view.read_only}
     <p class="help">{m.panel_read_only()}</p>
   {:else}
@@ -459,6 +463,11 @@
     padding: 12px 14px;
     border-radius: 14px;
     background: var(--warn-bg);
+  }
+
+  .same-name {
+    margin: 0;
+    font-size: 13px;
   }
 
   .warning p {
