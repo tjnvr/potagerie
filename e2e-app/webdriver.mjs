@@ -41,13 +41,10 @@ export class Session {
     this.url = `${base}/session/${id}`;
   }
 
-  /**
-   * Launches `application` through tauri-driver: one session is one run of the app.
-   * On Windows, `args` go to WebView2 (msedgedriver), on Linux to the app.
-   */
-  static async start(base, application, args = []) {
+  /** Launches `application` through tauri-driver: one session is one run of the app. */
+  static async start(base, application) {
     const value = await request(`${base}/session`, "POST", {
-      capabilities: { alwaysMatch: { browserName: "wry", "tauri:options": { application, args } } },
+      capabilities: { alwaysMatch: { browserName: "wry", "tauri:options": { application } } },
     });
     return new Session(base, value.sessionId);
   }

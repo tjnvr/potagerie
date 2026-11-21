@@ -23,7 +23,6 @@ const DRIVER = process.env.TAURI_DRIVER ?? "tauri-driver";
 const PORT = 4444;
 const BASE = `http://127.0.0.1:${PORT}`;
 const RESULTS = join(HERE, "results");
-const WEBVIEW2_ARGS = "--disable-gpu";
 const ENTER = "";
 
 const DATA = mkdtempSync(join(tmpdir(), "potagerie-smoke-"));
@@ -39,8 +38,7 @@ let app;
 
 /** Starts the app and waits for its interface (the first screen or the tabs). */
 async function launch() {
-  // WebView2 on a machine without a GPU (CI runner) hangs before showing the page.
-  const start = Session.start(BASE, APP, WINDOWS ? [WEBVIEW2_ARGS] : []);
+  const start = Session.start(BASE, APP);
   // Temporary: what WebView2 runs while msedgedriver waits for it.
   if (WINDOWS) setTimeout(windowsProcesses, 20_000).unref();
   app = await start;
@@ -128,10 +126,8 @@ describe("the real app", { concurrency: false }, () => {
         POTAGERIE_DATA_DIR: DATA,
         POTAGERIE_DIALOG_FILE: FILE,
         LANG: "en_US.UTF-8",
-        // No GPU on a CI runner: software rendering in WebView2 and WebKitGTK.
-        ...(WINDOWS
-          ? { WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: WEBVIEW2_ARGS }
-          : { WEBKIT_DISABLE_COMPOSITING_MODE: "1", WEBKIT_DISABLE_DMABUF_RENDERER: "1" }),
+        // WebKitGTK without a GPU (Xvfb): software rendering, no DMA-BUF.
+        ...(WINDOWS ? {} : { WEBKIT_DISABLE_COMPOSITING_MODE: "1", WEBKIT_DISABLE_DMABUF_RENDERER: "1" }),
       },
     });
     await until(() => fetch(`${BASE}/status`).then((r) => r.ok), "tauri-driver", 30_000);

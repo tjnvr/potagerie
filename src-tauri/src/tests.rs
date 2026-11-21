@@ -1140,3 +1140,24 @@ fn the_data_folder_can_be_set_for_the_smoke_tests() {
         Path::new("default")
     );
 }
+
+/// msedgedriver hands its own WebView2 arguments (the debugging port) in
+/// `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS`; wry always sets its own list,
+/// which WebView2 then prefers: the main window carries both.
+#[test]
+fn the_webview2_arguments_of_the_driver_reach_the_main_window() {
+    let mut ctx = context::<MockRuntime>();
+    smoke::add_browser_args(&mut ctx, Some("--remote-debugging-port=0".into()));
+    let args = ctx.config().app.windows[0]
+        .additional_browser_args
+        .clone()
+        .unwrap();
+    assert!(args.contains("--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection"));
+    assert!(args.ends_with(" --remote-debugging-port=0"), "{args}");
+
+    for var in [None, Some("".into())] {
+        let mut ctx = context::<MockRuntime>();
+        smoke::add_browser_args(&mut ctx, var);
+        assert_eq!(ctx.config().app.windows[0].additional_browser_args, None);
+    }
+}

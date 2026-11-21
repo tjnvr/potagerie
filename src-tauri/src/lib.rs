@@ -83,6 +83,9 @@ pub fn run() {
     #[cfg(debug_assertions)]
     export_bindings(&builder, &bindings_path()).expect("failed to export bindings.ts");
 
+    let mut context = context();
+    smoke::add_browser_args(&mut context, std::env::var_os(smoke::BROWSER_ARGS_VAR));
+
     let app = tauri::Builder::default();
     let app = match std::env::var_os(smoke::DIALOG_FILE_VAR) {
         Some(file) if !file.is_empty() => app.plugin(smoke::dialog_stand_in(file.into())),
@@ -99,7 +102,7 @@ pub fn run() {
             app.manage(state);
             Ok(())
         })
-        .run(context())
+        .run(context)
         .expect("error while running Potagerie");
 }
 
