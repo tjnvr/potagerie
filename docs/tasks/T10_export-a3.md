@@ -1,6 +1,6 @@
 # T10 · A3 paper size in the timeline export
 
-- Status: Draft
+- Status: Ready
 - Owner: agent
 - Depends on: —
 - Refs: S01 F-EXP-1 (after lot 1)
@@ -33,5 +33,6 @@ The PDF export offers A3 landscape next to A4.
 1. [functional] Offer A3 paper in the timeline export now? S01 lists it for after lot 1.
    (a) Yes, now. (b) Later.
    Recommendation: (b), unless you print in A3.
+   Answer: b
 
 ## Log

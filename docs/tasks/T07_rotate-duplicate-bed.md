@@ -1,6 +1,6 @@
 # T07 · Rotate and duplicate a bed
 
-- Status: Draft
+- Status: Ready
 - Owner: agent
 - Depends on: —
 - Refs: S01 F-PLN-6 (after lot 1) · S03 placement
@@ -27,5 +27,6 @@ A selected bed can be rotated by a quarter turn and duplicated, from its bar or 
 1. [functional] Build rotate and duplicate a bed now? S01 lists them for after lot 1.
    (a) Yes, now. (b) Later.
    Recommendation: (a).
+   Answer: no
 
 ## Log

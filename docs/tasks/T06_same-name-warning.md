@@ -1,6 +1,6 @@
 # T06 · Flag two beds with the same name
 
-- Status: Draft
+- Status: Ready
 - Owner: agent
 - Depends on: —
 - Refs: S01 F-PLN-1 (after lot 1)
@@ -27,5 +27,6 @@ Two beds with the same name are allowed but flagged.
 1. [functional] Build it now? S01 lists the warning for two beds with the same name for after lot 1.
    (a) Yes, now. (b) Later.
    Recommendation: (a), it is small.
+   Answer: a
 
 ## Log

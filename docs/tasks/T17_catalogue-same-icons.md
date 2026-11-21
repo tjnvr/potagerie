@@ -1,6 +1,6 @@
 # T17 · Crops that look the same in the catalogue
 
-- Status: Draft
+- Status: Ready
 - Owner: agent
 - Depends on: —
 - Refs: S02 (look-alike drawings, `appearances.ts`) · S01 §5 (visual direction)
@@ -34,8 +34,13 @@ In the catalogue, crops that share a drawing can still be told apart at a glance
 
 - [functional] In the catalogue, several crops show exactly the same small drawing (for example artichoke, broccoli, Brussels sprout and cauliflower). What should the user see?
   1. Keep it as it is: close crops share one drawing; the name under the card tells them apart.
+   Answer: no it is not sufficient
+
   2. Same shared drawing, tinted with each crop's own colour (a white-ish head for the cauliflower, a pale leaf for the chervil…), in the catalogue and in the garden.
+   Answer: no
+
   3. Draw a dedicated picture for the crops grown most often (cauliflower, artichoke, basil…), the others keep sharing.
   Recommendation: 2, cheap and consistent with the timeline colours; 3 later if some crops still look wrong.
+   Answer: yes
 
 ## Log

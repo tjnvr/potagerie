@@ -1,6 +1,6 @@
 # T09 · Families of the two previous seasons in the bed panel
 
-- Status: Draft
+- Status: Ready
 - Owner: agent
 - Depends on: —
 - Refs: S01 F-VIS-7 (after lot 1) · S03 §11
@@ -33,5 +33,6 @@ The bed panel reminds the families grown on the bed the two previous seasons.
 1. [functional] Show the families grown on a bed the two previous seasons in its panel now? S01 lists it for after lot 1.
    (a) Yes, now. (b) Later.
    Recommendation: (a).
+   Answer: no
 
 ## Log
