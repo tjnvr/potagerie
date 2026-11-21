@@ -38,7 +38,12 @@ let app;
 /** Starts the app and waits for its interface (the first screen or the tabs). */
 async function launch() {
   app = await Session.start(BASE, APP);
-  await app.find("//button", 60_000);
+  try {
+    await app.find("//button", 60_000);
+  } catch (e) {
+    await keep("launch");
+    throw e;
+  }
 }
 
 async function counter() {
@@ -68,16 +73,25 @@ async function closeSettings() {
   await app.click(inSettings("//button[@aria-label='Close']"));
 }
 
-/** Runs a step; on failure keeps a screenshot and the page source in e2e-app/results/. */
+/** Keeps a screenshot, the page source and the address of the page in e2e-app/results/. */
+async function keep(id) {
+  mkdirSync(RESULTS, { recursive: true });
+  const base = join(RESULTS, id);
+  await app?.screenshot().then((png) => writeFileSync(`${base}.png`, png)).catch(() => {});
+  await app?.source().then((html) => writeFileSync(`${base}.html`, html)).catch(() => {});
+  await app
+    ?.cmd("GET", "/url")
+    .then((url) => console.log(`${id}: page ${url}`))
+    .catch(() => {});
+}
+
+/** Runs a step; on failure keeps what the window shows. */
 function step(name, fn) {
   it(name, async () => {
     try {
       await fn();
     } catch (e) {
-      mkdirSync(RESULTS, { recursive: true });
-      const base = join(RESULTS, name.split(" ")[0]);
-      await app?.screenshot().then((png) => writeFileSync(`${base}.png`, png)).catch(() => {});
-      await app?.source().then((html) => writeFileSync(`${base}.html`, html)).catch(() => {});
+      await keep(name.split(" ")[0]);
       throw e;
     }
   });
@@ -88,7 +102,14 @@ describe("the real app", { concurrency: false }, () => {
     assert.ok(existsSync(APP), `build the app first: ${APP} is missing (make e2e-app builds it)`);
     driver = spawn(DRIVER, process.env.NATIVE_DRIVER ? ["--native-driver", process.env.NATIVE_DRIVER] : [], {
       stdio: "inherit",
-      env: { ...process.env, POTAGERIE_DATA_DIR: DATA, POTAGERIE_DIALOG_FILE: FILE, LANG: "en_US.UTF-8" },
+      env: {
+        ...process.env,
+        POTAGERIE_DATA_DIR: DATA,
+        POTAGERIE_DIALOG_FILE: FILE,
+        LANG: "en_US.UTF-8",
+        // WebKitGTK without a GPU (Xvfb): software rendering, no DMA-BUF.
+        ...(WINDOWS ? {} : { WEBKIT_DISABLE_COMPOSITING_MODE: "1", WEBKIT_DISABLE_DMABUF_RENDERER: "1" }),
+      },
     });
     await until(() => fetch(`${BASE}/status`).then((r) => r.ok), "tauri-driver", 30_000);
     await launch();

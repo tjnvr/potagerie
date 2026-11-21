@@ -147,17 +147,32 @@ jobs:
         run: pnpm dlx @tauri-apps/cli@2.12.4 build --no-bundle
       - name: Diagnose a direct launch (temporary)
         if: runner.os == 'Windows'
+        continue-on-error: true
         shell: pwsh
         run: |
+          New-Item -ItemType Directory -Force e2e-app\results | Out-Null
           $env:POTAGERIE_DATA_DIR = "$env:RUNNER_TEMP\diag"
-          $p = Start-Process -FilePath target\release\potagerie.exe -PassThru -RedirectStandardError "$env:RUNNER_TEMP\err.txt" -RedirectStandardOutput "$env:RUNNER_TEMP\out.txt"
-          Start-Sleep -Seconds 8
+          $p = Start-Process -FilePath target\release\potagerie.exe -PassThru
+          Start-Sleep -Seconds 25
           Write-Host "exited: $($p.HasExited) code: $($p.ExitCode)"
-          Get-Content "$env:RUNNER_TEMP\err.txt", "$env:RUNNER_TEMP\out.txt"
-          Get-ChildItem "$env:RUNNER_TEMP\diag"
+          Write-Host "data folder: $(Test-Path "$env:RUNNER_TEMP\diag")"; Get-ChildItem "$env:RUNNER_TEMP\diag" -ErrorAction SilentlyContinue
+          Get-ChildItem "$env:LOCALAPPDATA\garden.potagerie" -Recurse -Depth 1 -ErrorAction SilentlyContinue | Select-Object -First 20 FullName
+          Get-CimInstance Win32_Process | Where-Object { $_.Name -match 'potagerie|msedgewebview2' } | ForEach-Object { "$($_.ProcessId) $($_.Name) $($_.CommandLine)".Substring(0, [Math]::Min(300, "$($_.ProcessId) $($_.Name) $($_.CommandLine)".Length)) }
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+          [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+          $bmp.Save("e2e-app\results\desktop.png")
           if (-not $p.HasExited) { Stop-Process -Id $p.Id }
           & $env:NATIVE_DRIVER --version
           Get-ChildItem 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients' | ForEach-Object { "$($_.PSChildName) $((Get-ItemProperty $_.PSPath).name) $((Get-ItemProperty $_.PSPath).pv)" }
+      - name: Diagnose a direct launch (temporary)
+        if: runner.os == 'Linux'
+        continue-on-error: true
+        run: |
+          mkdir -p "$RUNNER_TEMP/diag"
+          POTAGERIE_DATA_DIR="$RUNNER_TEMP/diag" timeout 20 xvfb-run -a target/release/potagerie || echo "exit $?"
+          ls -la "$RUNNER_TEMP/diag"
       - name: Smoke tests
         shell: bash
         run: |
@@ -167,7 +182,7 @@ jobs:
             node --test e2e-app/smoke.test.mjs
           fi
       - name: Keep the screenshots of failed steps
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: app-smoke-${{ runner.os }}
