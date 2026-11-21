@@ -1,6 +1,6 @@
 # T05 · Resize a bed from the keyboard
 
-- Status: Draft
+- Status: Ready
 - Owner: agent
 - Depends on: —
 - Refs: POT-00_review-2026-11 (seen, not fixed) · S01 §5
@@ -27,5 +27,6 @@ Decide whether the plan resize handles must be reachable from the keyboard, sinc
 1. [functional] Should the resize handles on the plan also work from the keyboard (Tab to a handle, arrow keys to resize)? Today the bed panel already lets you type a size, and S01 says the keyboard is never required.
    (a) Yes, add keyboard resizing on the plan. (b) No, the panel fields are enough.
    Recommendation: (b).
+   Answer: keyboard feature not needed let's focus on the mouse or tactile
 
 ## Log
