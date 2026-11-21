@@ -3,6 +3,7 @@
 mod command_names;
 pub mod commands;
 pub mod error;
+pub mod smoke;
 
 use std::path::{Path, PathBuf};
 
@@ -82,12 +83,17 @@ pub fn run() {
     #[cfg(debug_assertions)]
     export_bindings(&builder, &bindings_path()).expect("failed to export bindings.ts");
 
-    tauri::Builder::default()
-        .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(builder.invoke_handler())
+    let app = tauri::Builder::default();
+    let app = match std::env::var_os(smoke::DIALOG_FILE_VAR) {
+        Some(file) if !file.is_empty() => app.plugin(smoke::dialog_stand_in(file.into())),
+        _ => app.plugin(tauri_plugin_dialog::init()),
+    };
+    app.invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);
-            let dir = app.path().app_data_dir()?;
+            let dir = smoke::data_dir(std::env::var_os(smoke::DATA_DIR_VAR), || {
+                app.path().app_data_dir()
+            })?;
             std::fs::create_dir_all(&dir)?;
             let state = AppState::open(&dir.join(DB_FILE));
             app.manage(state);
