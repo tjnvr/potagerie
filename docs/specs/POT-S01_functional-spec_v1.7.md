@@ -1,7 +1,7 @@
 # Potagerie — V1 functional specification
 
 > Version: 1.7 (draft) · Date: 2026-11-16 November 2026 · Author: Tim · Domain: potagerie.garden
-> v1.7 settles the inconsistencies found by the audit (catalogue size, season selector, performance target, what comes after lot 1). v1.6 is the English translation of v1.5; no requirement changes. Stack and lots: [S05](POT-S05_technical-spec_v0.17.md). Rules and calculations: [S03](POT-S03_rules-and-calculations_v0.17.md). Catalogue: [S02](POT-S02_crop-catalogue_v0.4.md).
+> v1.7 settles the inconsistencies found by the audit (catalogue size, season selector, performance target, what comes after lot 1). v1.6 is the English translation of v1.5; no requirement changes. Stack and lots: [S05](POT-S05_technical-spec_v0.18.md). Rules and calculations: [S03](POT-S03_rules-and-calculations_v0.17.md). Catalogue: [S02](POT-S02_crop-catalogue_v0.4.md).
 > v1.3: three clarifications revealed by D02 (additional screens), see §11.
 
 ---
