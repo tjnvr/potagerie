@@ -1,4 +1,4 @@
-//! The test cases T1 to T13 of S03 §12. Expected values are copied as they are
+//! The test cases T1 to T14 of S03 §12. Expected values are copied as they are
 //! in the spec.
 
 mod common;
@@ -277,4 +277,80 @@ fn t13_shortened_end_recorded_as_manual_end() {
     let planting = lettuce.into_planting(crop("lettuce"), &slot).unwrap();
     assert_eq!(planting.manual_end, Some(d(2027, 10, 6)));
     assert_eq!(planting.dates().end, d(2027, 10, 6));
+}
+
+/// T14 · Plot 20 × 10 m, aisle 50 cm; bed A 3 × 1.2 m at (0, 0); bed B of the
+/// same size placed at (330, 0), 30 cm from A (S03 §15)
+/// → Without "Keep here": refused, `aisle_too_narrow`, nothing changes. With
+/// "Keep here": accepted, and the pair is not "to resolve". Moving B afterwards
+/// to (340, 0) does not ask again. B at (200, 0), over A: refused even with
+/// "Keep here". The aisle can then go to 80 cm; after a bed C 60 cm below A,
+/// it can no longer go to 80 cm, but it can go to 30 cm.
+#[test]
+fn t14_keep_a_bed_closer_than_the_aisle() {
+    use plan::{Geometry, Layout, Plan, TypeBed};
+    let at = |x, y| Geometry {
+        bed_type: TypeBed::Bed,
+        x,
+        y,
+        length_cm: 300,
+        width_cm: 120,
+    };
+    // As the commands do: the change, then the placement check against the plan before it.
+    let place = |plan: &mut Plan, keep_close: bool, change: &dyn Fn(&mut Plan)| {
+        let before = plan.clone();
+        change(plan);
+        let checked = plan.check_placement_change(&before, 2026, keep_close);
+        if checked.is_err() {
+            *plan = before;
+        }
+        checked
+    };
+    let (a, b, c) = (bed_id(1), bed_id(2), bed_id(3));
+    let mut plan = Plan::new(
+        plan::PlanId::from_uuid(uuid::Uuid::from_u128(1)),
+        plot(),
+        now(),
+    );
+    plan.add_bed(a, "A".into(), 2026, at(0, 0), today())
+        .unwrap();
+    let add_b = |p: &mut Plan| p.add_bed(b, "B".into(), 2026, at(330, 0), today()).unwrap();
+
+    let before = plan.clone();
+    assert!(matches!(
+        place(&mut plan, false, &add_b),
+        Err(PlanError::AisleTooNarrow { aisle_cm: 50, .. })
+    ));
+    assert_eq!(plan, before, "a refusal changes nothing");
+
+    assert_eq!(place(&mut plan, true, &add_b), Ok(()));
+    assert!(plan.beds.contains_key(&b));
+    assert!(
+        plan.incoherences().is_empty(),
+        "a kept pair is not to resolve"
+    );
+
+    let move_b = |x| {
+        move |p: &mut Plan| {
+            p.set_layout(b, 2026, Layout::Present(at(x, 0)), today())
+                .unwrap()
+        }
+    };
+    assert_eq!(place(&mut plan, false, &move_b(340)), Ok(()));
+    assert!(matches!(
+        place(&mut plan, true, &move_b(200)),
+        Err(PlanError::BedsOverlap { .. })
+    ));
+    assert_eq!(plan.beds[&b].layout_in(2026), Some(&at(340, 0)));
+
+    let mut wider = plan.clone();
+    assert_eq!(wider.set_plot(2000, 1000, 80, today()), Ok(()));
+
+    let add_c = |p: &mut Plan| p.add_bed(c, "C".into(), 2026, at(0, 180), today()).unwrap();
+    assert_eq!(place(&mut plan, false, &add_c), Ok(()));
+    assert!(matches!(
+        plan.set_plot(2000, 1000, 80, today()),
+        Err(PlanError::AisleTooNarrow { aisle_cm: 80, .. })
+    ));
+    assert_eq!(plan.set_plot(2000, 1000, 30, today()), Ok(()));
 }

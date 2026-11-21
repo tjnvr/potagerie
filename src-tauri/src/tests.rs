@@ -75,7 +75,7 @@ fn add_a_bed_and_find_it_after_a_restart() {
         let view = invoke(
             &window,
             "create_bed",
-            json!({ "year": year(), "bedType": "bed", "name": "Bed A", "x": 50, "y": 50 }),
+            json!({ "year": year(), "bedType": "bed", "name": "Bed A", "x": 50, "y": 50, "keepClose": false }),
         )
         .unwrap();
         assert_eq!(view["beds"][0]["name"], "Bed A");
@@ -96,7 +96,7 @@ fn refusals_carry_a_code_and_change_nothing() {
     let err = invoke(
         &window,
         "create_bed",
-        json!({ "year": year(), "bedType": "square", "name": "Square A", "x": 0, "y": 0 }),
+        json!({ "year": year(), "bedType": "square", "name": "Square A", "x": 0, "y": 0, "keepClose": false }),
     )
     .unwrap_err();
     assert_eq!(err["code"], "plot_absent");
@@ -113,7 +113,7 @@ fn refusals_carry_a_code_and_change_nothing() {
     let err = invoke(
         &window,
         "create_bed",
-        json!({ "year": year() - 1, "bedType": "square", "name": "Square A", "x": 0, "y": 0 }),
+        json!({ "year": year() - 1, "bedType": "square", "name": "Square A", "x": 0, "y": 0, "keepClose": false }),
     )
     .unwrap_err();
     assert_eq!(err["code"], "year_past");
@@ -137,7 +137,7 @@ fn export_import_and_clear() {
     invoke(
         &window,
         "create_bed",
-        json!({ "year": year(), "bedType": "planter", "name": "Planter A", "x": 50, "y": 50 }),
+        json!({ "year": year(), "bedType": "planter", "name": "Planter A", "x": 50, "y": 50, "keepClose": false }),
     )
     .unwrap();
 
@@ -212,11 +212,85 @@ fn place(
     x: u32,
     y: u32,
 ) -> Result<Value, Value> {
+    place_close(window, kind, name, x, y, false)
+}
+
+fn place_close(
+    window: &WebviewWindow<MockRuntime>,
+    kind: &str,
+    name: &str,
+    x: u32,
+    y: u32,
+    keep_close: bool,
+) -> Result<Value, Value> {
     invoke(
         window,
         "create_bed",
-        json!({ "year": year(), "bedType": kind, "name": name, "x": x, "y": y }),
+        json!({ "year": year(), "bedType": kind, "name": name, "x": x, "y": y, "keepClose": keep_close }),
     )
+}
+
+fn move_close(
+    window: &WebviewWindow<MockRuntime>,
+    id: &str,
+    x: u32,
+    y: u32,
+    keep_close: bool,
+) -> Result<Value, Value> {
+    invoke(
+        window,
+        "move_bed",
+        json!({ "year": year(), "id": id, "x": x, "y": y, "keepClose": keep_close }),
+    )
+}
+
+/// "Keep here" (S03 §15, T14): a narrow aisle is refused until the same
+/// change comes back with `keepClose`; an overlap never passes.
+#[test]
+fn a_narrow_aisle_is_kept_only_when_asked() {
+    let dir = tempfile::tempdir().unwrap();
+    let (_app, window) = app(&dir.path().join(DB_FILE));
+    invoke(&window, "create_plot", plot_args()).unwrap();
+    let view = place(&window, "bed", "Bed A", 0, 0).unwrap();
+    let version = view["version"].clone();
+
+    // 30 cm from A: asked first, nothing saved; kept with keepClose.
+    let err = place(&window, "bed", "Bed B", 330, 0).unwrap_err();
+    assert_eq!(err["code"], "aisle_too_narrow");
+    let view = invoke(&window, "view_year", json!({ "year": year() })).unwrap();
+    assert_eq!(view["version"], version);
+    let view = place_close(&window, "bed", "Bed B", 330, 0, true).unwrap();
+    let b = view["beds"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|p| p["name"] == "Bed B")
+        .unwrap()["id"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let incoherences = invoke(&window, "incoherences_plan", json!({})).unwrap();
+    assert_eq!(incoherences, json!([]));
+
+    // Still close after a move: not asked again. Onto A: refused anyway.
+    move_close(&window, &b, 340, 0, false).unwrap();
+    let err = move_close(&window, &b, 200, 0, true).unwrap_err();
+    assert_eq!(err["code"], "bed_overlaps");
+
+    // A resize is asked the same way.
+    let resize = |keep_close: bool| {
+        invoke(
+            &window,
+            "modify_bed",
+            json!({ "year": year(), "id": b, "geometry": {
+                "bed_type": "bed", "x": 340, "y": 0, "length_cm": 300, "width_cm": 200 },
+                "keepClose": keep_close }),
+        )
+    };
+    let c = place(&window, "bed", "Bed C", 400, 230).unwrap();
+    assert_eq!(c["beds"].as_array().unwrap().len(), 3);
+    assert_eq!(resize(false).unwrap_err()["code"], "aisle_too_narrow");
+    resize(true).unwrap();
 }
 
 /// The first-use journey: plot, beds, move, refusals, deletion.
@@ -268,14 +342,14 @@ fn journey_plot_place_move_refuse_delete() {
     let err = invoke(
         &window,
         "move_bed",
-        json!({ "year": year(), "id": a, "x": 350, "y": 50 }),
+        json!({ "year": year(), "id": a, "x": 350, "y": 50, "keepClose": false }),
     )
     .unwrap_err();
     assert_eq!(err["code"], "bed_overlaps");
     let view = invoke(
         &window,
         "move_bed",
-        json!({ "year": year(), "id": a, "x": 50, "y": 300 }),
+        json!({ "year": year(), "id": a, "x": 50, "y": 300, "keepClose": false }),
     )
     .unwrap();
     let moved = view["beds"]
@@ -294,7 +368,8 @@ fn journey_plot_place_move_refuse_delete() {
         &window,
         "modify_bed",
         json!({ "year": year(), "id": a, "geometry": {
-            "bed_type": "bed", "x": 50, "y": 300, "length_cm": 330, "width_cm": 120 } }),
+            "bed_type": "bed", "x": 50, "y": 300, "length_cm": 330, "width_cm": 120 },
+            "keepClose": false }),
     )
     .unwrap_err();
     assert_eq!(err["code"], "length_invalid");
@@ -302,7 +377,8 @@ fn journey_plot_place_move_refuse_delete() {
         &window,
         "modify_bed",
         json!({ "year": year(), "id": a, "name": "The tomatoes", "geometry": {
-            "bed_type": "bed", "x": 50, "y": 300, "length_cm": 400, "width_cm": 135 } }),
+            "bed_type": "bed", "x": 50, "y": 300, "length_cm": 400, "width_cm": 135 },
+            "keepClose": false }),
     )
     .unwrap();
     assert_eq!(view["beds"][0]["name"], "The tomatoes");
@@ -892,11 +968,11 @@ fn incoherent_imports_are_accepted_with_a_list_and_nothing_is_deleted() {
         json!({"crop_id":"tomato","bed_id":bed_id,"segment_start":t1,"segment_end":t2,
             "mode":"plants","date":format!("{y}-05-20"),"indoor_days":0,"after_days":60,"duration_days":40})
     };
-    // 11 beds, the first two touch each other; two plantings overlap on
-    // bed 1; one planting points to a bed that does not exist.
+    // 11 beds, the first two overlap; two plantings overlap on bed 1; one
+    // planting points to a bed that does not exist.
     let mut beds = serde_json::Map::new();
     beds.insert(p(1), bed("A", 0));
-    beds.insert(p(2), bed("B", 300));
+    beds.insert(p(2), bed("B", 250));
     for n in 3..=11u32 {
         beds.insert(p(n), bed(&format!("P{n}"), 600 + (n - 3) * 100));
     }
@@ -914,7 +990,7 @@ fn incoherent_imports_are_accepted_with_a_list_and_nothing_is_deleted() {
         "too_many_beds",
         "overlap",
         "planting_orphan",
-        "aisle_too_narrow",
+        "bed_overlaps",
     ] {
         assert!(codes.contains(&expected), "{expected} in {codes:?}");
     }
@@ -998,7 +1074,7 @@ fn bed_names_are_trimmed_when_saved() {
     let view = invoke(
         &window,
         "create_bed",
-        json!({ "year": year(), "bedType": "bed", "name": "  Leeks  ", "x": 50, "y": 50 }),
+        json!({ "year": year(), "bedType": "bed", "name": "  Leeks  ", "x": 50, "y": 50, "keepClose": false }),
     )
     .unwrap();
     assert_eq!(view["beds"][0]["name"], "Leeks");

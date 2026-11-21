@@ -371,8 +371,7 @@ pub struct ImportSummaryView {
 /// One incoherence of an imported plan. `code` is `too_many_beds`,
 /// `planting_orphan`, `overlap`, `zone_outside_bed`, `crop_unknown`,
 /// `note_bed_unknown`, `note_invalid`, or a placement code
-/// (`bed_outside_plot`, `bed_overlaps`, `aisle_too_narrow`,
-/// `width_invalid`). Names come from the file, not from the interface.
+/// (`bed_outside_plot`, `bed_overlaps`, `width_invalid`). Names come from the file, not from the interface.
 #[derive(Debug, Clone, Serialize, Type)]
 pub struct IncoherenceView {
     pub code: String,
@@ -433,8 +432,7 @@ fn incoherence_view(plan: &Plan, incoherence: &Incoherence) -> IncoherenceView {
                 v.year = Some(*year);
                 v.bed_name = name(bed_id);
             }
-            plan::PlanError::BedsOverlap { a, b, year }
-            | plan::PlanError::AisleTooNarrow { a, b, year, .. } => {
+            plan::PlanError::BedsOverlap { a, b, year } => {
                 v.year = Some(*year);
                 v.bed_name = name(a);
                 v.other_bed_name = name(b);
@@ -549,6 +547,7 @@ pub fn modify_plot(
 
 /// Drops a new bed from the tray at `(x, y)`, at its default size (F-PLN-6).
 /// The default name ("Bed A") is chosen and translated by the interface.
+/// `keep_close`: the user chose "Keep here" for a narrow aisle (S03 §15).
 #[tauri::command]
 #[specta::specta]
 pub fn create_bed(
@@ -558,8 +557,10 @@ pub fn create_bed(
     name: String,
     x: u32,
     y: u32,
+    keep_close: bool,
 ) -> Result<YearView, AppError> {
     change(&state, year, |plan, today| {
+        let before = plan.clone();
         let (length_cm, width_cm) = default_size(bed_type);
         plan::check_name(&name)?;
         let name = name.trim().to_string();
@@ -576,12 +577,13 @@ pub fn create_bed(
             },
             today,
         )?;
-        plan.check_placements(year)?;
+        plan.check_placement_change(&before, year, keep_close)?;
         Ok(())
     })
 }
 
 /// Renames a bed and/or changes its layout from `year` on (S03 §7).
+/// `keep_close` as for `create_bed`.
 #[tauri::command]
 #[specta::specta]
 pub fn modify_bed(
@@ -590,11 +592,13 @@ pub fn modify_bed(
     id: BedId,
     name: Option<String>,
     geometry: Option<GeometryInput>,
+    keep_close: bool,
 ) -> Result<YearView, AppError> {
     change(&state, year, |plan, today| {
         if let Some(geometry) = geometry {
+            let before = plan.clone();
             plan.set_layout(id, year, Layout::Present(geometry.into()), today)?;
-            plan.check_placements(year)?;
+            plan.check_placement_change(&before, year, keep_close)?;
         }
         if let Some(name) = name {
             plan::check_name(&name)?;
@@ -608,7 +612,7 @@ pub fn modify_bed(
     })
 }
 
-/// Moves a bed from `year` on, keeping its size.
+/// Moves a bed from `year` on, keeping its size. `keep_close` as for `create_bed`.
 #[tauri::command]
 #[specta::specta]
 pub fn move_bed(
@@ -617,8 +621,10 @@ pub fn move_bed(
     id: BedId,
     x: u32,
     y: u32,
+    keep_close: bool,
 ) -> Result<YearView, AppError> {
     change(&state, year, |plan, today| {
+        let before = plan.clone();
         let mut geometry = plan
             .beds
             .get(&id)
@@ -629,7 +635,7 @@ pub fn move_bed(
         geometry.x = x;
         geometry.y = y;
         plan.set_layout(id, year, Layout::Present(geometry), today)?;
-        plan.check_placements(year)?;
+        plan.check_placement_change(&before, year, keep_close)?;
         Ok(())
     })
 }

@@ -44,25 +44,17 @@ fn gap(a: u32, la: u32, b: u32, lb: u32) -> i64 {
     (b - (a + la)).max(a - (b + lb))
 }
 
-impl Plan {
-    /// Checks the layout of every bed, in every year from `from_year` to
-    /// the last year with a recorded layout (a layout holds until the next
-    /// one, S03 §7): the bed fits in the plot, has a valid width, does
-    /// not overlap another one and keeps the aisle width from it.
-    ///
-    /// Operations call it after changing a layout; the command then does not
-    /// save when it fails.
-    pub fn check_placements(&self, from_year: i32) -> Result<(), PlanError> {
-        match self.placement_errors(from_year).into_iter().next() {
-            Some(error) => Err(error),
-            None => Ok(()),
-        }
-    }
+/// Two beds keep the aisle if they are far enough apart on one axis (S03 §15).
+fn keeps_aisle(a: &Geometry, b: &Geometry, aisle_cm: u32) -> bool {
+    let aisle = i64::from(aisle_cm);
+    gap(a.x, a.length_cm, b.x, b.length_cm) >= aisle
+        || gap(a.y, a.width_cm, b.y, b.width_cm) >= aisle
+}
 
-    /// Every placement problem from `from_year` on, not only the first one: the
-    /// "to resolve" list of an import shows them all (S03 §13).
-    pub fn placement_errors(&self, from_year: i32) -> Vec<PlanError> {
-        let mut errors = Vec::new();
+impl Plan {
+    /// Years from `from_year` to the last year with a recorded layout (a
+    /// layout holds until the next one, S03 §7).
+    fn checked_years(&self, from_year: i32) -> std::ops::RangeInclusive<i32> {
         let last = self
             .beds
             .values()
@@ -70,7 +62,83 @@ impl Plan {
             .max()
             .unwrap_or(from_year)
             .max(from_year);
-        for year in from_year..=last {
+        from_year..=last
+    }
+
+    /// Checks the layout of every bed, in every year from `from_year` on: the
+    /// bed fits in the plot, has a valid width and does not overlap another
+    /// one. The aisle is not a rule but a question (S03 §15): see
+    /// [`Plan::check_placement_change`].
+    pub fn check_placements(&self, from_year: i32) -> Result<(), PlanError> {
+        match self.placement_errors(from_year).into_iter().next() {
+            Some(error) => Err(error),
+            None => Ok(()),
+        }
+    }
+
+    /// What a command checks after placing, moving or resizing a bed (S03
+    /// §15): the placement rules, then, unless the user chose "Keep here"
+    /// (`keep_close`), no pair of beds made closer than the aisle compared
+    /// with `before`. The command does not save when it fails.
+    pub fn check_placement_change(
+        &self,
+        before: &Plan,
+        from_year: i32,
+        keep_close: bool,
+    ) -> Result<(), PlanError> {
+        self.check_placements(from_year)?;
+        if keep_close {
+            return Ok(());
+        }
+        match self.pairs_made_too_close(before, from_year).next() {
+            Some(error) => Err(error),
+            None => Ok(()),
+        }
+    }
+
+    /// The pairs of beds too close in `self` that kept the aisle in `before`,
+    /// or did not exist there that year: a pair kept close on purpose earlier
+    /// does not count (S03 §15).
+    fn pairs_made_too_close<'a>(
+        &'a self,
+        before: &'a Plan,
+        from_year: i32,
+    ) -> impl Iterator<Item = PlanError> + 'a {
+        self.checked_years(from_year).flat_map(move |year| {
+            let beds = self.beds_in(year);
+            let previous = before.beds_in(year);
+            let mut errors = Vec::new();
+            for (i, (a_id, _, a)) in beds.iter().enumerate() {
+                for (b_id, _, b) in &beds[i + 1..] {
+                    if keeps_aisle(a, b, self.plot.aisle_cm) {
+                        continue;
+                    }
+                    let find = |id: BedId| previous.iter().find(|(p, _, _)| *p == id);
+                    let kept_before = match (find(*a_id), find(*b_id)) {
+                        (Some((_, _, pa)), Some((_, _, pb))) => {
+                            keeps_aisle(pa, pb, before.plot.aisle_cm)
+                        }
+                        _ => true,
+                    };
+                    if kept_before {
+                        errors.push(PlanError::AisleTooNarrow {
+                            a: *a_id,
+                            b: *b_id,
+                            year,
+                            aisle_cm: self.plot.aisle_cm,
+                        });
+                    }
+                }
+            }
+            errors
+        })
+    }
+
+    /// Every placement problem from `from_year` on, not only the first one: the
+    /// "to resolve" list of an import shows them all (S03 §13).
+    pub fn placement_errors(&self, from_year: i32) -> Vec<PlanError> {
+        let mut errors = Vec::new();
+        for year in self.checked_years(from_year) {
             let beds = self.beds_in(year);
             for (id, _, geometry) in &beds {
                 errors.extend(self.check_inside(*id, geometry, year).err());
@@ -114,15 +182,6 @@ impl Plan {
                 year,
             });
         }
-        let aisle = i64::from(self.plot.aisle_cm);
-        if dx < aisle && dy < aisle {
-            return Err(PlanError::AisleTooNarrow {
-                a: a_id,
-                b: b_id,
-                year,
-                aisle_cm: self.plot.aisle_cm,
-            });
-        }
         Ok(())
     }
 }
@@ -132,6 +191,7 @@ impl Plan {
     /// Refused, with the plan untouched, if the new plot is invalid or no
     /// longer holds the beds of any year: the plot is one for the whole garden
     /// and a past layout cannot be repaired, so a plot that breaks one is refused.
+    /// A pair already closer than the old aisle does not count (S03 §15).
     pub fn set_plot(
         &mut self,
         length_cm: u32,
@@ -154,7 +214,7 @@ impl Plan {
             .min()
             .unwrap_or(chrono::Datelike::year(&today))
             .min(chrono::Datelike::year(&today));
-        after.check_placements(first)?;
+        after.check_placement_change(self, first, false)?;
         *self = after;
         Ok(())
     }

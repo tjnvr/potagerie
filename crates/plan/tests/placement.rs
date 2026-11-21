@@ -95,47 +95,75 @@ fn overlapping_beds_are_refused() {
 }
 
 #[test]
-fn the_aisle_width_is_kept_between_beds() {
-    let mut plan = empty();
-    put(&mut plan, 1, 2026, at(0, 0, 300, 120));
+fn the_aisle_width_is_asked_for_between_beds() {
+    let mut start = empty();
+    put(&mut start, 1, 2026, at(0, 0, 300, 120));
+    // Bed 2 placed at `g`, as the commands check it: against the plan before.
+    let asked = |g: Geometry| {
+        let mut plan = start.clone();
+        put(&mut plan, 2, 2026, g);
+        plan.check_placement_change(&start, 2026, false)
+    };
     // 49 cm to the right: too close; exactly 50 cm: fine.
-    put(&mut plan, 2, 2026, at(349, 0, 300, 120));
     assert!(matches!(
-        plan.check_placements(2026),
+        asked(at(349, 0, 300, 120)),
         Err(PlanError::AisleTooNarrow {
             aisle_cm: 50,
             year: 2026,
             ..
         })
     ));
-    plan.set_layout(
-        bed_id(2),
-        2026,
-        Layout::Present(at(350, 0, 300, 120)),
-        today(),
-    )
-    .unwrap();
-    assert_eq!(plan.check_placements(2026), Ok(()));
+    assert_eq!(asked(at(350, 0, 300, 120)), Ok(()));
     // Below, 49 cm: too close; diagonal corners far enough on one axis: fine.
+    assert!(matches!(
+        asked(at(0, 169, 300, 120)),
+        Err(PlanError::AisleTooNarrow { .. })
+    ));
+    assert_eq!(asked(at(350, 100, 300, 120)), Ok(()));
+    // Too close is not a placement error: only the change asks about it.
+    let mut close = start.clone();
+    put(&mut close, 2, 2026, at(349, 0, 300, 120));
+    assert_eq!(close.check_placements(2026), Ok(()));
+    assert!(close.placement_errors(2026).is_empty());
+}
+
+#[test]
+fn a_pair_made_too_close_in_a_following_year_is_asked_for() {
+    let mut start = empty();
+    put(&mut start, 1, 2026, at(0, 0, 300, 120));
+    put(&mut start, 2, 2028, at(400, 0, 300, 120));
+    // Bed 1 moved in 2027, 40 cm from bed 2 of 2028: too close in 2028 only.
+    let mut plan = start.clone();
     plan.set_layout(
-        bed_id(2),
-        2026,
-        Layout::Present(at(0, 169, 300, 120)),
+        bed_id(1),
+        2027,
+        Layout::Present(at(60, 0, 300, 120)),
         today(),
     )
     .unwrap();
     assert!(matches!(
-        plan.check_placements(2026),
-        Err(PlanError::AisleTooNarrow { .. })
+        plan.check_placement_change(&start, 2027, false),
+        Err(PlanError::AisleTooNarrow { year: 2028, .. })
     ));
-    plan.set_layout(
-        bed_id(2),
-        2026,
-        Layout::Present(at(350, 100, 300, 120)),
-        today(),
-    )
-    .unwrap();
-    assert_eq!(plan.check_placements(2026), Ok(()));
+    assert_eq!(plan.check_placement_change(&start, 2027, true), Ok(()));
+}
+
+#[test]
+fn keep_close_never_lets_an_overlap_or_a_bed_outside_the_plot_through() {
+    let mut start = empty();
+    put(&mut start, 1, 2026, at(0, 0, 300, 120));
+    let mut over = start.clone();
+    put(&mut over, 2, 2026, at(250, 0, 300, 120));
+    assert!(matches!(
+        over.check_placement_change(&start, 2026, true),
+        Err(PlanError::BedsOverlap { .. })
+    ));
+    let mut outside = start.clone();
+    put(&mut outside, 2, 2026, at(1800, 0, 300, 120));
+    assert!(matches!(
+        outside.check_placement_change(&start, 2026, true),
+        Err(PlanError::OutsidePlot { .. })
+    ));
 }
 
 #[test]
