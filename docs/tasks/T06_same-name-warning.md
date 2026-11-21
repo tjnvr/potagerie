@@ -1,6 +1,6 @@
 # T06 · Flag two beds with the same name
 
-- Status: Ready
+- Status: Running
 - Owner: agent
 - Depends on: —
 - Refs: S01 F-PLN-1 (after lot 1)
