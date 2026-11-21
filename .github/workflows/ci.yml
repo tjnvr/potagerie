@@ -145,6 +145,19 @@ jobs:
 
       - name: Build the app (no installer)
         run: pnpm dlx @tauri-apps/cli@2.12.4 build --no-bundle
+      - name: Diagnose a direct launch (temporary)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:POTAGERIE_DATA_DIR = "$env:RUNNER_TEMP\diag"
+          $p = Start-Process -FilePath target\release\potagerie.exe -PassThru -RedirectStandardError "$env:RUNNER_TEMP\err.txt" -RedirectStandardOutput "$env:RUNNER_TEMP\out.txt"
+          Start-Sleep -Seconds 8
+          Write-Host "exited: $($p.HasExited) code: $($p.ExitCode)"
+          Get-Content "$env:RUNNER_TEMP\err.txt", "$env:RUNNER_TEMP\out.txt"
+          Get-ChildItem "$env:RUNNER_TEMP\diag"
+          if (-not $p.HasExited) { Stop-Process -Id $p.Id }
+          & $env:NATIVE_DRIVER --version
+          Get-ChildItem 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients' | ForEach-Object { "$($_.PSChildName) $((Get-ItemProperty $_.PSPath).name) $((Get-ItemProperty $_.PSPath).pv)" }
       - name: Smoke tests
         shell: bash
         run: |

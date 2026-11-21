@@ -35,9 +35,10 @@ let driver;
 /** @type {Session} */
 let app;
 
+/** Starts the app and waits for its interface (the first screen or the tabs). */
 async function launch() {
   app = await Session.start(BASE, APP);
-  await app.find(button("Plan"), 60_000);
+  await app.find("//button", 60_000);
 }
 
 async function counter() {
