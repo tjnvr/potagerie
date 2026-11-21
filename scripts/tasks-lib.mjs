@@ -198,16 +198,35 @@ export function loopState() {
   return { running, limit: readLimit() };
 }
 
-// Commits the task files changed on disk and pushes them to main.
-export function publish() {
-  const changed = (git("status", "--porcelain", "--", DIR) || "").split("\n").filter(Boolean)
-    .map((l) => l.slice(3)).filter((f) => /\.md$/.test(f));
-  if (!changed.length) return "nothing to publish";
-  const run = (...a) => execFileSync("git", a, { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
-  run("add", "--", ...changed);
-  run("commit", "-q", "-m", `docs(tasks): update ${changed.map((f) => f.split("/").pop().split("_")[0]).join(", ")} from the board`, "--", ...changed);
-  run("pull", "-q", "--rebase", "--autostash", "origin", "main");
-  run("push", "-q", "origin", "HEAD:main");
+const sh = (...a) => execFileSync("git", a, { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+
+// Task files with uncommitted changes, optionally only those untouched for `idleMs`.
+function editedTaskFiles(idleMs = 0) {
+  return (git("status", "--porcelain", "--", DIR) || "").split("\n").filter(Boolean)
+    .map((l) => l.slice(3)).filter((f) => /\.md$/.test(f))
+    .filter((f) => !idleMs || Date.now() - statSync(join(ROOT, f)).mtimeMs > idleMs);
+}
+
+// Only the task system lives in this checkout's commits; code always comes through an agent's task branch.
+const SAFE = /^(docs\/|scripts\/tasks|skills\/)/;
+
+// Commits the edited task files, then pushes this checkout's main if it holds only docs, task scripts and skills.
+export function publish({ idleMs = 0 } = {}) {
+  if (sh("rev-parse", "--abbrev-ref", "HEAD") !== "main") return "not on main: nothing published";
+  const out = [];
+  const changed = editedTaskFiles(idleMs);
+  if (changed.length) {
+    sh("add", "--", ...changed);
+    sh("commit", "-q", "-m", `docs(tasks): update ${changed.map((f) => f.split("/").pop().split("_")[0]).join(", ")} from the board`, "--", ...changed);
+    out.push(`committed ${changed.length} task file(s)`);
+  }
+  sh("fetch", "-q", "origin");
+  if (!sh("rev-list", "origin/main..HEAD")) return out.join(", ") || "nothing to publish";
+  const files = sh("diff", "--name-only", "origin/main...HEAD").split("\n").filter(Boolean);
+  const other = files.filter((f) => !SAFE.test(f));
+  if (other.length) return [...out, `not pushed: local commits touch ${other.slice(0, 3).join(", ")}${other.length > 3 ? "…" : ""}`].join(", ");
+  sh("pull", "-q", "--rebase", "--autostash", "origin", "main");
+  sh("push", "-q", "origin", "HEAD:main");
   lastFetch = 0;
-  return `published ${changed.length} task file(s)`;
+  return [...out, `pushed ${files.length} file(s) to main`].join(", ");
 }

@@ -6,7 +6,7 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync, appendFileSync } from "node:fs";
 import { join } from "node:path";
 import {
-  ROOT, HOME, MAX, fetchOrigin, readTasks, lastRun, limitReset, readLimit, writeLimit, clearLimit,
+  ROOT, HOME, MAX, fetchOrigin, readTasks, lastRun, limitReset, readLimit, writeLimit, clearLimit, publish,
 } from "./tasks-lib.mjs";
 
 const EVERY = Number(process.env.TASKS_LOOP_MINUTES || 5) * 60_000;
@@ -42,8 +42,16 @@ const tasksSh = (...args) => {
   catch (e) { return `failed: ${(e.stderr || e.message || "").trim()}`; }
 };
 
+let lastPublish = "";
 function tick() {
   const now = Date.now();
+  // 0. Send to main what was answered in the board (left alone 2 min) and the task-system commits.
+  try {
+    const out = publish({ idleMs: 120_000 });
+    if (out !== "nothing to publish" && out !== lastPublish) say(`publish · ${out}`);
+    lastPublish = out;
+  } catch (e) { say(`publish failed: ${(e.stderr || e.message || "").toString().trim().split("\n")[0]}`); }
+
   const limit = readLimit();
   if (limit && now < limit.until) return limit.until - now; // still paused
   if (limit) { say(`Claude limit over, resuming ${limit.tasks?.join(", ") || "work"}`); clearLimit(); }

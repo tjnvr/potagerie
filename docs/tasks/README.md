@@ -75,6 +75,7 @@ Worktrees and logs are in `../potagerie-tasks/` (outside the repository). `TASKS
 
 `scripts/tasks.sh loop` keeps the Mac awake (`caffeinate`) and, every 5 minutes:
 
+0. **Publish**: task files answered in the board (untouched for 2 minutes) are committed, and this checkout's `main` is pushed if its commits only touch `docs/`, `skills/` and the task scripts. Code is never pushed from here: it comes through a task branch.
 1. **Claude limit**: if an agent stopped on a Claude usage limit, the loop sleeps until the reset time given in the message (5 hours when there is none, plus 2 minutes), then resumes the tasks it cut. The board shows "Claude limit · resumes HH:MM".
 2. **Restarts**: an agent that stopped for another reason is restarted, twice at most; a task you answered in the board is resumed.
 3. **Next**: free slots (2) take the next `Ready` tasks.
