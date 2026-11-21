@@ -1,6 +1,6 @@
 # T18 · Red fruits in the catalogue: raspberry, strawberry and others
 
-- Status: Draft
+- Status: Ready
 - Owner: agent
 - Depends on: —
 - Refs: S02 §1, §3 bis, §4 · S01 F-PLA (plantings), F-VIS-1 (garden view), F-VIS-2 (timeline), "Wider catalogue" (after V1) · S03 §2 (dates), §5 (conflicts), §7 (free slots)
@@ -39,5 +39,6 @@ The user can plant red fruit bushes and strawberries on a bed, see them in the g
    (b) Treated like the vegetables: one planting per year, to be re-entered each year. Simpler, but a raspberry would vanish from the garden every winter.
    Crops: raspberry, strawberry, redcurrant, blackcurrant, gooseberry, thornless blackberry, blueberry (in a planter: it needs acid soil). Say which to leave out.
    Recommendation: (a), with the whole list.
+   Answer: a
 
 ## Log
