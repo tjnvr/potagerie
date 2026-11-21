@@ -65,7 +65,7 @@ Specific to prototypes:
 | S03 | Rules and calculations (dates, stages, conflicts, quantities, layouts, slots, suggestions, tasks, validation after a merge; plot and placement of the beds; sunlight in an annex) | 0.17 | Draft | [specs/POT-S03_rules-and-calculations_v0.17.md](specs/POT-S03_rules-and-calculations_v0.17.md) |
 | S05 | Technical spec (Rust + Svelte, desktop then mobile Tauri app, serverless CRDT sync) | 0.17 | Draft | [specs/POT-S05_technical-spec_v0.17.md](specs/POT-S05_technical-spec_v0.17.md) |
 | P01 | Isometric rendering prototype (SVG or Canvas?) | 0.2 | Draft | [prototypes/POT-P01_iso-rendering_v0.2/](prototypes/POT-P01_iso-rendering_v0.2/README.md) · [page](https://claude.ai/artifact/PBrzt3qta6sHKisnhfZWMv) |
-| D01 | Key V1 screens (E03 editor, E05 computer and phone, E07, visual direction) | 1.2 | Draft | [design/POT-D01_key-screens_v1.2/](design/POT-D01_key-screens_v1.2/README.md) · [canvas](https://claude.ai/artifact/DoHRUtcujzwPF6bfjdQtSN) |
+| D01 | Key V1 screens (E03 editor, E05 computer and phone, E07, visual direction) | 1.2 | Draft | [design/POT-D01_key-screens_v1.2/](design/POT-D01_key-screens_v1.2/README.md) · [canvas](https://claude.ai/artifact/DoHRUtcujzwPF6bfjdQtSN) (older French version, not maintained) |
 | D02 | Additional V1 screens (E02, E06, E07 computer, E09, E10 computer and phone, E11, cross-cutting states) | 0.2 | Draft | [design/POT-D02_additional-screens_v0.2/](design/POT-D02_additional-screens_v0.2/README.md) |
 
 ## Reserved codes
