@@ -58,4 +58,5 @@ Every push runs a few use cases in the real built app, with the real Rust comman
 - Version 0.10.1 (patch: tests and CI, nothing the user sees). Specs: S05 v0.21; S01 v1.9 and S03 v0.20 only get the new S05 link.
 - Checked: full local gate on macOS; both `app` jobs green in CI on the replayed code (run 44945943201).
 - NOT checked: `make e2e-app` run locally (this machine is macOS, which `tauri-driver` does not support); the macOS window (WKWebView), touch, the installed build and the native file windows themselves (UC-30, manual).
+- Pushed to `main` (8586dbf), tag v0.10.1: CI of `main` (run 44947197021) and of the tag (run 44947210056) green, all six jobs including both `app` jobs; release v0.10.1 published with the dmg, exe and msi.
 - Extra paths outside `Scope`: `.gitignore` (`e2e-app/results/`), `docs/specs/` (S05 v0.21 and the cross-references in S01 v1.9, S03 v0.20), `docs/POT-00_index.md`.
