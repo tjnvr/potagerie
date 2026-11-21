@@ -1,6 +1,6 @@
 # T05 · Resize a bed from the keyboard
 
-- Status: Ready
+- Status: Running
 - Owner: agent
 - Depends on: —
 - Refs: POT-00_review-2026-11 (seen, not fixed) · S01 §5
