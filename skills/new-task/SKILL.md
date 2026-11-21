@@ -5,7 +5,7 @@ description: Write a Potagerie task in docs/tasks/ so the work and its context s
 
 # New task
 
-1. Id: highest `T<NN>` in `docs/tasks/` on `origin/main` (and on your branch) + 1. Never reuse one.
+1. Id: highest `T<NN>` found in `docs/tasks/` on `origin/main`, on your branch **and on every other task branch** (`git for-each-ref refs/heads/task refs/remotes/origin/task`: other agents create tasks too) + 1. Never reuse one.
 2. Copy `docs/tasks/_template.md` to `docs/tasks/T<NN>_<topic>.md` (lowercase English, hyphens).
 3. Fill it, in English:
    - `From`: `Tim`, `T<NN> (agent)` or `chat`.
