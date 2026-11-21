@@ -1,6 +1,6 @@
 # T16 · One e2e server per task worktree
 
-- Status: Ready
+- Status: Running
 - Owner: agent
 - Depends on: —
 - Refs: `skills/spec-driven-delivery` step 5 (local gate)
