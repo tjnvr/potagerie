@@ -28,7 +28,7 @@ State of the requirements of S01 (§4) in the app at lot 1, read in the code on 
 | F-VIS-4 Season playback | Done | Garden, ×1 and ×2 | Measured at 60 frames/s (10 beds, normal density) |
 | F-VIS-5 Timeline annotations | Done | Timeline, "Annotate", double click / long press on a row, drag of a note or a period; bed panel, "Add a note"; `create_annotation`, `modify_annotation`, `delete_annotation` | Notes and periods, edit, delete, hide. A dragged note follows the row it is dropped on; a period, or a note of the whole garden, keeps its bed |
 | F-VIS-6 Screen layout | Done | App shell | Checked at 360 and 1440 px |
-| F-VIS-7 Bed panel | Partial | Garden and Plan | Read-only history present; the families of the two previous seasons are not shown (after lot 1); the "Move" action of the panel is absent (moving is done in the editor) |
+| F-VIS-7 Bed panel | Partial | Garden and Plan | Read-only history present; the families of the two previous seasons are not shown (after lot 1). "Move" opens the plan editor with the bed selected (T04), disabled in a past season |
 | F-CRE-1 Free slots | Done | Timeline (dotted), diorama ("Free") | |
 | F-CRE-2 Suggestions | Done | Click on a slot | Up to 3 crops, pre-filled dates |
 | F-EXP-1 Timeline export | Partial | Export screen; `export_timeline` | PDF (A4 only), PNG, period and beds of your choice; A3 after lot 1 |
