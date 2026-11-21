@@ -26,7 +26,7 @@ State of the requirements of S01 (§4) in the app at lot 1, read in the code on 
 | F-VIS-2 Timeline view | Done | Garden, under the diorama | Merged with the diorama; continuous scroll between years |
 | F-VIS-3 Time cursor | Done | Garden | |
 | F-VIS-4 Season playback | Done | Garden, ×1 and ×2 | Measured at 60 frames/s (10 beds, normal density) |
-| F-VIS-5 Timeline annotations | Partial | Timeline, "Annotate"; bed panel, "Add a note"; `create_annotation`, `modify_annotation`, `delete_annotation` | Notes and periods, edit, delete, hide. Absent: creation by double click / long press on a row, and moving an annotation by dragging it (corrected: marked Done before) |
+| F-VIS-5 Timeline annotations | Done | Timeline, "Annotate", double click / long press on a row, drag of a note or a period; bed panel, "Add a note"; `create_annotation`, `modify_annotation`, `delete_annotation` | Notes and periods, edit, delete, hide. A dragged note follows the row it is dropped on; a period, or a note of the whole garden, keeps its bed |
 | F-VIS-6 Screen layout | Done | App shell | Checked at 360 and 1440 px |
 | F-VIS-7 Bed panel | Partial | Garden and Plan | Read-only history present; the families of the two previous seasons are not shown (after lot 1); the "Move" action of the panel is absent (moving is done in the editor) |
 | F-CRE-1 Free slots | Done | Timeline (dotted), diorama ("Free") | |

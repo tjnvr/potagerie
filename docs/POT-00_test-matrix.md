@@ -38,6 +38,8 @@ against the Vite dev server with the in-memory fake of the Tauri commands (`?exa
 | UC-26 | Planting form: change the start date | F-PLA-2 | The end stays within a year of the start and follows the new date | automated (e2e) |
 | UC-27 | Plan: type a bed length in the panel | F-PLN-3 | No error; a refused value goes back to the real one | automated (e2e) |
 | UC-28 | Zoom and pan the garden view | F-VIS-1 | The wheel zooms around the pointer; dragging the background pans; zoomed all the way out, the wheel scrolls the page; a bed still opens on a click | automated (e2e) |
+| UC-29 | Timeline: double click (computer) or long press (touch) on a row | F-VIS-5 | "New note" opens on that bed, on that day; saved, the note stands there | automated (e2e; the long press through Chromium touch events only) |
+| UC-31 | Timeline: drag a note or a period | F-VIS-5 | A note takes the new date and the bed of the row it is dropped on; a period dragged into a past year is refused with the reason and goes back | automated (e2e) |
 | SER-01 | Catalogue sheet: no internal reference ("V1", "S02") in its footer, English and French | F-CAT-3 | The footer only says the sheet is read-only | automated (`front/e2e/series-form.spec.ts`) |
 | SER-02 | Catalogue: pick a crop, then filter by family | F-CAT-3 | The sheet always belongs to a card that is shown | automated (`front/e2e/series-form.spec.ts`) |
 | SER-03 | Catalogue on a phone (390 px): tap a crop card | F-CAT-3 | The sheet, under the cards, is scrolled into view | automated (`front/e2e/series-form.spec.ts`) |
@@ -105,7 +107,7 @@ e2e = Playwright against the fake of the commands (`?example`), which does not r
 | F-VIS-2 Timeline | unit `geometry.test.ts` (rows, phases, stacking, zoom 3 months to 3 years, scroll); e2e UC-06, UC-14, TML-01, LAY-05 | Covered. Greyed row of a missing bed: unit only |
 | F-VIS-3 Time cursor | e2e UC-05 (Next week, Today); unit `geometry.test.ts` | Covered |
 | F-VIS-4 Season playback | unit `animation.test.ts` (15 s a year, ×2, reduced motion, bounce); e2e DIO-01, DIO-02 (plays, frame p95, at full view and zoomed in) | Covered. e2e **PAN-09** (play, pause, resume), **PAN-10** (×1 default, ×2 exclusive and about twice as fast); LAY-02 for the size |
-| F-VIS-5 Annotations | e2e UC-07, TML-01, **REQ-02** (hide, edit window, delete); unit `note.test.ts`; Rust `annotations.rs` | Covered for what exists. Double click / long press creation and drag are absent (coverage doc corrected to Partial) |
+| F-VIS-5 Annotations | e2e UC-07, TML-01, **REQ-02** (hide, edit window, delete), **UC-29** (double click / long press creation), **UC-31** (drag, refusal goes back); unit `note.test.ts` (moved input), `geometry.test.ts` (row under the pointer); Rust `annotations.rs` | Covered. The long press on a real phone is not driven (UC-30 manual) |
 | F-VIS-6 Screen layout | e2e UC-12, UC-13, LAY-01..08, A11Y | Covered at 360 / 390 / 1440 px |
 | F-VIS-7 Bed panel | e2e UC-21, UC-25, **REQ-05** (rename in place); Rust `deletion_warning_quantities_and_history`, `families_of_the_two_previous_seasons`; LAY-03 | Covered. e2e **PAN-02..06** (plantings of the year, empty bed, History folded / open / empty, past planting read only, "Plant here", same panel from the garden) |
 | F-CRE-1 Free slots | Rust: `slot_of_35_days_dropped_and_36_days_kept`, window 1 March – 15 November, `t07`; e2e UC-06, LAY-05 | Covered |
