@@ -1,4 +1,4 @@
-//! Invariants checked on every crop of the V1 catalogue (67 crops), over many
+//! Invariants checked on every crop of the V1 catalogue (67 annual crops and the red fruits), over many
 //! slots: a suggestion must always make a valid planting that stays in its slot.
 //! The cases of S03 §12 only cover the 6 reference crops.
 
@@ -70,9 +70,10 @@ fn every_crop_gives_valid_suggestions_in_any_slot() {
 
 /// The crops no free slot can ever suggest. Winter crops (garlic, spring onion)
 /// harvest the next year: they are suggested in the slots that reach 15
-/// November, which they may overrun (S03 §9). If this list is not empty, the
+/// November, which they may overrun (S03 §9). The perennials are never
+/// suggested (S03 §9, v0.19). If this list changes, the
 /// catalogue or the rules changed: check it is on purpose.
-const NEVER_SUGGESTED: &[&str] = &[];
+const NEVER_SUGGESTED: &[&str] = &["raspberry", "strawberry"];
 
 #[test]
 fn only_the_known_crops_are_never_suggested() {

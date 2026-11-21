@@ -9,8 +9,8 @@ use catalogue::Catalogue;
 use chrono::{DateTime, Local, NaiveDate, Utc};
 use export::TimelineFormat;
 use plan::{
-    Annotation, AnnotationId, BedId, CellCm, Geometry, Incoherence, Layout, Mode, Plan, PlanId,
-    Planting, PlantingId, Plot, TypeAnnotation, TypeBed, YearView, Zone,
+    Annotation, AnnotationId, BedId, CellCm, Geometry, HarvestView, Incoherence, Layout, Mode,
+    Plan, PlanId, Planting, PlantingId, Plot, TypeAnnotation, TypeBed, YearView, Zone,
 };
 use serde::{Deserialize, Serialize};
 use specta::Type;
@@ -163,6 +163,10 @@ pub struct CropView {
     pub planting_out_end: String,
     pub row_cm: u32,
     pub spacing_cm: u32,
+    /// Usual years on the bed of a perennial (S02 §3 ter); `None` for an annual crop.
+    pub lifespan_years: Option<u32>,
+    /// `MM-DD`: first day of the yearly harvest of a perennial.
+    pub harvest_from: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Type)]
@@ -271,6 +275,8 @@ pub struct DatesPreview {
     pub pot_days: u32,
     pub rows: u32,
     pub plants_by_row: u32,
+    /// One harvest, or one a year for a perennial (S03 §2 bis): the mini-timeline.
+    pub harvests: Vec<HarvestView>,
 }
 
 /// What the form of E07 shows while the user types: computed by Rust, never by
@@ -489,6 +495,8 @@ pub fn catalogue() -> Vec<CropView> {
             planting_out_end: c.planting_out.end.to_string(),
             row_cm: c.row_cm,
             spacing_cm: c.spacing_cm,
+            lifespan_years: c.perennial.map(|p| p.lifespan_years),
+            harvest_from: c.perennial.map(|p| p.harvest_from.to_string()),
         })
         .collect()
 }
@@ -902,6 +910,7 @@ fn build_planting_preview(
             pot_days: planting.indoor_days,
             rows,
             plants_by_row,
+            harvests: HarvestView::of(&planting),
         }
     });
     PlantingPreview {

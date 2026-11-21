@@ -61,7 +61,8 @@ pub enum PlanError {
     /// Mode "indoor" for a crop without pots needs at least 1 day (S03 §2).
     #[error("at least 1 day in pots is required")]
     PotDaysRequired,
-    /// A manual end must be after the start of harvest (S03 §2).
+    /// A manual end must be after the start of harvest (S03 §2), or after the
+    /// planting out for a perennial (S03 §2 bis).
     #[error("manual end {end} must be after the start of harvest {harvest_start}")]
     InvalidManualEnd {
         end: NaiveDate,

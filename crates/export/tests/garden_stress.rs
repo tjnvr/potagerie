@@ -62,6 +62,7 @@ fn planting(bed_id: BedId, t1: u32, t2: u32, date: NaiveDate, days: [u32; 3]) ->
         indoor_days: days[0],
         after_days: days[1],
         duration_days: days[2],
+        perennial: None,
         manual_end: None,
     }
 }

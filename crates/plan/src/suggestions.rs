@@ -74,6 +74,10 @@ impl Suggestion {
 /// during the first 28 days of the slot, or not enough room for half of the
 /// harvest.
 pub fn evaluate(slot: &Slot, crop: &Crop, today: NaiveDate) -> Option<Suggestion> {
+    // A perennial is never suggested: a slot is the room of one season (S03 §9).
+    if crop.perennial.is_some() {
+        return None;
+    }
     let start = slot.start;
     let slot_end = slot.end;
 
@@ -104,6 +108,7 @@ pub fn evaluate(slot: &Slot, crop: &Crop, today: NaiveDate) -> Option<Suggestion
         indoor_days: crop.indoor_days,
         after_days: crop.harvest_after_days,
         duration_days: crop.harvest_duration_days,
+        perennial: None,
         manual_end: None,
     };
     let harvest_start = planting.dates().harvest_start;

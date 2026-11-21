@@ -104,6 +104,31 @@ pub struct PlantingView {
     /// garden view can show any date, and play the season, without
     /// calculating a stage itself.
     pub appearance_changes: Vec<AppearanceChange>,
+    /// The harvests `[start, end[`: one for an annual crop, one a year for a
+    /// perennial (S03 §2 bis). The timeline draws the harvest phase from them.
+    pub harvests: Vec<HarvestView>,
+}
+
+/// A harvest of a planting, `end` excluded like the end of the planting.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+pub struct HarvestView {
+    pub start: NaiveDate,
+    pub end: NaiveDate,
+}
+
+impl HarvestView {
+    /// The harvests of a planting (S03 §2 bis).
+    pub fn of(planting: &crate::planting::Planting) -> Vec<Self> {
+        planting
+            .harvests()
+            .into_iter()
+            .map(|h| Self {
+                start: h.start,
+                end: h.end,
+            })
+            .collect()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -217,6 +242,7 @@ fn planting_view(
         plants_by_row,
         appearance_today: s.appearance_on(today),
         appearance_changes: s.appearance_changes(),
+        harvests: HarvestView::of(s),
     }
 }
 

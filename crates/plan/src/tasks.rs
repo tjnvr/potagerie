@@ -73,7 +73,18 @@ impl Planting {
             Mode::Plants => vec![task(TaskType::Plant, dates.planting_out)],
             Mode::OpenGround => vec![task(TaskType::SowInGround, dates.planting_out)],
         };
-        tasks.push(task(TaskType::Harvest, dates.harvest_start));
+        if self.perennial.is_none() {
+            tasks.push(task(TaskType::Harvest, dates.harvest_start));
+            return tasks;
+        }
+        // One harvest a year: `harvest`, then `harvest-2`, `harvest-3`… (S03 §11).
+        for (i, harvest) in self.harvests().iter().enumerate() {
+            let mut t = task(TaskType::Harvest, harvest.start);
+            if i > 0 {
+                t.id = format!("{}-{}", t.id, i + 1);
+            }
+            tasks.push(t);
+        }
         tasks
     }
 }

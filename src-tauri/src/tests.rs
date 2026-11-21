@@ -746,7 +746,8 @@ fn crops_in_season_follow_the_planting_window() {
     assert!(ids.contains(&"carrot") && ids.contains(&"lettuce"));
     assert!(!ids.contains(&"tomato") && !ids.contains(&"leek"));
     let in_january = invoke(&window, "crops_of_season", json!({ "date": "2027-01-10" })).unwrap();
-    assert_eq!(in_january.as_array().unwrap().len(), 0);
+    // Only the raspberry, whose window straddles the new year (S02 §3 ter).
+    assert_eq!(in_january, json!(["raspberry"]));
 }
 
 fn start_with_a_bed(window: &WebviewWindow<MockRuntime>) -> String {

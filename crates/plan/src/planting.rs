@@ -1,13 +1,16 @@
 //! Dates of a planting (S03 §2).
 
-use catalogue::Crop;
-use chrono::NaiveDate;
+use catalogue::{Crop, MonthDay, Perennial};
+use chrono::{Datelike, NaiveDate};
 use serde::{Deserialize, Serialize};
 
 use crate::days::plus_days;
 use crate::error::PlanError;
 use crate::ids::BedId;
 use crate::zone::{Occupation, Zone};
+
+/// The longest lifespan of a perennial, in years (S03 §17).
+pub const MAX_LIFESPAN_YEARS: u32 = 20;
 
 /// How the planting starts (S01 F-PLA-1).
 #[cfg_attr(feature = "specta", derive(specta::Type))]
@@ -40,8 +43,12 @@ pub struct Planting {
     pub indoor_days: u32,
     /// Days from planting out to the start of harvest.
     pub after_days: u32,
-    /// Length of the harvest.
+    /// Length of the harvest (each year, for a perennial).
     pub duration_days: u32,
+    /// Lifespan and yearly harvest of a perennial, copied from the catalogue
+    /// like the durations (S03 §2 bis). Absent for an annual crop.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub perennial: Option<Perennial>,
     /// End modified by hand; it is not recomputed.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub manual_end: Option<NaiveDate>,
@@ -95,6 +102,7 @@ impl Planting {
             indoor_days: pot_days_for(crop, mode, pot_days)?,
             after_days: crop.harvest_after_days,
             duration_days: crop.harvest_duration_days,
+            perennial: crop.perennial,
             manual_end,
         };
         planting.check()?;
@@ -113,6 +121,7 @@ impl Planting {
         candidate.crop_id = crop.id.clone();
         candidate.after_days = crop.harvest_after_days;
         candidate.duration_days = crop.harvest_duration_days;
+        candidate.perennial = crop.perennial;
         candidate.indoor_days = pot_days_for(crop, self.mode, pot_days)?;
         candidate.check()?;
         *self = candidate;
@@ -143,7 +152,8 @@ impl Planting {
         }
     }
 
-    /// `m`, `r` and `f` (S03 §2).
+    /// `m`, `r` and `f` (S03 §2). A perennial first harvests on the first
+    /// `harvest_from` on or after that `r`, and ends after its lifespan (§2 bis).
     pub fn dates(&self) -> PlantingDates {
         let pot_days = i64::from(self.indoor_days);
         let after = i64::from(self.after_days);
@@ -160,9 +170,21 @@ impl Planting {
                 plus_days(self.date, after + pot_days),
             ),
         };
-        let end = self
-            .manual_end
-            .unwrap_or_else(|| plus_days(r, i64::from(self.duration_days)));
+        let (r, default_end) = match self.perennial {
+            None => (r, plus_days(r, i64::from(self.duration_days))),
+            Some(p) => {
+                let first = p.harvest_from.in_year(r.year());
+                let r = if first >= r {
+                    first
+                } else {
+                    p.harvest_from.in_year(r.year().saturating_add(1))
+                };
+                let years = i32::try_from(p.lifespan_years).unwrap_or(i32::MAX);
+                let end = MonthDay::from_date(m).in_year(m.year().saturating_add(years));
+                (r, end)
+            }
+        };
+        let end = self.manual_end.unwrap_or(default_end);
         PlantingDates {
             sowing,
             planting_out: m,
@@ -178,6 +200,35 @@ impl Planting {
             start: dates.planting_out,
             end: dates.end,
         }
+    }
+
+    /// The harvests, in date order: `[r, f[` for an annual crop; one a year,
+    /// cut to `[m, f[`, for a perennial (S03 §2 bis).
+    pub fn harvests(&self) -> Vec<Occupation> {
+        let dates = self.dates();
+        let Some(p) = self.perennial else {
+            return vec![Occupation {
+                start: dates.harvest_start,
+                end: dates.end,
+            }];
+        };
+        let mut harvests = Vec::new();
+        let mut year = dates.harvest_start.year();
+        loop {
+            let start = p.harvest_from.in_year(year);
+            if start >= dates.end || year == i32::MAX {
+                break;
+            }
+            let harvest = Occupation {
+                start,
+                end: plus_days(start, i64::from(self.duration_days)).min(dates.end),
+            };
+            if start >= dates.harvest_start && !harvest.is_empty() {
+                harvests.push(harvest);
+            }
+            year += 1;
+        }
+        harvests
     }
 
     /// Timeline phases (S03 §2).
@@ -225,11 +276,24 @@ impl Planting {
         if self.mode == Mode::Indoor && self.indoor_days == 0 {
             return Err(PlanError::PotDaysRequired);
         }
+        if let Some(p) = self.perennial {
+            if !(1..=MAX_LIFESPAN_YEARS).contains(&p.lifespan_years) {
+                return Err(PlanError::OutOfRange {
+                    what: "lifespan",
+                    value: p.lifespan_years.to_string(),
+                });
+            }
+        }
         let dates = self.dates();
-        if self.manual_end.is_some() && dates.end <= dates.harvest_start {
+        // A perennial may be ended before its first harvest (S03 §2 bis).
+        let bound = match self.perennial {
+            None => dates.harvest_start,
+            Some(_) => dates.planting_out,
+        };
+        if self.manual_end.is_some() && dates.end <= bound {
             return Err(PlanError::InvalidManualEnd {
                 end: dates.end,
-                harvest_start: dates.harvest_start,
+                harvest_start: bound,
             });
         }
         if self.occupation().is_empty() {

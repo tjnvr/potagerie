@@ -197,6 +197,10 @@ export type CropView = {
 	planting_out_end: string,
 	row_cm: number,
 	spacing_cm: number,
+	/**  Usual years on the bed of a perennial (S02 §3 ter); `None` for an annual crop. */
+	lifespan_years: number | null,
+	/**  `MM-DD`: first day of the yearly harvest of a perennial. */
+	harvest_from: string | null,
 };
 
 /**  The dates and quantities of a planting being entered (S03 §2, §6). */
@@ -216,6 +220,8 @@ export type DatesPreview = {
 	pot_days: number,
 	rows: number,
 	plants_by_row: number,
+	/**  One harvest, or one a year for a perennial (S03 §2 bis): the mini-timeline. */
+	harvests: HarvestView[],
 };
 
 /**
@@ -246,6 +252,12 @@ export type GeometryInput = {
 	y: number,
 	length_cm: number,
 	width_cm: number,
+};
+
+/**  A harvest of a planting, `end` excluded like the end of the planting. */
+export type HarvestView = {
+	start: string,
+	end: string,
 };
 
 /**  What an import file holds, before it replaces anything (F-CPT-3). */
@@ -363,6 +375,11 @@ export type PlantingView = {
 	 *  calculating a stage itself.
 	 */
 	appearance_changes: AppearanceChange[],
+	/**
+	 *  The harvests `[start, end[`: one for an annual crop, one a year for a
+	 *  perennial (S03 §2 bis). The timeline draws the harvest phase from them.
+	 */
+	harvests: HarvestView[],
 };
 
 export type PlotEdit = {
@@ -427,7 +444,9 @@ export type SlotView = {
 	suggestions: SuggestionView[],
 };
 
-export type Stage = "sowing" | "young_shoot" | "adult" | "harvest";
+export type Stage = "sowing" | "young_shoot" | "adult" | "harvest" | 
+/**  A perennial in winter: bare, without leaves or fruit (S03 §3). */
+"dormant";
 
 export type SuggestionView = {
 	crop_id: string,

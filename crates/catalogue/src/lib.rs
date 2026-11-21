@@ -46,6 +46,19 @@ pub struct Crop {
     pub spacing_cm: u32,
     /// Not used in V1; reserved for frost alerts.
     pub frost_sensitive: bool,
+    /// Set for a crop that stays several years on its bed (S02 §3 ter).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub perennial: Option<Perennial>,
+}
+
+/// What a perennial adds to its sheet (S02 §2, S03 §2 bis).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Perennial {
+    /// Usual years on the bed before it is renewed: the default end.
+    pub lifespan_years: u32,
+    /// First day of the harvest, each year.
+    pub harvest_from: MonthDay,
 }
 
 /// A `MM-DD` → `MM-DD` period of the catalogue.
@@ -260,8 +273,67 @@ mod tests {
                 row_cm: 80,
                 spacing_cm: 60,
                 frost_sensitive: true,
+                perennial: None,
             }
         );
+    }
+
+    #[test]
+    fn red_fruits_match_s02() {
+        let md = |m, d| MonthDay::new(m, d).unwrap();
+        let raspberry = Catalogue::v1().crop("raspberry").unwrap();
+        assert_eq!(
+            *raspberry,
+            Crop {
+                id: "raspberry".into(),
+                name: "Raspberry".into(),
+                family: "Rosaceae".into(),
+                indoor_days: 0,
+                harvest_after_days: 180,
+                harvest_duration_days: 45,
+                planting_out: Period {
+                    start: md(11, 1),
+                    end: md(3, 15),
+                },
+                row_cm: 150,
+                spacing_cm: 50,
+                frost_sensitive: false,
+                perennial: Some(Perennial {
+                    lifespan_years: 10,
+                    harvest_from: md(6, 25),
+                }),
+            }
+        );
+        let strawberry = Catalogue::v1().crop("strawberry").unwrap();
+        assert_eq!(
+            strawberry.perennial,
+            Some(Perennial {
+                lifespan_years: 3,
+                harvest_from: md(5, 15),
+            })
+        );
+        assert_eq!(
+            (
+                strawberry.harvest_after_days,
+                strawberry.harvest_duration_days
+            ),
+            (180, 40)
+        );
+        let perennials = Catalogue::v1()
+            .iter()
+            .filter(|c| c.perennial.is_some())
+            .count();
+        assert_eq!(perennials, 2);
+        assert_eq!(Catalogue::v1().crops().len(), 69);
+    }
+
+    #[test]
+    fn perennials_have_a_lifespan_from_1_to_20_years() {
+        for c in Catalogue::v1().iter() {
+            if let Some(p) = c.perennial {
+                assert!((1..=20).contains(&p.lifespan_years), "{}", c.id);
+            }
+        }
     }
 
     #[test]

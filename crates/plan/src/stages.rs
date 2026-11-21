@@ -1,6 +1,6 @@
 //! Visual stages in the garden view (S03 §3).
 
-use chrono::NaiveDate;
+use chrono::{Datelike, NaiveDate};
 use serde::{Deserialize, Serialize};
 
 use crate::planting::{Mode, Planting};
@@ -13,6 +13,8 @@ pub enum Stage {
     YoungShoot,
     Adult,
     Harvest,
+    /// A perennial in winter: bare, without leaves or fruit (S03 §3).
+    Dormant,
 }
 
 /// What the garden view draws on the zone at a given day.
@@ -80,6 +82,19 @@ impl Planting {
         }
         if d >= dates.end {
             return Appearance::Nothing;
+        }
+        if self.perennial.is_some() {
+            if self.harvests().iter().any(|h| h.contains(d)) {
+                return Appearance::Plant(Stage::Harvest);
+            }
+            // Winter: outside the search window of the free slots (S03 §8).
+            let day = (d.month(), d.day());
+            if !((3, 1)..(11, 15)).contains(&day) {
+                return Appearance::Plant(Stage::Dormant);
+            }
+            if d >= dates.harvest_start {
+                return Appearance::Plant(Stage::Adult);
+            }
         }
         let elapsed = (d - dates.planting_out).num_days();
         let duration = (dates.harvest_start - dates.planting_out).num_days();

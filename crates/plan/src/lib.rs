@@ -50,8 +50,8 @@ pub use suggestions::{MAX_SUGGESTIONS, Suggestion, evaluate};
 pub use tasks::{Task, TaskType};
 pub use validation::Fraction;
 pub use view::{
-    AnnotationView, BedView, ConflictView, PlantingView, PlotView, SlotView, SuggestionView,
-    TaskView, YearView,
+    AnnotationView, BedView, ConflictView, HarvestView, PlantingView, PlotView, SlotView,
+    SuggestionView, TaskView, YearView,
 };
 pub use window::{in_window, window_starting_in};
 pub use zone::{Occupation, Zone};

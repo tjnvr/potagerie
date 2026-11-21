@@ -802,5 +802,31 @@
     "row_cm": 25,
     "spacing_cm": 15,
     "frost_sensitive": true
+  },
+  {
+    "id": "raspberry",
+    "name": "Raspberry",
+    "family": "Rosaceae",
+    "indoor_days": 0,
+    "harvest_after_days": 180,
+    "harvest_duration_days": 45,
+    "planting_out": { "start": "11-01", "end": "03-15" },
+    "row_cm": 150,
+    "spacing_cm": 50,
+    "frost_sensitive": false,
+    "perennial": { "lifespan_years": 10, "harvest_from": "06-25" }
+  },
+  {
+    "id": "strawberry",
+    "name": "Strawberry",
+    "family": "Rosaceae",
+    "indoor_days": 0,
+    "harvest_after_days": 180,
+    "harvest_duration_days": 40,
+    "planting_out": { "start": "08-01", "end": "10-15" },
+    "row_cm": 40,
+    "spacing_cm": 30,
+    "frost_sensitive": false,
+    "perennial": { "lifespan_years": 3, "harvest_from": "05-15" }
   }
 ]
