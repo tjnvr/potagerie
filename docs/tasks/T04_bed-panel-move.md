@@ -1,6 +1,6 @@
 # T04 · Bed panel: "Move" action
 
-- Status: Ready
+- Status: Running
 - Owner: agent
 - Depends on: —
 - Refs: S01 F-VIS-7 · lot1-coverage
