@@ -1,6 +1,6 @@
 # T13 · Test the real app windows in CI (tauri-driver)
 
-- Status: Ready
+- Status: Running
 - Owner: agent
 - Depends on: —
 - Refs: POT-00_review-2026-11 (known problem 2) · S05 §3 · POT-00_test-matrix.md
