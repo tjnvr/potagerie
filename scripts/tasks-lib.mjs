@@ -169,7 +169,8 @@ export function lastRun(id) {
 
 // Claude usage limits. Returns the time (ms) when Claude can be used again, or null.
 // `now` is when the message was written: a reset already past means the limit is over.
-const LIMIT = /usage limit|limit reached|hit your limit|limit will reset|out of (?:extra )?usage|credit balance is too low|rate[_ ]limit/i;
+// e.g. "You've hit your session limit · resets 2:40pm (Europe/Paris)", "Claude AI usage limit reached|1795262400".
+const LIMIT = /usage limit|limit reached|hit your (?:[\w-]+ )*limit|limit will reset|out of (?:extra )?usage|credit balance is too low|rate[_ ]limit/i;
 export function limitReset(text, now = Date.now()) {
   if (!LIMIT.test(text)) return null;
   const epoch = text.match(/\|(\d{10})\b/);

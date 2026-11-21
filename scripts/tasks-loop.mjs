@@ -70,12 +70,16 @@ function tick() {
   // 2. Restart what stopped: limit victims, crashed agents (a few times), answered questions.
   const r = retries();
   for (const t of state.tasks) {
-    if (t.alive || t.owner !== "agent") continue;
+    if (t.alive) { delete r[t.id]; continue; } // a run in progress starts a fresh count
+    if (t.owner !== "agent") continue;
     if (t.status === "Done" || (t.status === "Blocked" && !t.answered)) { delete r[t.id]; continue; }
     const victim = limit?.tasks?.includes(t.id);
     if (t.stalled && !victim) {
+      if ((r[t.id] || 0) >= RETRIES) {
+        if (r[t.id] === RETRIES) { say(`${t.id} keeps stopping (${RETRIES} restarts): left alone, see its log`); r[t.id] = RETRIES + 1; }
+        continue;
+      }
       r[t.id] = (r[t.id] || 0) + 1;
-      if (r[t.id] > RETRIES) { if (r[t.id] === RETRIES + 1) say(`${t.id} keeps stopping (${RETRIES} restarts): left alone, see its log`); continue; }
     }
     if (t.stalled || t.answered) {
       if (state.running >= MAX) break;
