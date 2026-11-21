@@ -1,6 +1,6 @@
 # T01 · Aisle bubble "Keep here" / "Go back"
 
-- Status: Blocked
+- Status: Running
 - Owner: agent
 - Depends on: —
 - Refs: S01 F-PLN-2 · S03 (plot and placement of the beds) · lot1-coverage
