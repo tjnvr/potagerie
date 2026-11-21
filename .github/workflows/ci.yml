@@ -91,6 +91,76 @@ jobs:
           path: front/test-results
           if-no-files-found: ignore
 
+  # Smoke tests of the real app (APP-xx in docs/POT-00_test-matrix.md): the built
+  # binary, its webview, the Rust commands and SQLite, through tauri-driver.
+  # Not on macOS: tauri-driver does not support WKWebView.
+  app:
+    name: Real app (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux, WebKitGTK
+            os: ubuntu-24.04
+          - name: Windows, WebView2
+            os: windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install WebKitGTK, its WebDriver and a virtual display
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev libssl-dev webkit2gtk-driver xvfb
+
+      # msedgedriver must match the WebView2 runtime, not the Edge browser.
+      - name: Download the msedgedriver of the WebView2 version
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $key = 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'
+          $version = (Get-ItemProperty $key).pv
+          Write-Host "WebView2 $version"
+          Invoke-WebRequest "https://msedgedriver.microsoft.com/$version/edgedriver_win64.zip" -OutFile "$env:RUNNER_TEMP\edgedriver.zip"
+          Expand-Archive "$env:RUNNER_TEMP\edgedriver.zip" -DestinationPath "$env:RUNNER_TEMP\edgedriver"
+          "NATIVE_DRIVER=$env:RUNNER_TEMP\edgedriver\msedgedriver.exe" >> $env:GITHUB_ENV
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: app
+      - name: Install tauri-driver
+        run: cargo install tauri-driver --locked
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: front/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: front/pnpm-lock.yaml
+      - run: pnpm --dir front install --frozen-lockfile
+
+      - name: Build the app (no installer)
+        run: pnpm dlx @tauri-apps/cli@2.12.4 build --no-bundle
+      - name: Smoke tests
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = Linux ]; then
+            xvfb-run -a node --test e2e-app/smoke.test.mjs
+          else
+            node --test e2e-app/smoke.test.mjs
+          fi
+      - name: Keep the screenshots of failed steps
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-smoke-${{ runner.os }}
+          path: e2e-app/results
+          if-no-files-found: ignore
+
   bundle:
     name: Bundle (${{ matrix.name }})
     strategy:
