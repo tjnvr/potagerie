@@ -52,6 +52,7 @@ Dropping a bed closer than the minimum aisle offers "Keep here" or "Go back" ins
    - (a) Widen `Scope` to the files above and accept the design. **Recommended.**
    - (b) The same, but drop the flag: Rust accepts narrow aisles and the front decides when to show the bubble. This duplicates the rule in the front, against "Rust owns the rules".
    - (c) Keep the diorama out (it keeps the error message there) and log a follow-up task for it.
+   Answer: This is a technical choice: under the new rule (skill run-task, "Decide, do not ask"), it is yours. Go with (a), as recommended; the bubble itself is what S01 F-PLN-2 describes.
 
 ## Log
 
