@@ -1,9 +1,19 @@
 // End-to-end tests of the interface (docs/POT-00_test-matrix.md). They run against
 // the Vite dev server with the in-memory fake of the Tauri commands (`?example`),
 // in Chromium and in WebKit (the engine of the macOS app).
+import { createHash } from "node:crypto";
+import { fileURLToPath } from "node:url";
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = Number(process.env.E2E_PORT ?? 5320);
+// Each checkout (task worktree) gets its own port, derived from the path of `front/`, so
+// that suites run side by side never test each other's server. `E2E_PORT` overrides it;
+// the CI keeps 5320.
+function checkoutPort(): number {
+  const dir = fileURLToPath(new URL(".", import.meta.url));
+  return 5400 + (createHash("sha1").update(dir).digest().readUInt32BE(0) % 2000);
+}
+
+const PORT = Number(process.env.E2E_PORT ?? (process.env.CI ? 5320 : checkoutPort()));
 
 export default defineConfig({
   testDir: "./e2e",
@@ -25,7 +35,9 @@ export default defineConfig({
   webServer: {
     command: `pnpm exec vite --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}`,
-    reuseExistingServer: !process.env.CI,
+    // Reusing a server already on the port is opt-in (`E2E_REUSE=1`): it may belong to
+    // another checkout and serve other code.
+    reuseExistingServer: !process.env.CI && process.env.E2E_REUSE === "1",
     timeout: 60_000,
   },
 });
