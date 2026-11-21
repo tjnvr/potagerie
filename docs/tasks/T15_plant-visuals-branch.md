@@ -1,6 +1,6 @@
 # T15 · Land or drop the branch feat/plant-visuals
 
-- Status: Ready
+- Status: Running
 - Owner: agent
 - Depends on: —
 - Refs: S01 §5 (visual direction) · D01 (DV01) · S02 · git branch `feat/plant-visuals`
