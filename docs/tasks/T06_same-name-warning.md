@@ -16,12 +16,16 @@ Two beds with the same name are allowed but flagged.
 
 ## Acceptance
 
-- [ ] Where and how the flag shows, in S01 or D02 (Tim).
+- [ ] Written by the agent from S01 once the question is answered.
 
 ## Scope
 
-- to be set
+- Decided by the agent.
 
 ## Questions
+
+1. [functional] Build it now? S01 lists the warning for two beds with the same name for after lot 1.
+   (a) Yes, now. (b) Later.
+   Recommendation: (a), it is small.
 
 ## Log

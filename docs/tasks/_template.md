@@ -23,15 +23,15 @@ Each line is checkable by the agent alone.
 
 ## Scope
 
-Paths the agent may change. Anything else: Blocked, with a question.
+Where the work is expected. A starting point: the agent may touch more, and says so in the Log.
 
 - `front/src/lib/…`
 - `docs/specs/…` (only if the spec must change: new version, per `spec-driven-delivery`)
 
 ## Questions
 
-<!-- Agent: numbered questions, the options seen, a recommendation. Tim: "Answer: …" under each. -->
+<!-- Only [functional] questions, for Tim: what the user would see with each option, a recommendation. Tim answers "Answer: …" under each. -->
 
 ## Log
 
-<!-- Agent, at the end of each run: date, what changed, version shipped, spec versions, what was checked, what was NOT checked. -->
+<!-- Agent, at the end of each run: date, what changed, version shipped, spec versions, what was checked, what was NOT checked. Decisions: one line per technical choice. Stuck: what was tried, if any. -->

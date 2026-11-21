@@ -30,4 +30,8 @@ The bed panel reminds the families grown on the bed the two previous seasons.
 
 ## Questions
 
+1. [functional] Show the families grown on a bed the two previous seasons in its panel now? S01 lists it for after lot 1.
+   (a) Yes, now. (b) Later.
+   Recommendation: (a).
+
 ## Log

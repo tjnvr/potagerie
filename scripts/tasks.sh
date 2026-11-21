@@ -164,5 +164,9 @@ case "${1:-board}" in
   log) [ -n "${2:-}" ] || die "usage: tasks.sh log T<NN>"; tail -n 50 -f "$HOME_DIR/logs/$2.log" ;;
   clean) clean ;;
   ui) exec node "$ROOT/scripts/tasks-ui.mjs" ;;
-  *) die "usage: tasks.sh [board | run T<NN> | next | log T<NN> | clean | ui]" ;;
+  loop)
+    # caffeinate keeps the Mac awake while the loop runs (macOS only).
+    if command -v caffeinate > /dev/null; then exec caffeinate -is node "$ROOT/scripts/tasks-loop.mjs"; fi
+    exec node "$ROOT/scripts/tasks-loop.mjs" ;;
+  *) die "usage: tasks.sh [board | run T<NN> | next | log T<NN> | clean | ui | loop]" ;;
 esac

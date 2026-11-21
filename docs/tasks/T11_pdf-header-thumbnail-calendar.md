@@ -16,12 +16,16 @@ The exported timeline carries a header, a thumbnail of the plan and, as an optio
 
 ## Acceptance
 
-- [ ] To be split in three tasks once the layout is in D02 (Tim).
+- [ ] Written by the agent from S01 once the question is answered.
 
 ## Scope
 
-- to be set
+- Decided by the agent.
 
 ## Questions
+
+1. [functional] Which of these do you want in the exported timeline now: a header (garden name, period, date), a thumbnail of the plan, the task calendar? S01 lists all three for after lot 1.
+   (a) Header only. (b) Header and plan thumbnail. (c) All three. (d) Later.
+   Recommendation: (a).
 
 ## Log

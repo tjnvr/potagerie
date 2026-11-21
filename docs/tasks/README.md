@@ -22,31 +22,36 @@ The memory of the work, one file per task. The specs say **what** the app does; 
 | Field | Values |
 |---|---|
 | Status | `Draft` · `Ready` · `Running` · `Blocked` · `Done` |
-| Owner | `agent` (an agent may take it) or `Tim` (needs a human: a real device, a decision, a canvas) |
+| Owner | `agent` (an agent may take it) or `Tim` (needs a human: a real device, a canvas, a product choice) |
 | Depends on | Task ids that must be `Done` first, or `—` |
 | Refs | The spec items the task implements |
 | From | Who created it and in which context: `Tim`, `T04 (agent)`, `chat` |
 
-Sections: **Context** (why the task exists: what was seen, where, what was tried), **Goal** (one sentence), **Acceptance** (checkable: S03 §12 cases, `UC-xx` rows, commands), **Scope** (paths the agent may touch), **Questions**, **Log**.
+Sections: **Context** (why the task exists: what was seen, where, what was tried), **Goal** (one sentence), **Acceptance** (checkable: S03 §12 cases, `UC-xx` rows, commands), **Scope** (where the work is expected; a starting point), **Questions** (`[functional]` only), **Log** (with `Decisions`).
 
 ## Statuses
 
 ```
 Draft ───────▶ Ready ──(agent)──▶ Running ──▶ Done        pushed to main, Log filled
                                        │
-                                       └──▶ Blocked ──(Tim answers)──▶ Running
+                                       ├──▶ Blocked, [functional] question ──(Tim answers)──▶ Running
+                                       └──▶ Blocked, stuck (technical) ──(run again)──▶ Running
 ```
 
-- **Draft**: not runnable yet: a decision or a spec is missing. Its `Questions` say what.
+- **Draft**: waits for a functional decision from Tim (one `[functional]` question). Nothing else keeps a task in Draft.
 - **Ready**: an agent can do it alone (the specs answer everything) once its dependencies are `Done`. Nothing runs on its own: a task starts when it is launched (`run`, `next`).
 - **Running** and **Blocked** live on the branch `task/T<NN>-<topic>`, in the task's worktree. `main` only ever sees `Draft`, `Ready` and `Done`.
 - **Done**: the slice passed the full local gate and was pushed to `main` by the agent (skill `run-task`). Tim reads the Log afterwards.
+
+## Who decides what
+
+Tim decides **functional scope only**: what the user can see or do, and when (which lot). Everything else (code, design, files, specs S03 / S05 written to match S01, tests, edge cases) is decided by the agents, written in the task's `Log` under `Decisions`, and never asked. A technical dead end is not a question either: the task is marked stuck and the next run picks it up.
 
 ## Who does what
 
 - **Agents running a task** never widen it: what they find outside its scope (a bug, a missing rule, a follow-up) becomes a new task, pushed with their work (skill `new-task`).
 - **Chat sessions** turn a discussion into tasks before it ends, so the next session starts from the file, not from memory.
-- **Tim** launches tasks, answers the `Blocked` and `Draft` questions (in the board: an answer to a blocked task is committed on its branch and can resume it; an answer to a task not started is written in the working tree, to commit), and reads the Logs.
+- **Tim** launches tasks and answers `[functional]` questions in the board. An answer to a blocked task is committed on its branch and can resume it; an answer to a `Draft` can set it `Ready`, and **Publish** pushes the task files to `main`.
 
 ## Commands
 
@@ -58,11 +63,22 @@ Draft ───────▶ Ready ──(agent)──▶ Running ──▶ Do
 | `scripts/tasks.sh next` | Starts the first `Ready` agent task whose dependencies are `Done`, if fewer than 2 are running |
 | `scripts/tasks.sh log T07` | Follows the agent's output |
 | `scripts/tasks.sh clean` | Removes the worktrees and branches of `Done` tasks |
+| `scripts/tasks.sh loop` | Runs the tasks continuously on this Mac (see below) |
 
 Worktrees and logs are in `../potagerie-tasks/` (outside the repository). `TASKS_MAX` sets the number of tasks running at once (2 by default).
 
-To let tasks advance on their own, run `next` on a schedule, e.g. every hour (`crontab -e`):
+## Running continuously
+
+`scripts/tasks.sh loop` keeps the Mac awake (`caffeinate`) and, every 5 minutes:
+
+1. **Claude limit**: if an agent stopped on a Claude usage limit, the loop sleeps until the reset time given in the message (5 hours when there is none, plus 2 minutes), then resumes the tasks it cut. The board shows "Claude limit · resumes HH:MM".
+2. **Restarts**: an agent that stopped for another reason is restarted, twice at most; a task you answered in the board is resumed.
+3. **Next**: free slots (2) take the next `Ready` tasks.
+
+Stuck tasks (technical dead end) and tasks waiting for a `[functional]` answer are left alone. One loop at a time; its journal is `../potagerie-tasks/loop.log`. Leave it in a terminal tab, or in the background:
 
 ```
-0 * * * * cd ~/github.com/tjnvr/potagerie && scripts/tasks.sh next >> ../potagerie-tasks/next.log 2>&1
+nohup scripts/tasks.sh loop > /dev/null 2>&1 &
 ```
+
+Settings: `TASKS_MAX` (agents at once, 2), `TASKS_LOOP_MINUTES` (5), `TASKS_LIMIT_HOURS` (5), `TASKS_LOOP_RETRIES` (2).

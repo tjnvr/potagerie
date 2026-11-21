@@ -30,4 +30,8 @@ The PDF export offers A3 landscape next to A4.
 
 ## Questions
 
+1. [functional] Offer A3 paper in the timeline export now? S01 lists it for after lot 1.
+   (a) Yes, now. (b) Later.
+   Recommendation: (b), unless you print in A3.
+
 ## Log

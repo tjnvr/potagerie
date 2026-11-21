@@ -16,12 +16,16 @@ A selected bed can be rotated by a quarter turn and duplicated, from its bar or 
 
 ## Acceptance
 
-- [ ] To be written: S03 cases for a rotation that would overlap or leave the plot, and for a duplicate with no free spot.
+- [ ] Written by the agent from S01 once the question is answered.
 
 ## Scope
 
-- to be set
+- Decided by the agent.
 
 ## Questions
+
+1. [functional] Build rotate and duplicate a bed now? S01 lists them for after lot 1.
+   (a) Yes, now. (b) Later.
+   Recommendation: (a).
 
 ## Log

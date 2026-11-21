@@ -16,12 +16,16 @@ Decide whether the plan resize handles must be reachable from the keyboard, sinc
 
 ## Acceptance
 
-- [ ] Decision written in S01 or S05 (Tim).
+- [ ] Written by the agent from S01 once the question is answered.
 
 ## Scope
 
-- to be set
+- Decided by the agent.
 
 ## Questions
+
+1. [functional] Should the resize handles on the plan also work from the keyboard (Tab to a handle, arrow keys to resize)? Today the bed panel already lets you type a size, and S01 says the keyboard is never required.
+   (a) Yes, add keyboard resizing on the plan. (b) No, the panel fields are enough.
+   Recommendation: (b).
 
 ## Log

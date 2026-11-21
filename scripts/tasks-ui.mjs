@@ -2,136 +2,10 @@
 // Local board of docs/tasks/: statuses, dependency order, details, launch.
 // No dependency: node scripts/tasks-ui.mjs, then http://localhost:4321 (TASKS_PORT to change).
 import { createServer } from "node:http";
-import { execFile, execFileSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
-
-const ROOT = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
-const DIR = "docs/tasks";
-const BASE = process.env.TASKS_BASE || "origin/main";
-const HOME = process.env.TASKS_HOME || join(resolve(ROOT, ".."), "potagerie-tasks");
-const MAX = Number(process.env.TASKS_MAX || 2);
-const PORT = Number(process.env.TASKS_PORT || 4321);
-const ORDER = ["Draft", "Ready", "Running", "Blocked", "Done"];
-
-const git = (...args) => {
-  try { return execFileSync("git", args, { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }); }
-  catch { return null; }
-};
-
-let lastFetch = 0;
-function fetchOrigin(force = false) {
-  if (!force && Date.now() - lastFetch < 60_000) return;
-  git("fetch", "-q", "origin");
-  lastFetch = Date.now();
-}
-
-// An agent is alive while its pid file names a live process (written by tasks.sh run).
-function alive(id) {
-  const p = join(HOME, "pids", `${id}.pid`);
-  if (!existsSync(p)) return false;
-  try { process.kill(Number(readFileSync(p, "utf8").trim()), 0); return true; } catch { return false; }
-}
-
-const field = (text, name) => (text.match(new RegExp(`^- ${name}: *(.*)$`, "m"))?.[1] ?? "").trim();
-const list = (v) => v.split(",").map((s) => s.trim()).filter((s) => /^T\d+$/.test(s));
-
-function readTasks() {
-  const isTask = (f) => /^T\d+_[^/]*\.md$/.test(f);
-  const remote = (git("ls-tree", "--name-only", BASE, `${DIR}/`) || "")
-    .split("\n").map((f) => f.split("/").pop()).filter(isTask);
-  const local = existsSync(join(ROOT, DIR)) ? readdirSync(join(ROOT, DIR)).filter(isTask) : [];
-  const names = [...new Set([...remote, ...local])];
-  const branches = (git("for-each-ref", "--format=%(refname:short)", "refs/heads/task/") || "")
-    .split("\n").filter(Boolean);
-  const tasks = names.map((name) => {
-    const file = `${DIR}/${name}`;
-    const id = name.split("_")[0];
-    const branch = branches.find((b) => b.startsWith(`task/${id}-`)) || null;
-    const base = remote.includes(name) ? git("show", `${BASE}:${file}`) : null;
-    const disk = local.includes(name) ? readFileSync(join(ROOT, file), "utf8") : null;
-    const onBranch = branch ? git("show", `${branch}:${file}`) : null;
-    // Branch first (Running, Blocked); then origin when an agent finished it (Done);
-    // then the working tree (what Tim is editing); then origin.
-    const text = onBranch || (base && field(base, "Status") === "Done" ? base : disk || base) || "";
-    const log = join(HOME, "logs", `${id}.log`);
-    return {
-      id, file, branch, text,
-      pushed: base !== null,
-      edited: base !== null && disk !== null && disk !== base,
-      num: Number(id.slice(1)),
-      title: (text.match(/^# T\d+ · (.*)$/m)?.[1] ?? id).trim(),
-      status: field(text, "Status") || "Draft",
-      owner: field(text, "Owner") || "agent",
-      deps: list(field(text, "Depends on")),
-      refs: field(text, "Refs"),
-      from: field(text, "From"),
-      hasLog: existsSync(log),
-      alive: alive(id),
-    };
-  }).sort((a, b) => a.num - b.num);
-
-  const byId = Object.fromEntries(tasks.map((t) => [t.id, t]));
-  for (const t of tasks) {
-    t.waitsFor = t.deps.filter((d) => byId[d]?.status !== "Done");
-    t.unblocks = tasks.filter((o) => o.deps.includes(t.id)).map((o) => o.id);
-    t.stalled = t.status === "Running" && !t.alive;
-    t.runnable = !t.alive && t.pushed && t.owner === "agent" && (
-      (t.status === "Ready" && t.waitsFor.length === 0) || t.status === "Blocked" || t.status === "Running");
-  }
-  // Depth in the dependency graph, for the order view.
-  const depth = (t, seen = new Set()) => {
-    if (t.depth !== undefined) return t.depth;
-    if (seen.has(t.id)) return 0;
-    seen.add(t.id);
-    t.depth = t.deps.length ? 1 + Math.max(...t.deps.map((d) => (byId[d] ? depth(byId[d], seen) : 0))) : 0;
-    return t.depth;
-  };
-  tasks.forEach((t) => depth(t));
-  // What `next` would start, in order.
-  const queue = tasks.filter((t) => t.pushed && t.status === "Ready" && t.owner === "agent" && !t.branch && t.waitsFor.length === 0)
-    .map((t) => t.id);
-  const unpushed = tasks.filter((t) => !t.pushed).length;
-  const running = tasks.filter((t) => t.alive).length;
-  return { tasks, queue, running, unpushed, max: MAX, base: BASE, fetchedAt: lastFetch, order: ORDER };
-}
-
-// Writes "Answer: …" under question n of the Questions section (replaces a previous answer).
-function setAnswer(text, n, answer) {
-  const lines = text.split("\n");
-  const qs = lines.findIndex((l) => /^## Questions\s*$/.test(l));
-  if (qs < 0) throw new Error("no Questions section");
-  let qe = lines.findIndex((l, i) => i > qs && /^## /.test(l));
-  if (qe < 0) qe = lines.length;
-  const start = lines.findIndex((l, i) => i > qs && i < qe && new RegExp(`^\\s*${n}\\.\\s`).test(l));
-  if (start < 0) throw new Error(`no question ${n}`);
-  let end = lines.findIndex((l, i) => i > start && i < qe && /^\s*\d+\.\s/.test(l));
-  if (end < 0) end = qe;
-  const block = lines.slice(start, end).filter((l, i) => i === 0 || !/^\s*Answer:/.test(l));
-  while (block.length > 1 && block[block.length - 1].trim() === "") block.pop();
-  block.push(`   Answer: ${answer.replace(/\s*\n\s*/g, " ").trim()}`, "");
-  return [...lines.slice(0, start), ...block, ...lines.slice(end)].join("\n");
-}
-
-function answerTask(id, n, answer) {
-  const t = readTasks().tasks.find((x) => x.id === id);
-  if (!t) throw new Error(`unknown task ${id}`);
-  if (t.branch) {
-    // Blocked or running: the answer goes on the task branch, in its worktree, committed.
-    const wt = join(HOME, id);
-    if (!existsSync(wt)) throw new Error(`${id} has a branch but no worktree in ${HOME}`);
-    const p = join(wt, t.file);
-    writeFileSync(p, setAnswer(readFileSync(p, "utf8"), n, answer));
-    execFileSync("git", ["-C", wt, "add", t.file]);
-    execFileSync("git", ["-C", wt, "commit", "-q", "-m", `docs(tasks): answer ${id} question ${n}`]);
-    return `answered on ${t.branch}`;
-  }
-  // Not started: the answer goes in your working tree, for you to commit.
-  const p = join(ROOT, t.file);
-  if (!existsSync(p)) throw new Error(`${t.file} is not on your disk`);
-  writeFileSync(p, setAnswer(readFileSync(p, "utf8"), n, answer));
-  return `answered in ${t.file} (commit it with your next push)`;
-}
+import { execFile } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { ROOT, HOME, PORT, fetchOrigin, readTasks, answerTask, publish } from "./tasks-lib.mjs";
 
 const body = (req) => new Promise((ok, ko) => {
   let b = ""; req.on("data", (c) => (b += c)); req.on("end", () => { try { ok(JSON.parse(b || "{}")); } catch (e) { ko(e); } });
@@ -153,9 +27,9 @@ const server = createServer((req, res) => {
   }
   const am = url.pathname.match(/^\/api\/answer\/(T\d+)$/);
   if (am && req.method === "POST") {
-    body(req).then(({ n, answer, resume }) => {
+    body(req).then(({ n, answer, resume, ready }) => {
       if (!Number.isInteger(n) || typeof answer !== "string" || !answer.trim()) throw new Error("question number and answer required");
-      let out = answerTask(am[1], n, answer);
+      let out = answerTask(am[1], n, answer, { ready: !!ready });
       if (!resume) return send(res, 200, { ok: true, out });
       execFile(join(ROOT, "scripts/tasks.sh"), ["run", am[1]], { cwd: ROOT }, (err, o, e) =>
         send(res, err ? 409 : 200, { ok: !err, out: out + "\n" + (o + e).trim() }));
@@ -171,6 +45,10 @@ const server = createServer((req, res) => {
     execFile(join(ROOT, "scripts/tasks.sh"), ["run", m[2]], { cwd: ROOT }, (err, out, errOut) =>
       send(res, err ? 409 : 200, { ok: !err, out: (out + errOut).trim() }));
     return;
+  }
+  if (url.pathname === "/api/publish" && req.method === "POST") {
+    try { return send(res, 200, { ok: true, out: publish() }); }
+    catch (e) { return send(res, 409, { ok: false, out: String(e.stderr || e.message || e).trim() }); }
   }
   if (url.pathname === "/api/next" && req.method === "POST") {
     execFile(join(ROOT, "scripts/tasks.sh"), ["next"], { cwd: ROOT }, (err, out, errOut) =>
@@ -225,7 +103,7 @@ svg text{font-family:inherit}.sec{font-size:12px;text-transform:uppercase;letter
 </style></head><body>
 <header><h1>Potagerie <span>· Tasks</span></h1>
 <div class="tabs"><button data-v="board" aria-pressed="true">Board</button><button data-v="order" aria-pressed="false">Order</button></div>
-<div class="meta"><span id="stamp"></span><button class="btn" id="refresh">Fetch</button></div></header>
+<div class="meta"><span id="loop"></span><span id="stamp"></span><button class="btn" id="publish" hidden>Publish</button><button class="btn" id="refresh">Fetch</button></div></header>
 <main><section id="view"></section><aside id="detail"><p class="empty">Select a task</p></aside></main>
 <script>
 const C={Blocked:"var(--blocked)",Running:"var(--running)",Ready:"var(--ready)",Draft:"var(--draft)",Done:"var(--done)"};
@@ -246,11 +124,11 @@ function md(src){
   }
   return out+(inList?"</ul>":"");
 }
-function questions(t){const m=t.text.split(/^## Questions\s*$/m)[1];if(!m)return 0;const b=m.split(/^## /m)[0].replace(/<!--[\s\S]*?-->/g,"");return (b.match(/^\s*\d+\./gm)||[]).length}
+function questions(t){return t.openQuestions||0}
 function card(t){
   const q=questions(t);
   return '<div class="card'+(sel===t.id?" sel":"")+'" style="--c:'+C[t.status]+'" data-id="'+t.id+'"><div class="id">'+t.id+
-  (t.owner==="Tim"?' <span class="chip tim">Tim</span>':"")+(t.alive?' <span class="chip q">agent running</span>':"")+(t.stalled?' <span class="chip tim">stalled</span>':"")+(!t.pushed?' <span class="chip tim">not pushed</span>':t.edited?' <span class="chip">edited</span>':"")+(t.status!=="Done"&&q?' <span class="chip q">'+q+" ?</span>":"")+
+  (t.owner==="Tim"?' <span class="chip tim">Tim</span>':"")+(t.alive?' <span class="chip q">agent running</span>':"")+(t.stalled?' <span class="chip tim">stalled</span>':"")+(t.stuck?' <span class="chip tim">stuck</span>':"")+(t.answered?' <span class="chip">answered, to resume</span>':"")+(!t.pushed?' <span class="chip tim">not pushed</span>':t.edited?' <span class="chip">edited</span>':"")+(t.status!=="Done"&&q?' <span class="chip q">'+q+" ?</span>":"")+
   '</div><div class="t">'+esc(t.title)+"</div>"+
   (t.waitsFor.length&&t.status!=="Done"?'<div class="sub">after '+t.waitsFor.join(", ")+"</div>":"")+
   (t.branch&&(t.status==="Ready")?'<div class="sub">started, see the log</div>':"")+(data.queue.includes(t.id)?'<div class="sub">next #'+(data.queue.indexOf(t.id)+1)+"</div>":"")+"</div>";
@@ -261,7 +139,8 @@ function board(){
     if(s==="Ready")ts.sort((a,b)=>(data.queue.indexOf(a.id)+1||99)-(data.queue.indexOf(b.id)+1||99)||a.num-b.num);
     const body=s==="Done"&&!showDone&&ts.length?'<button class="done-toggle" id="dt">Show '+ts.length+"</button>":ts.map(card).join("");
     return '<div class="col"><h2><span class="dot" style="background:'+C[s]+'"></span>'+s+' <span class="n">'+ts.length+"</span></h2>"+body+"</div>"}).join("");
-  const q='<div class="queue"><b>Running '+data.running+" / "+data.max+"</b><span>Next: "+(data.queue.slice(0,5).join(" → ")||"nothing ready")+
+  const need=data.tasks.filter(t=>t.openQuestions>0).length;
+  const q='<div class="queue"><b>Running '+data.running+" / "+data.max+"</b>"+(need?'<span class="chip q">'+need+" question"+(need>1?"s":"")+" for you</span>":"")+"<span>Next: "+(data.queue.slice(0,5).join(" → ")||"nothing ready")+
     '</span><button class="btn primary" id="next" '+(data.queue.length&&data.running<data.max?"":"disabled")+">Start next</button></div>";
   const warn=data.unpushed?'<div class="queue">'+data.unpushed+" task(s) only on your disk: an agent can start them once they are pushed to "+data.base+".</div>":"";
   return warn+q+'<div class="board">'+cols+"</div>";
@@ -323,11 +202,12 @@ function qform(t,p){
     '<textarea data-n="'+q.n+'" rows="3" placeholder="Your answer">'+esc(q.a)+'</textarea><div class="actions">'+
     '<button class="btn" data-save="'+q.n+'">'+(q.a?"Update":"Save")+'</button>'+
     (can?'<button class="btn primary" data-resume="'+q.n+'">Save and resume '+t.id+'</button>':"")+
+    (t.status==="Draft"?'<button class="btn primary" data-ready="'+q.n+'">Save and set Ready</button>':"")+
     (q.a?'<span class="hint">answered</span>':"")+'</div></div>').join("");
 }
-async function answer(t,n,resume){
+async function answer(t,n,resume,ready){
   const ta=document.querySelector('textarea[data-n="'+n+'"]');if(!ta.value.trim())return alertBox("Write an answer first.");
-  const r=await fetch("/api/answer/"+t.id,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({n,answer:ta.value,resume})}).then(r=>r.json());
+  const r=await fetch("/api/answer/"+t.id,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({n,answer:ta.value,resume,ready:!!ready})}).then(r=>r.json());
   alertBox(r.out);await load(true);detail();
 }
 async function detail(){
@@ -339,7 +219,7 @@ async function detail(){
   else if(t.status==="Draft")why="Draft: answer its questions and set it Ready first.";
   else if(t.status==="Done")why="Done.";
   else if(t.waitsFor.length)why="Waits for "+t.waitsFor.join(", ")+".";
-  const label=t.status==="Blocked"?"Resume":t.stalled?"Restart":"Start";
+  const label=t.stuck?"Retry":t.status==="Blocked"?"Resume":t.stalled?"Restart":"Start";
   let h='<div class="actions"><button class="btn primary" id="run" '+(t.runnable?"":"disabled")+">"+label+" "+t.id+'</button><span class="hint">'+(t.runnable?(t.branch?"branch "+t.branch:"new worktree from "+data.base):why)+"</span></div>";
   const qp=qparse(t.text);
   h+='<div class="doc">'+(qp?md(qp.before)+qform(t,qp)+md(qp.after):md(t.text))+"</div>";
@@ -348,6 +228,7 @@ async function detail(){
   $("#detail").innerHTML=h;
   document.querySelectorAll("[data-save]").forEach(b=>b.onclick=()=>answer(t,+b.dataset.save,false));
   document.querySelectorAll("[data-resume]").forEach(b=>b.onclick=()=>answer(t,+b.dataset.resume,true));
+  document.querySelectorAll("[data-ready]").forEach(b=>b.onclick=()=>answer(t,+b.dataset.ready,false,true));
   const b=$("#run");if(b)b.onclick=async()=>{b.disabled=true;const r=await fetch("/api/run/"+t.id,{method:"POST"}).then(r=>r.json());alertBox(r.out);load()};
 }
 function alertBox(msg){const d=document.createElement("div");d.textContent=msg;Object.assign(d.style,{position:"fixed",bottom:"16px",left:"22px",background:"#26342b",color:"#fff",padding:"10px 14px",borderRadius:"8px",fontSize:"13px",maxWidth:"520px"});document.body.append(d);setTimeout(()=>d.remove(),5000)}
@@ -358,10 +239,14 @@ function render(){
   const sd=$("#sd");if(sd)sd.onchange=()=>{showDone=sd.checked;render()};
   const nx=$("#next");if(nx)nx.onclick=async()=>{nx.disabled=true;const r=await fetch("/api/next",{method:"POST"}).then(r=>r.json());alertBox(r.out);load()};
   $("#stamp").textContent=data.fetchedAt?"fetched "+new Date(data.fetchedAt).toLocaleTimeString():"";
+  const edits=data.tasks.filter(t=>t.edited).length,pb=$("#publish");pb.hidden=!edits;pb.textContent="Publish "+edits;
+  const L=data.loop||{},lim=L.limit&&L.limit.until>Date.now()?L.limit:null;
+  $("#loop").innerHTML=lim?'<span class="chip tim">Claude limit · resumes '+new Date(lim.until).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})+"</span>":L.running?'<span class="chip q">loop on</span>':'<span class="chip">loop off</span>';
 }
 const typing=()=>[...document.querySelectorAll("#detail textarea")].some(x=>x.value!==x.defaultValue||x===document.activeElement);
 async function load(force){data=await fetch("/api/tasks"+(force?"?fetch":"")).then(r=>r.json());render();if(sel&&!typing())detail()}
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{view=b.dataset.v;document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-pressed",x===b));render()});
 $("#refresh").onclick=()=>load(true);
+$("#publish").onclick=async()=>{const b=$("#publish");b.disabled=true;const r=await fetch("/api/publish",{method:"POST"}).then(r=>r.json());b.disabled=false;alertBox(r.out);load(true)};
 load();setInterval(load,10000);
 </script></body></html>`;
