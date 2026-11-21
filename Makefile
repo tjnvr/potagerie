@@ -2,7 +2,7 @@
 # Needs: Rust stable, the Tauri CLI (cargo install tauri-cli --version "^2"),
 # Node.js 22+ and pnpm.
 
-.PHONY: install dev build test check e2e fmt bindings
+.PHONY: install dev build test check e2e e2e-app fmt bindings
 
 install:
 	pnpm --dir front install --frozen-lockfile
@@ -38,3 +38,12 @@ bindings:
 # Use cases of the interface in Chromium and WebKit (first time: pnpm --dir front exec playwright install chromium webkit).
 e2e: install
 	pnpm --dir front e2e
+
+# Smoke tests of the real app (APP-xx in docs/POT-00_test-matrix.md) through tauri-driver,
+# on Linux or Windows only (tauri-driver does not support macOS). Needs tauri-driver
+# (cargo install tauri-driver --locked) and the native driver of the webview: WebKitWebDriver
+# on Linux (package webkit2gtk-driver), on Windows the msedgedriver of the WebView2 version,
+# its path in NATIVE_DRIVER. Uses a temporary data folder, never your potagerie.db.
+e2e-app: install
+	cargo tauri build --no-bundle
+	node --test e2e-app/smoke.test.mjs
