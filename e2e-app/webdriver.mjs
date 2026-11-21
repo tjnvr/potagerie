@@ -1,7 +1,7 @@
 // A small W3C WebDriver client, enough for the smoke tests of the real app
 // (tauri-driver on port 4444). No dependency: plain fetch.
 
-const ELEMENT = "element-6066-11e4-a52f-4f94d47db1c9";
+const ELEMENT = "element-6066-11e4-a52e-4f735466cecf";
 
 export class WebDriverError extends Error {}
 
@@ -41,10 +41,13 @@ export class Session {
     this.url = `${base}/session/${id}`;
   }
 
-  /** Launches `application` through tauri-driver: one session is one run of the app. */
-  static async start(base, application) {
+  /**
+   * Launches `application` through tauri-driver: one session is one run of the app.
+   * On Windows, `args` go to WebView2 (msedgedriver), on Linux to the app.
+   */
+  static async start(base, application, args = []) {
     const value = await request(`${base}/session`, "POST", {
-      capabilities: { alwaysMatch: { browserName: "wry", "tauri:options": { application } } },
+      capabilities: { alwaysMatch: { browserName: "wry", "tauri:options": { application, args } } },
     });
     return new Session(base, value.sessionId);
   }

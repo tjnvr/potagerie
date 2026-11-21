@@ -23,6 +23,7 @@ const DRIVER = process.env.TAURI_DRIVER ?? "tauri-driver";
 const PORT = 4444;
 const BASE = `http://127.0.0.1:${PORT}`;
 const RESULTS = join(HERE, "results");
+const WEBVIEW2_ARGS = "--disable-gpu";
 const ENTER = "";
 
 const DATA = mkdtempSync(join(tmpdir(), "potagerie-smoke-"));
@@ -37,7 +38,8 @@ let app;
 
 /** Starts the app and waits for its interface (the first screen or the tabs). */
 async function launch() {
-  app = await Session.start(BASE, APP);
+  // WebView2 on a machine without a GPU (CI runner) hangs before showing the page.
+  app = await Session.start(BASE, APP, WINDOWS ? [WEBVIEW2_ARGS] : []);
   try {
     await app.find("//button", 60_000);
   } catch (e) {
@@ -83,17 +85,6 @@ async function keep(id) {
     ?.cmd("GET", "/url")
     .then((url) => console.log(`${id}: page ${url}`))
     .catch(() => {});
-  // Temporary: which ways of finding an element work in this webview.
-  for (const [what, call] of [
-    ["script", () => app.execute("return document.querySelectorAll('button').length")],
-    ["css", () => app.cmd("POST", "/elements", { using: "css selector", value: "button" })],
-    ["xpath", () => app.cmd("POST", "/elements", { using: "xpath", value: "//button" })],
-    ["tag", () => app.cmd("POST", "/elements", { using: "tag name", value: "button" })],
-  ]) {
-    await call()
-      .then((v) => console.log(`${id}: ${what} -> ${JSON.stringify(v).slice(0, 300)}`))
-      .catch((e) => console.log(`${id}: ${what} failed: ${e.message}`));
-  }
 }
 
 /** Runs a step; on failure keeps what the window shows. */
@@ -118,8 +109,10 @@ describe("the real app", { concurrency: false }, () => {
         POTAGERIE_DATA_DIR: DATA,
         POTAGERIE_DIALOG_FILE: FILE,
         LANG: "en_US.UTF-8",
-        // WebKitGTK without a GPU (Xvfb): software rendering, no DMA-BUF.
-        ...(WINDOWS ? {} : { WEBKIT_DISABLE_COMPOSITING_MODE: "1", WEBKIT_DISABLE_DMABUF_RENDERER: "1" }),
+        // No GPU on a CI runner: software rendering in WebView2 and WebKitGTK.
+        ...(WINDOWS
+          ? { WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: WEBVIEW2_ARGS }
+          : { WEBKIT_DISABLE_COMPOSITING_MODE: "1", WEBKIT_DISABLE_DMABUF_RENDERER: "1" }),
       },
     });
     await until(() => fetch(`${BASE}/status`).then((r) => r.ok), "tauri-driver", 30_000);
