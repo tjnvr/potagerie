@@ -44,9 +44,11 @@ Every push runs a few use cases in the real built app, with the real Rust comman
 - On Windows the window passes wry's WebView2 arguments plus those msedgedriver sets in `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS`: wry's own list otherwise hides the driver's debugging port and the session never attaches.
 - The `app` job runs on every push, in parallel with the others: Windows takes about 11 min, Linux about 3.5 min, the Playwright e2e job about 10 min, so the CI wall time grows by about one minute.
 - Ids `APP-01` to `APP-06` in the test matrix; `UC-30` (manual) narrowed to the macOS window, touch, the installed build and the native file windows.
-- S05 v0.20 (and not v0.19 as first written): T18 took v0.19 on `main` meanwhile; the branch was replayed on `origin/main` and its spec change rewritten on top of v0.19.
+- S05 v0.21 (first written as v0.19, then v0.20): T18 then T06 took those versions on `main` meanwhile; the branch was replayed on `origin/main` each time and its spec change rewritten on top of the current S05.
 
 ### Progress
 - 2026-11-21: smoke tests and Rust support written, CI made green on `task/T13-real-window-check-ci` (run 44916368333, both `app` jobs green) after fixes for the W3C element key, icon buttons by `aria-label`, the WebView2 arguments and a Plant click while the form opens.
 - 2026-11-21: replayed on `origin/main` (v0.9.0, T18), S05 bumped to v0.20; full local gate green (fmt, clippy, cargo test, front check, test, build, e2e 323 passed).
-- Extra paths outside `Scope`: `.gitignore` (`e2e-app/results/`), `docs/specs/` (S05 v0.20 and the cross-references in S01 v1.8, S03 v0.19), `docs/POT-00_index.md`.
+- 2026-11-21: CI green on the replayed commit (run 44945943201, branch `task/T13-real-window-check-ci2`, all six jobs).
+- 2026-11-21: `main` moved again (T06, v0.10.0, S05 v0.20): replayed once more, S05 bumped to v0.21.
+- Extra paths outside `Scope`: `.gitignore` (`e2e-app/results/`), `docs/specs/` (S05 v0.21 and the cross-references in S01 v1.9, S03 v0.20), `docs/POT-00_index.md`.
