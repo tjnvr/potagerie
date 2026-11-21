@@ -1,6 +1,6 @@
 # T18 · Red fruits in the catalogue: raspberry, strawberry and others
 
-- Status: Running
+- Status: Done
 - Owner: agent
 - Depends on: —
 - Refs: S02 §1, §3 bis, §4 · S01 F-PLA (plantings), F-VIS-1 (garden view), F-VIS-2 (timeline), "Wider catalogue" (after V1) · S03 §2 (dates), §5 (conflicts), §7 (free slots)
@@ -45,6 +45,7 @@ The user can plant red fruit bushes and strawberries on a bed, see them in the g
 
 - 2026-11-21 · Split (acceptance, last but one line): this slice ships the model of a planting over several years with raspberry and strawberry; the five other red fruits and the dedicated drawings go to **T19**, the "renew it" suggestion at the end of the lifespan to **T20** (Draft: how it is shown is Tim's call).
 - 2026-11-21 · Specs written: S01 v1.8, S02 v0.5, S03 v0.19 (§2 bis, §3, §9, §11, §12 T15–T19, §17), S05 v0.19 (§5, §7, §17). Rust done and green (`crates/plan/tests/perennials.rs`, 14 tests, written after the code in the same session, not before). Front done: timeline, mini-timeline, garden stage, catalogue sheet, simulation, UC-34. Extra paths: `front/src/lib/planting/MiniTimeline.svelte`, `front/src/lib/timeline/TimelineSvg.svelte` (keys of the phases were the phase name, duplicated by a perennial), `crates/export/tests/garden_stress.rs`.
+- 2026-11-21 · Done, version **0.9.0**. Specs: S01 v1.8, S02 v0.5, S03 v0.19, S05 v0.19. Rebased on `origin/main` (4 task-system commits, no id taken). Checked: full local gate green (fmt, clippy, `cargo test --workspace`, `pnpm check`, 219 unit tests, build, 323 e2e in Chromium and WebKit, 3 skipped as before); new UC-34; screenshots in headless Chromium at 1440 and 360 px, English and French (`docs/tasks/T18/`: the form with ten yearly harvests and the end in 2036, the garden in fruit on 1 July 2027 with the timeline bar, the bare raspberry in January). Landing page: 69 crops, FAQ. NOT checked: the real Tauri window, touch, the installed build, the PDF / PNG export of a timeline holding a perennial (it reuses the same bars, covered only by the unit tests), an import of an old database (covered by the serde round trip test, not by a real old file). The raspberry and the strawberry still look like a tomato and a lettuce (T19).
 
 ### Decisions
 
