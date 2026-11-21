@@ -53,6 +53,10 @@ Tim decides **functional scope only**: what the user can see or do, and when (wh
 - **Chat sessions** turn a discussion into tasks before it ends, so the next session starts from the file, not from memory.
 - **Tim** launches tasks and answers `[functional]` questions in the board. An answer to a blocked task is committed on its branch and can resume it; an answer to a `Draft` can set it `Ready`, and **Publish** pushes the task files to `main`.
 
+## Not a task
+
+- Now and then, install the latest release on the Mac and look around for ten minutes: the macOS window (WKWebView) is the one place the tests cannot drive (T13). Anything odd becomes a task.
+
 ## Commands
 
 | Command | Role |
