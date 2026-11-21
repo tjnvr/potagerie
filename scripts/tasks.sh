@@ -123,7 +123,7 @@ run() {
         "Bash(ls:*)" "Bash(cat:*)" "Bash(grep:*)" "Bash(find:*)" "Bash(sed:*)" "Bash(mkdir:*)" \
       $TASKS_CLAUDE_ARGS >> "$2" 2>&1 < /dev/null
     rc=$?; printf "\n=== exit %s %s\n" "$rc" "$(date "+%Y-%m-%d %H:%M")" >> "$2"
-    rm -f "$3"' _ "Run task $id ($f). Follow skills/run-task/SKILL.md." "$log" "$(pid_file "$id")" > /dev/null 2>&1 &
+    rm -f "$3"' _ "Run task $id ($f). Follow $ROOT/skills/run-task/SKILL.md: the latest version, from the main checkout, even if your branch holds an older one." "$log" "$(pid_file "$id")" > /dev/null 2>&1 &
   echo $! > "$(pid_file "$id")"
   cd "$ROOT"
   echo "$id started in $wt (log: scripts/tasks.sh log $id)"
