@@ -14,6 +14,7 @@ import type {
   ZoneView,
 } from "../bindings";
 import { dayOf, endExclusive, shiftDate } from "../dates";
+import { groundPhases } from "../timeline/geometry";
 import { m } from "../paraglide/messages.js";
 
 export type Zone = { start: number; end: number };
@@ -195,12 +196,11 @@ export type Segment = { phase: "pots" | "growth" | "harvest"; days: number };
 /** The proportions of the mini-timeline (F-PLA-1), from the dates Rust sent. */
 export function segmentsMiniTimeline(d: NonNullable<PlantingPreview["dates"]>, mode: Mode): Segment[] {
   const m = dayOf(d.planting_out);
-  const r = dayOf(d.harvest_start);
   const f = dayOf(d.end);
   const sowing = mode === "indoor" && d.sowing ? dayOf(d.sowing) : m;
   const segments: Segment[] = [];
   if (m > sowing) segments.push({ phase: "pots", days: m - sowing });
-  if (r > m) segments.push({ phase: "growth", days: r - m });
-  if (f > r) segments.push({ phase: "harvest", days: f - r });
+  // One harvest, or one a year for a perennial (S03 §2 bis).
+  for (const s of groundPhases(m, f, d.harvests)) segments.push({ phase: s.phase, days: s.end - s.start });
   return segments;
 }

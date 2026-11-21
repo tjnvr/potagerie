@@ -31,6 +31,7 @@ const tomato = {
   planting_out: "2027-05-05",
   harvest_start: "2027-07-19",
   end: "2027-09-27",
+  harvests: [{ start: "2027-07-19", end: "2027-09-27" }],
   manual_end: false,
   pot_days: 56,
   rows: 1,

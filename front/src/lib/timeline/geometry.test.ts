@@ -200,6 +200,7 @@ function planting(id: string, crop: string, over: Partial<PlantingView> = {}): P
     plants_by_row: 2,
     appearance_today: { appearance: "nothing" },
     ...over,
+    harvests: over.harvests ?? [{ start: over.harvest_start ?? "2027-07-19", end: over.end ?? "2027-09-27" }],
   } as PlantingView;
 }
 
@@ -238,6 +239,33 @@ describe("bars and phases", () => {
     expect(dateOf(plants.start)).toBe("2027-09-27");
     const ground = barOf(planting("a", "carrot", { mode: "open_ground", sowing: "2027-03-15", planting_out: "2027-03-15", harvest_start: "2027-06-23", end: "2027-08-02" }));
     expect(ground.segments.map((s) => s.phase)).toEqual(["growth", "harvest"]);
+  });
+
+  it("draws a perennial as one bar with a harvest each year (S03 §2 bis, T15)", () => {
+    const harvests = [2027, 2028, 2029].map((y) => ({ start: `${y}-06-25`, end: `${y}-08-09` }));
+    const raspberry = barOf(
+      planting("r", "raspberry", {
+        mode: "plants",
+        sowing: null,
+        date: "2026-11-20",
+        planting_out: "2026-11-20",
+        harvest_start: "2027-06-25",
+        end: "2029-10-01",
+        harvests,
+      }),
+    );
+    expect(raspberry.segments.map((s) => s.phase)).toEqual(["growth", "harvest", "growth", "harvest", "growth", "harvest", "growth"]);
+    expect(dateOf(raspberry.start)).toBe("2026-11-20");
+    expect(dateOf(raspberry.end)).toBe("2029-10-01");
+    expect(dateOf(raspberry.segments[3]!.start)).toBe("2028-06-25");
+    expect(dateOf(raspberry.segments[3]!.end)).toBe("2028-08-09");
+  });
+
+  it("draws a perennial ended before its first harvest as growth only", () => {
+    const early = barOf(
+      planting("r", "raspberry", { mode: "plants", sowing: null, planting_out: "2026-11-20", harvest_start: "2027-06-25", end: "2027-01-01", harvests: [] }),
+    );
+    expect(early.segments.map((s) => s.phase)).toEqual(["growth"]);
   });
 });
 

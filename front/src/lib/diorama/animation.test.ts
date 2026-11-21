@@ -11,6 +11,7 @@ import {
   indexTo,
   dayOfPlayback,
   bounce,
+  symbolPlant,
 } from "./animation";
 import { daySince } from "./days";
 
@@ -132,5 +133,12 @@ describe("dayOfPlayback", () => {
       expect(day % PALIER_DAYS === 0 || day === 365).toBe(true);
     }
     expect(vus.size).toBeGreaterThan(40);
+  });
+});
+
+describe("perennials (S03 §3, T18)", () => {
+  test("a bare perennial is drawn with its stage 0, the other stages as they are", () => {
+    expect(symbolPlant("raspberry", "dormant")).toBe("plant-tomato-sowing");
+    expect(symbolPlant("strawberry", "harvest")).toBe("plant-lettuce-harvest");
   });
 });

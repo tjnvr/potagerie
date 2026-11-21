@@ -238,11 +238,11 @@ test("UC-07 notes: empty text is refused, 80 characters at most, the note appear
   await expect(notes).toHaveCount(before + 1);
 });
 
-test("UC-08 catalogue: 67 crops, a family filter narrows the list", async ({ page }) => {
+test("UC-08 catalogue: 69 crops, a family filter narrows the list", async ({ page }) => {
   await open(page);
   await toGarden(page);
   await page.getByRole("button", { name: /Catalogue/ }).first().click();
-  await expect(page.getByText(/67 crops/)).toBeVisible();
+  await expect(page.getByText(/69 crops/)).toBeVisible();
   await page.getByRole("button", { name: "Solanaceae", exact: true }).click();
   const cards = page.locator("button.carte");
   expect(await cards.count()).toBeGreaterThan(3);
@@ -522,4 +522,40 @@ test("UC-33 plan: a bed dropped closer than the aisle asks « Keep here » or «
   await drag();
   await expect(page.getByRole("alert")).toBeVisible();
   await expect(bubble).toHaveCount(0);
+});
+
+test("UC-34 red fruits: a raspberry planted in November is still on its bed the next summer, in fruit", async ({ page }) => {
+  await page.goto("/?date=2026-11-20");
+  await page.getByRole("button", { name: "Create my plot" }).click();
+  await page.getByRole("button", { name: "Create the plot" }).click();
+  const grass = (await page.locator("rect.grass").boundingBox())!;
+  await page.mouse.click(grass.x + grass.width * 0.3, grass.y + grass.height * 0.3);
+  await expect(page.locator(".counter")).toContainText("1 / 10");
+  const panel = page.getByRole("complementary", { name: "Selected bed" });
+  await panel.getByRole("button", { name: "Plant here" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("radio", { name: /Raspberry/ }).click();
+  await dialog.locator("label.mode", { hasText: "I buy plants" }).click();
+  const date = dialog.locator("input[type=date]").first();
+  await date.fill("2026-11-20");
+  await date.dispatchEvent("change");
+  // One harvest a year, until the end of its usual lifespan, ten years on.
+  await expect(dialog.locator(".end input[type=date]")).toHaveValue("2036-11-19");
+  await dialog.locator("button.validate").click();
+  await expect(dialog).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Garden", exact: true }).click();
+  await page.getByRole("button", { name: "2027", exact: true }).click();
+  const slider = page.getByRole("slider", { name: "Garden date" });
+  const day = (iso: string) => String(Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8))) / 86_400_000);
+  // The raspberry borrows the drawing of the tomato until T19 draws it.
+  const plants = (stage: string) => page.locator(`svg.diorama use[href="#plant-tomato-${stage}"]`);
+  await slider.fill(day("2027-07-01"));
+  await expect(plants("harvest").first()).toBeAttached();
+  // Bare in winter: its smallest drawing, but still on its bed.
+  await slider.fill(day("2027-01-15"));
+  await expect(plants("sowing").first()).toBeAttached();
+  await expect(plants("harvest")).toHaveCount(0);
+  // The timeline shows one bar for the whole life of the raspberry.
+  await expect(page.locator(".bar")).toHaveCount(1);
 });

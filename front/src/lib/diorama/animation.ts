@@ -44,9 +44,11 @@ export type State = { symbol: string | null; scale: number };
 export const SYMBOL_ETIQUETTE = "etiquette";
 const NOTHING: State = { symbol: null, scale: 1 };
 
-/** Id of the symbol of a crop at a stage: `plant-tomato-adult`. */
+/** Id of the symbol of a crop at a stage: `plant-tomato-adult`. A perennial bare in
+ *  winter (`dormant`, S03 §3) is drawn with its stage 0, the smallest plant (T19 gives
+ *  the red fruits drawings of their own, bare at stage 0). */
 export function symbolPlant(crop: string, stade: string): string {
-  return `plant-${drawingOf(crop)}-${stade}`;
+  return `plant-${drawingOf(crop)}-${stade === "dormant" ? "sowing" : stade}`;
 }
 
 /** Days a plant takes to settle at its new size after a change. */

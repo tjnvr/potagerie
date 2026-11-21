@@ -32,7 +32,7 @@
     <clipPath id="mini-forme"><rect width="100%" height="14" rx="7" /></clipPath>
   </defs>
   <g clip-path="url(#mini-forme)">
-    {#each positions as s (s.phase)}
+    {#each positions as s, i (i)}
       <rect
         x="{s.x}%"
         width="{s.width}%"

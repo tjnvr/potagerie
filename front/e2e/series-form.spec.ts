@@ -123,7 +123,7 @@ test.describe("phone", () => {
       const r = e.getBoundingClientRect();
       return { top: r.top, bottom: r.bottom, height: innerHeight };
     });
-    // Under the 67 cards: without the scroll, the sheet stays off screen.
+    // Under the 69 cards: without the scroll, the sheet stays off screen.
     await expect.poll(async () => (await box()).top).toBeLessThan(400);
     const r = await box();
     expect(r.top).toBeGreaterThanOrEqual(-1);

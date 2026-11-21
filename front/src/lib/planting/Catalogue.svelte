@@ -42,7 +42,7 @@
   const fiche = $derived(catalogue.crop(list.find((c) => c.id === chosen)?.id ?? list[0]?.id ?? ""));
   let sheet = $state<HTMLElement>();
 
-  // On a phone the sheet sits under the 67 cards: bring it into view.
+  // On a phone the sheet sits under the 69 cards: bring it into view.
   async function choose(id: string) {
     chosen = id;
     if (!window.matchMedia("(max-width: 900px)").matches) return;
@@ -146,6 +146,10 @@
           </div>
           <div><dt>{m.catalogue_row()}</dt><dd>{m.cm({ value: fiche.row_cm })}</dd></div>
           <div><dt>{m.catalogue_spacing()}</dt><dd>{m.cm({ value: fiche.spacing_cm })}</dd></div>
+          {#if fiche.lifespan_years && fiche.harvest_from}
+            <div><dt>{m.catalogue_lifespan()}</dt><dd>{m.catalogue_lifespan_value({ years: fiche.lifespan_years })}</dd></div>
+            <div><dt>{m.catalogue_harvest_from()}</dt><dd>{dayMonth(fiche.harvest_from)}</dd></div>
+          {/if}
         </dl>
         <p class="lock"><IconTimeline name="lock" size={14} />{m.catalogue_read_only()}</p>
       </aside>
@@ -428,7 +432,7 @@
     h1 {
       font-size: 24px;
     }
-    /* 67 crops: two cards a row, and the families on one scrolling line. */
+    /* 69 crops: two cards a row, and the families on one scrolling line. */
     .grille {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;

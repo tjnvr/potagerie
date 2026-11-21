@@ -130,7 +130,7 @@ Also in `crates/catalogue/crops.json`. "Harvest after" is the shortest time from
 | `raspberry` | Raspberry | Rosaceae | 0 | 180 | 06-25 | 45 | 10 | 11-01 → 03-15 | 150 × 50 | no |
 | `strawberry` | Strawberry | Rosaceae | 0 | 180 | 05-15 | 40 | 3 | 08-01 → 10-15 | 40 × 30 | no |
 
-The raspberry is the first crop whose planting-out window straddles two years (S03 §10). Both have a drawing of their own.
+The raspberry is the first crop whose planting-out window straddles two years (S03 §10). Until T19 draws them (bare at stage 0, for the winter), they borrow the drawing of the tomato and of the lettuce, like the crops of section 3 bis.
 
 For the crops without their own drawing, the diorama and the icons reuse the drawing of a close crop (`front/src/lib/appearances.ts`), and the timeline gives them a colour of their own.
 

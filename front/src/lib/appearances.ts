@@ -64,6 +64,9 @@ export const APPEARANCES: Record<string, { lookalike: string; color: string }> =
   "sweet-potato": { lookalike: "zucchini", color: "#C56A3A" },
   "okra": { lookalike: "eggplant", color: "#7FA34A" },
   "purslane": { lookalike: "lettuce", color: "#8DBA5A" },
+  // Red fruits (S02 v0.5): borrowed drawings until T19 draws them.
+  "raspberry": { lookalike: "tomato", color: "#C2185B" },
+  "strawberry": { lookalike: "lettuce", color: "#E53950" },
 };
 
 /** The crops drawn by front/scripts/plant_art.py, whose ids name the symbols. */

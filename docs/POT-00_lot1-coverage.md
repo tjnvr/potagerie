@@ -14,15 +14,15 @@ State of the requirements of S01 (§4) in the app at lot 1, read in the code on 
 | F-PLN-4 A plan that evolves by season | Done | Plan, "read only" banner; `view_year`, `clear_plan` | Carry-over to the following years, past seasons read-only |
 | F-PLN-5 Plan summary | Done | Plan, right-hand panel | Plot, workable, aisles, beds |
 | F-PLN-6 Place and size | Partial | Plan; `move_bed` | Drag, handles and add by tap present; no rotate, no duplicate, no Undo / Redo (after lot 1) |
-| F-CAT-1 Content | Done | `catalogue` | The crops of S02 |
+| F-CAT-1 Content | Partial | `catalogue` | The 67 annual crops of S02 and, since S02 v0.5 (T18), raspberry and strawberry; the other red fruits (redcurrant, blackcurrant, gooseberry, thornless blackberry, blueberry) come with T19 |
 | F-CAT-2 Crop sheet | Done | Catalogue, "Sheet" | Schema of S02 |
 | F-CAT-3 Browsing | Done | Catalogue; `crops_of_season` | Filter by family and "in season now" |
-| F-PLA-1 Create a planting | Done | Bed panel, timeline; `create_planting`, `preview_planting` | Computed dates, preview before validation |
+| F-PLA-1 Create a planting | Done | Bed panel, timeline; `create_planting`, `preview_planting` | Computed dates, preview before validation; a red fruit stays on its bed until its end, ten years by default for a raspberry (S03 §2 bis, T18). No reminder to renew it at the end of its lifespan yet (T20) |
 | F-PLA-2 Edit or delete | Done | Timeline (click, drag); `modify_planting`, `shift_planting`, `delete_planting` | |
 | F-PLA-3 Successions | Done | Timeline, planting creation | Segment conflict flagged with the period |
 | F-PLA-4 Continuous time | Done | Garden, timeline | The diorama takes the layout of the cursor's year |
 | F-PLA-5 Quantity calculation | Done | Planting creation ("≈ n plants, rows × per row") | Calculation in `crates/plan` |
-| F-VIS-1 Isometric garden view | Done | Garden | Rotation, labels, "Free" signs, seasonal mood; zoom with the wheel, the trackpad or a pinch (×1 to ×4, no button) and panning by dragging the background (T02) |
+| F-VIS-1 Isometric garden view | Done | Garden | A red fruit shows every year, bare in winter (borrowed drawings until T19); rotation, labels, "Free" signs, seasonal mood; zoom with the wheel, the trackpad or a pinch (×1 to ×4, no button) and panning by dragging the background (T02) |
 | F-VIS-2 Timeline view | Done | Garden, under the diorama | Merged with the diorama; continuous scroll between years |
 | F-VIS-3 Time cursor | Done | Garden | |
 | F-VIS-4 Season playback | Done | Garden, ×1 and ×2 | Measured at 60 frames/s (10 beds, normal density) |

@@ -12,6 +12,7 @@ import type {
   CropView,
   DatesPreview,
   ErrorCode,
+  HarvestView,
   Mode,
   BedView,
   ProblemView,
@@ -36,12 +37,13 @@ type RawCrop = {
   planting_out: { start: string; end: string };
   row_cm: number;
   spacing_cm: number;
+  perennial?: { lifespan_years: number; harvest_from: string };
 };
 
 type Args = Record<string, unknown>;
 
 /** The V1 catalogue (S02): the real file of the Rust core, so that the demo shows
- *  the 67 crops. */
+ *  the 67 crops and the red fruits. */
 export const CROPS: CropView[] = (catalogueJson as RawCrop[]).map((c) => ({
   id: c.id,
   family: c.family,
@@ -52,6 +54,8 @@ export const CROPS: CropView[] = (catalogueJson as RawCrop[]).map((c) => ({
   planting_out_end: c.planting_out.end,
   row_cm: c.row_cm,
   spacing_cm: c.spacing_cm,
+  lifespan_years: c.perennial?.lifespan_years ?? null,
+  harvest_from: c.perennial?.harvest_from ?? null,
 }));
 
 export type Context = {
@@ -72,9 +76,38 @@ const crop = (id: string) => CROPS.find((c) => c.id === id);
 const day = (iso: string) => dayOf(iso);
 const iso = (n: number) => dateOf(n);
 
-type Calculation = { sowing: string | null; m: string; r: string; f: string; fDefault: string; stored: string; pots: number };
+type Calculation = {
+  sowing: string | null;
+  m: string;
+  r: string;
+  f: string;
+  fDefault: string;
+  stored: string;
+  pots: number;
+  harvests: HarvestView[];
+};
 
-/** S03 §2. Throws the code Rust would answer. */
+/** `MM-DD` placed in `year`, 02-29 giving 02-28 (S03 §1). */
+function inYear(md: string, year: number): number {
+  const [mo = 1, jo = 1] = md.split("-").map(Number);
+  const d = Date.UTC(year, mo - 1, jo) / 86_400_000;
+  return new Date(d * 86_400_000).getUTCMonth() === mo - 1 ? d : d - 1;
+}
+
+const yearOf = (n: number) => new Date(n * 86_400_000).getUTCFullYear();
+
+/** The yearly harvests of a perennial, cut to `[m, f[` (S03 §2 bis). */
+function perennialHarvests(from: string, duration: number, r: number, f: number): HarvestView[] {
+  const list: HarvestView[] = [];
+  for (let y = yearOf(r); inYear(from, y) < f; y++) {
+    const start = inYear(from, y);
+    const end = Math.min(start + duration, f);
+    if (start >= r && end > start) list.push({ start: iso(start), end: iso(end) });
+  }
+  return list;
+}
+
+/** S03 §2 and §2 bis. Throws the code Rust would answer. */
 function compute(c: CropView, entree: PlantingInput, refusal: (code: ErrorCode) => never): Calculation {
   // Rust (`pot_days_for`): the days entered only count for an indoor start of a crop without pots;
   // in every other mode the catalogue's time in pots is kept.
@@ -84,12 +117,18 @@ function compute(c: CropView, entree: PlantingInput, refusal: (code: ErrorCode) 
   const stored = entree.mode === "indoor" && entree.date_is_transplanting ? iso(day(entree.date) - A) : entree.date;
   const s = day(stored);
   const m = entree.mode === "indoor" ? s + A : s;
-  const r = entree.mode === "open_ground" ? m + c.harvest_after_days + c.indoor_days : m + c.harvest_after_days;
-  const fDefault = r + c.harvest_duration_days;
+  let r = entree.mode === "open_ground" ? m + c.harvest_after_days + c.indoor_days : m + c.harvest_after_days;
+  let fDefault = r + c.harvest_duration_days;
+  if (c.harvest_from && c.lifespan_years) {
+    const first = inYear(c.harvest_from, yearOf(r));
+    r = first >= r ? first : inYear(c.harvest_from, yearOf(r) + 1);
+    fDefault = inYear(iso(m).slice(5), yearOf(m) + c.lifespan_years);
+  }
   const f = entree.manual_end ? day(entree.manual_end) : fDefault;
-  if (entree.manual_end && f <= r) refusal("manual_end_invalid");
+  if (entree.manual_end && f <= (c.harvest_from ? m : r)) refusal("manual_end_invalid");
   if (f <= m) refusal("occupation_empty");
   return {
+    harvests: c.harvest_from ? perennialHarvests(c.harvest_from, c.harvest_duration_days, r, f) : [{ start: iso(r), end: iso(f) }],
     sowing: entree.mode === "plants" ? null : stored,
     m: iso(m),
     r: iso(r),
@@ -107,10 +146,25 @@ function quantity(c: CropView, p: BedView, plot: PlotView, k: number) {
   };
 }
 
-/** What a planting looks like on a day, thresholds of S03 §3 (dev copy). */
-function apparenceLe(d: string, sowing: string | null, m: string, r: string, f: string, mode: PlantingView["mode"]): Appearance {
+/** What a planting looks like on a day, thresholds of S03 §3 (dev copy). `harvests` is
+ *  only given for a perennial. */
+function apparenceLe(
+  d: string,
+  sowing: string | null,
+  m: string,
+  r: string,
+  f: string,
+  mode: PlantingView["mode"],
+  harvests: HarvestView[] | null,
+): Appearance {
   if (d < m) return mode === "indoor" && sowing !== null && d >= sowing ? { appearance: "label" } : { appearance: "nothing" };
   if (d >= f) return { appearance: "nothing" };
+  if (harvests) {
+    if (harvests.some((h) => h.start <= d && d < h.end)) return { appearance: "plant", stage: "harvest" };
+    const md = d.slice(5);
+    if (md < "03-01" || md >= "11-15") return { appearance: "plant", stage: "dormant" };
+    if (d >= r) return { appearance: "plant", stage: "adult" };
+  }
   const elapsed = (Date.parse(d) - Date.parse(m)) / 86_400_000;
   const duration = (Date.parse(r) - Date.parse(m)) / 86_400_000;
   const stage =
@@ -118,11 +172,18 @@ function apparenceLe(d: string, sowing: string | null, m: string, r: string, f: 
   return { appearance: "plant", stage: mode === "plants" && stage === "sowing" ? "young_shoot" : stage };
 }
 
-function changements(sowing: string | null, m: string, r: string, f: string, mode: PlantingView["mode"]): AppearanceChange[] {
+function changements(
+  sowing: string | null,
+  m: string,
+  r: string,
+  f: string,
+  mode: PlantingView["mode"],
+  harvests: HarvestView[] | null,
+): AppearanceChange[] {
   const result: AppearanceChange[] = [];
   let previous = "nothing:";
   for (let d = sowing && sowing < m ? sowing : m; d <= f; d = shiftDate(d, 1)) {
-    const a = apparenceLe(d, sowing, m, r, f, mode);
+    const a = apparenceLe(d, sowing, m, r, f, mode, harvests);
     const key = a.appearance === "plant" ? `plant:${a.stage}` : `${a.appearance}:`;
     if (key !== previous) {
       result.push({ from: d, appearance: a });
@@ -151,7 +212,15 @@ function enView(id: string, e: PlantingInput, c: CropView, p: BedView, plot: Plo
     rows: q.rows,
     plants_by_row: q.plants,
     appearance_today: { appearance: "nothing" },
-    appearance_changes: changements(calculation.sowing, calculation.m, calculation.r, calculation.f, e.mode),
+    appearance_changes: changements(
+      calculation.sowing,
+      calculation.m,
+      calculation.r,
+      calculation.f,
+      e.mode,
+      c.harvest_from ? calculation.harvests : null,
+    ),
+    harvests: calculation.harvests,
   };
 }
 
@@ -251,6 +320,7 @@ function preview(ctx: Context, ignore: string | null, e: PlantingInput): Plantin
     pot_days: calculation.pots,
     rows: q.rows,
     plants_by_row: q.plants,
+    harvests: calculation.harvests,
   };
   const occupied = ctx
     .plantings()
@@ -277,6 +347,7 @@ function suggestions(ctx: Context, start: number, end: number): SuggestionView[]
   const year = Number(iso(start).slice(0, 4));
   const list: (SuggestionView & { name: string })[] = [];
   for (const c of CROPS) {
+    if (c.lifespan_years) continue; // a perennial is never suggested (S03 §9)
     const [mo = 1, jo = 1] = c.planting_out_start.split("-").map(Number);
     const [mf = 1, jf = 1] = c.planting_out_end.split("-").map(Number);
     const windows = [year - 1, year].map((a) => [Date.UTC(a, mo - 1, jo) / 86_400_000, Date.UTC(a + (mo > mf ? 1 : 0), mf - 1, jf) / 86_400_000]);

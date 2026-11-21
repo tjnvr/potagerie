@@ -124,10 +124,24 @@ describe("form to command input", () => {
       planting_out: "2027-05-05",
       harvest_start: "2027-07-19",
       end: "2027-09-27",
+      harvests: [{ start: "2027-07-19", end: "2027-09-27" }],
     } as NonNullable<PlantingPreview["dates"]>;
     expect(segmentsMiniTimeline(dates, "indoor").map((s) => s.phase)).toEqual(["pots", "growth", "harvest"]);
     expect(segmentsMiniTimeline(dates, "indoor").map((s) => s.days)).toEqual([56, 75, 70]);
     expect(segmentsMiniTimeline(dates, "plants").map((s) => s.phase)).toEqual(["growth", "harvest"]);
+  });
+
+  it("shows a harvest each year in the mini-timeline of a perennial (S03 §2 bis)", () => {
+    const dates = {
+      sowing: null,
+      planting_out: "2027-08-20",
+      harvest_start: "2028-05-15",
+      end: "2030-08-20",
+      harvests: [2028, 2029, 2030].map((y) => ({ start: `${y}-05-15`, end: `${y}-06-24` })),
+    } as NonNullable<PlantingPreview["dates"]>;
+    const segments = segmentsMiniTimeline(dates, "plants");
+    expect(segments.map((s) => s.phase)).toEqual(["growth", "harvest", "growth", "harvest", "growth", "harvest", "growth"]);
+    expect(segments.filter((s) => s.phase === "harvest").map((s) => s.days)).toEqual([40, 40, 40]);
   });
 });
 

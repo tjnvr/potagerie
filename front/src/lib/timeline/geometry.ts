@@ -126,17 +126,32 @@ export type Bar = {
   enConflict: boolean;
 };
 
+/** The phases in the ground, from `m` to `f`: harvest on each harvest Rust sends
+ *  (one, or one a year for a perennial, S03 §2 bis), growth in between. */
+export function groundPhases(m: number, f: number, harvests: { start: string; end: string }[]): Segment[] {
+  const segments: Segment[] = [];
+  let at = m;
+  for (const h of harvests) {
+    const start = Math.max(at, dayOf(h.start));
+    const end = Math.min(f, dayOf(h.end));
+    if (end <= start) continue;
+    if (start > at) segments.push({ phase: "growth", start: at, end: start });
+    segments.push({ phase: "harvest", start, end });
+    at = end;
+  }
+  if (f > at) segments.push({ phase: "growth", start: at, end: f });
+  return segments;
+}
+
 /** The phases of S03 §2, read from the dates Rust sends: pots from sowing to
  *  planting out (mode indoor only), growth to the start of harvest, harvest. */
 export function barOf(s: PlantingView, enConflict = false): Bar {
   const m = dayOf(s.planting_out);
-  const r = dayOf(s.harvest_start);
   const f = dayOf(s.end);
   const sowing = s.mode === "indoor" && s.sowing ? dayOf(s.sowing) : m;
   const segments: Segment[] = [];
   if (sowing < m) segments.push({ phase: "pots", start: sowing, end: m });
-  if (r > m) segments.push({ phase: "growth", start: m, end: r });
-  segments.push({ phase: "harvest", start: r, end: f });
+  segments.push(...groundPhases(m, f, s.harvests));
   return {
     id: s.id,
     cropId: s.crop_id,

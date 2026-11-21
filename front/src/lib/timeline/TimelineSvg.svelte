@@ -324,7 +324,7 @@
           <rect x={gauche} y={top - 7} width={widthB} height={HIT} fill="transparent" />
           <rect x={gauche} y={top + 1} width={widthB} height="26" rx="9" fill={PALETTE.ink} opacity={scope === b.id ? 0.25 : 0.12} />
           <g clip-path="url(#timeline-bar-{b.id})" transform="translate(0 0)">
-            {#each b.segments as s (s.phase)}
+            {#each b.segments as s (s.start)}
               <rect
                 x={x(s.start) + dx}
                 y={top}
