@@ -36,8 +36,6 @@ export function textIncoherence(i: IncoherenceView): string {
       return m.import_i_bed_outside_plot({ bed, year });
     case "bed_overlaps":
       return m.import_i_bed_overlaps({ bed, other, year });
-    case "aisle_too_narrow":
-      return m.import_i_aisle_too_narrow({ bed, other, year });
     case "width_invalid":
       return m.import_i_width_invalid();
     case "note_bed_unknown":

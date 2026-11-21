@@ -50,7 +50,7 @@
   async function poser(type: TypeBed, x: number, y: number) {
     const name = nameByDefault(type, view.beds);
     const before = new Set(view.beds.map((p) => p.id));
-    const ok = await app.modify((year) => commands.createBed(year, type, name, x, y));
+    const ok = (await app.place((year, keepClose) => commands.createBed(year, type, name, x, y, keepClose))) === "ok";
     if (ok && app.view) {
       // The new bed stays selected (F-PLN-6).
       selectionId = app.view.beds.find((p) => !before.has(p.id))?.id ?? null;
@@ -92,12 +92,13 @@
       app.informer(m.plan_no_free_space());
       return;
     }
+    const before = new Set(view.beds.map((p) => p.id));
     await poser(type, spot.x, spot.y);
     const id = selectionId;
-    const bed = id ? app.view?.beds.find((b) => b.id === id) : null;
+    const bed = id && !before.has(id) ? app.view?.beds.find((b) => b.id === id) : null;
     if (id && bed) {
-      await app.modify((year) =>
-        commands.modifyBed(year, id, null, { bed_type: bed.bed_type, ...zone }),
+      await app.place((year, keepClose) =>
+        commands.modifyBed(year, id, null, { bed_type: bed.bed_type, ...zone }, keepClose),
       );
     }
   }
@@ -154,7 +155,8 @@
   }
 
   /** A move or a resize: Rust judges. A shorter bed first asks which
-   *  plantings would no longer fit (S03 §4) and waits for the user. */
+   *  plantings would no longer fit (S03 §4) and waits for the user; a bed
+   *  closer than the aisle asks « Keep here » or « Go back » (S03 §15). */
   async function modify(id: string, geo: Geo, nature: "move" | "resize"): Promise<Response> {
     const bed = view.beds.find((p) => p.id === id);
     if (!bed) return "refusal";
@@ -168,13 +170,11 @@
         if (!ok) return "cancelled";
       }
     }
-    const ok =
-      nature === "move"
-        ? await app.modify((year) => commands.moveBed(year, id, geo.x, geo.y))
-        : await app.modify((year) =>
-            commands.modifyBed(year, id, null, { bed_type: bed.bed_type, ...geo }),
-          );
-    return ok ? "ok" : "refusal";
+    return nature === "move"
+      ? app.place((year, keepClose) => commands.moveBed(year, id, geo.x, geo.y, keepClose))
+      : app.place((year, keepClose) =>
+          commands.modifyBed(year, id, null, { bed_type: bed.bed_type, ...geo }, keepClose),
+        );
   }
 </script>
 

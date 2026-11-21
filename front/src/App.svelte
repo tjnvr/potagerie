@@ -1,6 +1,7 @@
 <script lang="ts">
   // The shell: header, the two tabs without a router (S05 §4), settings and
   // the message line.
+  import AisleBubble from "./lib/editor/AisleBubble.svelte";
   import Editor from "./lib/editor/Editor.svelte";
   import Header from "./lib/shell/Header.svelte";
   import Icon from "./lib/shell/Icon.svelte";
@@ -90,6 +91,10 @@
     <p>{m.error_saving_text()}</p>
     <button class="button" onclick={() => app.retry()}><Icon name="retry" size={16} />{m.retry()}</button>
   </div>
+{/if}
+
+{#if app.aisleQuestion && app.view?.plot}
+  <AisleBubble aisle={app.view.plot.aisle_cm} answer={app.aisleQuestion.answer} />
 {/if}
 
 {#if app.message}

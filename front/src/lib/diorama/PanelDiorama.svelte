@@ -25,13 +25,11 @@
         if (!ok) return "cancelled";
       }
     }
-    const ok =
-      nature === "move"
-        ? await app.modify((year) => commands.moveBed(year, id, geo.x, geo.y))
-        : await app.modify((year) =>
-            commands.modifyBed(year, id, null, { bed_type: bed.bed_type, ...geo }),
-          );
-    return ok ? "ok" : "refusal";
+    return nature === "move"
+      ? app.place((year, keepClose) => commands.moveBed(year, id, geo.x, geo.y, keepClose))
+      : app.place((year, keepClose) =>
+          commands.modifyBed(year, id, null, { bed_type: bed.bed_type, ...geo }, keepClose),
+        );
   }
 </script>
 

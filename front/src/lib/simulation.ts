@@ -177,20 +177,34 @@ export function simulerTauri(): void {
   }
 
 
-  /** Overlap, aisle and plot edges: a rough copy of S03 §15, for the demo. */
-  function verifier(id: string, g: Geometry): void {
+  type Rect = Pick<Geometry, "x" | "y" | "length_cm" | "width_cm">;
+  const gaps = (a: Rect, b: Rect) => ({
+    dx: Math.max(b.x - (a.x + a.length_cm), a.x - (b.x + b.length_cm)),
+    dy: Math.max(b.y - (a.y + a.width_cm), a.y - (b.y + b.width_cm)),
+  });
+  const tooClose = (a: Rect, b: Rect, aisle: number) => {
+    const { dx, dy } = gaps(a, b);
+    return dx < aisle && dy < aisle;
+  };
+
+  /** Overlap, aisle and plot edges: a rough copy of S03 §15, for the demo (one
+   *  year). Without `keepClose`, a pair the change makes closer than the aisle
+   *  is refused with `aisle_too_narrow`, so the interface asks. */
+  function verifier(id: string, g: Rect, keepClose: boolean): void {
     const t = plot;
     if (!t) refusal("plot_absent");
     if (g.x + g.length_cm > t.length_cm || g.y + g.width_cm > t.width_cm) {
       refusal("bed_outside_plot");
     }
+    const before = beds.find((p) => p.id === id);
+    let narrow = false;
     for (const other of beds) {
       if (other.id === id) continue;
-      const dx = Math.max(other.x - (g.x + g.length_cm), g.x - (other.x + other.length_cm));
-      const dy = Math.max(other.y - (g.y + g.width_cm), g.y - (other.y + other.width_cm));
+      const { dx, dy } = gaps(g, other);
       if (dx < 0 && dy < 0) refusal("bed_overlaps");
-      if (dx < t.aisle_cm && dy < t.aisle_cm) refusal("aisle_too_narrow");
+      if (tooClose(g, other, t.aisle_cm) && !(before && tooClose(before, other, t.aisle_cm))) narrow = true;
     }
+    if (narrow && !keepClose) refusal("aisle_too_narrow");
   }
 
   function checkPlot(t: PlotView): void {
@@ -263,7 +277,7 @@ export function simulerTauri(): void {
       incoherence("too_many_beds", { year: annee0, count: 11 }),
       incoherence("planting_orphan", { year: annee0, bed_name: tr("Roots", "Racines"), crop_id: "carrot" }),
       incoherence("overlap", { bed_name: tr("The tomatoes", "Les tomates"), crop_id: "tomato", other_crop_id: "lettuce" }),
-      incoherence("aisle_too_narrow", { year: annee0, bed_name: tr("Leek square", "Carré poireaux"), other_bed_name: tr("Salad square", "Carré salades") }),
+      incoherence("bed_overlaps", { year: annee0, bed_name: tr("Leek square", "Carré poireaux"), other_bed_name: tr("Salad square", "Carré salades") }),
     ];
     switch (cmd) {
       case "plugin:dialog|save":
@@ -341,13 +355,19 @@ export function simulerTauri(): void {
       }
       case "modify_plot": {
         // Same rules as Rust (`Plan::set_plot`): the cell stays, the new plot must be valid and
-        // still hold the beds with the new aisle, otherwise nothing changes.
+        // still hold the beds; a pair that kept the old aisle must keep the new one, a pair
+        // already closer does not count. Otherwise nothing changes.
         const next = { ...plot!, ...(args.plot as Partial<PlotView>), cell_cm: plot!.cell_cm };
         checkPlot(next);
-        const before = plot;
+        const before = plot!;
+        for (const a of beds) {
+          for (const b of beds) {
+            if (a !== b && tooClose(a, b, next.aisle_cm) && !tooClose(a, b, before.aisle_cm)) refusal("aisle_too_narrow");
+          }
+        }
         plot = next;
         try {
-          for (const b of beds) verifier(b.id, b);
+          for (const b of beds) verifier(b.id, b, true);
         } catch (e) {
           plot = before;
           throw e;
@@ -360,7 +380,7 @@ export function simulerTauri(): void {
         const type = args.bedType as TypeBed;
         const [l, h] = SIZES[type];
         const created = bed(String(args.name), type, Number(args.x), Number(args.y), l, h);
-        verifier(created.id, created);
+        verifier(created.id, created, args.keepClose === true);
         beds = [...beds, created];
         version++;
         return view(year);
@@ -368,7 +388,7 @@ export function simulerTauri(): void {
       case "move_bed": {
         modifiable(year);
         const target = beds.find((p) => p.id === args.id)!;
-        verifier(target.id, { ...target, x: Number(args.x), y: Number(args.y) });
+        verifier(target.id, { ...target, x: Number(args.x), y: Number(args.y) }, args.keepClose === true);
         beds = beds.map((p) => (p === target ? { ...p, x: Number(args.x), y: Number(args.y) } : p));
         version++;
         return view(year);
@@ -385,7 +405,7 @@ export function simulerTauri(): void {
         }
         if (g) {
           if (g.length_cm % plot!.cell_cm !== 0) refusal("length_invalid");
-          verifier(target.id, g);
+          verifier(target.id, g, args.keepClose === true);
         }
         beds = beds.map((p) =>
           p === target

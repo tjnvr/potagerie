@@ -59,14 +59,14 @@
 
   async function rename() {
     if (name === bed.name) return;
-    const ok = await app.modify((year) => commands.modifyBed(year, bed.id, name, null));
+    const ok = await app.modify((year) => commands.modifyBed(year, bed.id, name, null, false));
     if (!ok) name = bed.name;
   }
 
   async function changerType(type: TypeBed) {
     if (type === bed.bed_type) return;
     await app.modify((year) =>
-      commands.modifyBed(year, bed.id, null, { bed_type: type, ...geo }),
+      commands.modifyBed(year, bed.id, null, { bed_type: type, ...geo }, false),
     );
   }
 

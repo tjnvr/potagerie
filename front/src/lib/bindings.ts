@@ -20,12 +20,16 @@ export const commands = {
 	/**
 	 *  Drops a new bed from the tray at `(x, y)`, at its default size (F-PLN-6).
 	 *  The default name ("Bed A") is chosen and translated by the interface.
+	 *  `keep_close`: the user chose "Keep here" for a narrow aisle (S03 §15).
 	 */
-	createBed: (year: number, bedType: TypeBed, name: string, x: number, y: number, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("create_bed", { year, bedType, name, x, y }, options)),
-	/**  Renames a bed and/or changes its layout from `year` on (S03 §7). */
-	modifyBed: (year: number, id: BedId, name: string | null, geometry: GeometryInput | null, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("modify_bed", { year, id, name, geometry }, options)),
-	/**  Moves a bed from `year` on, keeping its size. */
-	moveBed: (year: number, id: BedId, x: number, y: number, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("move_bed", { year, id, x, y }, options)),
+	createBed: (year: number, bedType: TypeBed, name: string, x: number, y: number, keepClose: boolean, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("create_bed", { year, bedType, name, x, y, keepClose }, options)),
+	/**
+	 *  Renames a bed and/or changes its layout from `year` on (S03 §7).
+	 *  `keep_close` as for `create_bed`.
+	 */
+	modifyBed: (year: number, id: BedId, name: string | null, geometry: GeometryInput | null, keepClose: boolean, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("modify_bed", { year, id, name, geometry, keepClose }, options)),
+	/**  Moves a bed from `year` on, keeping its size. `keep_close` as for `create_bed`. */
+	moveBed: (year: number, id: BedId, x: number, y: number, keepClose: boolean, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("move_bed", { year, id, x, y, keepClose }, options)),
 	/**
 	 *  The plantings that would no longer fit if the bed were shortened to
 	 *  `length_cm` from `year` on (S03 §4). Read-only: the interface warns
@@ -262,8 +266,7 @@ export type ImportSummaryView = {
  *  One incoherence of an imported plan. `code` is `too_many_beds`,
  *  `planting_orphan`, `overlap`, `zone_outside_bed`, `crop_unknown`,
  *  `note_bed_unknown`, `note_invalid`, or a placement code
- *  (`bed_outside_plot`, `bed_overlaps`, `aisle_too_narrow`,
- *  `width_invalid`). Names come from the file, not from the interface.
+ *  (`bed_outside_plot`, `bed_overlaps`, `width_invalid`). Names come from the file, not from the interface.
  */
 export type IncoherenceView = {
 	code: string,

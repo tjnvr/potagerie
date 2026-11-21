@@ -484,3 +484,42 @@ test("UC-32 garden: « Move » in the bed panel opens the plan on that bed; refu
   await expect(move).toBeDisabled();
   await expect(move).toHaveAccessibleDescription("Past season: the bed cannot be moved any more.");
 });
+
+test("UC-33 plan: a bed dropped closer than the aisle asks « Keep here » or « Go back »", async ({ page }) => {
+  await open(page);
+  await page.getByRole("button", { name: "Plan", exact: true }).click();
+  // The salad square stands 50 cm (the aisle) right of the leek square: one case
+  // to the left, it touches it without covering it.
+  const bed = page.getByRole("button", { name: /^Salad square, / }).locator("rect").first();
+  const drag = async () => {
+    const box = (await bed.boundingBox())!;
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+    const step = box.width / 2; // 100 cm wide, a case is 50 cm
+    await page.mouse.move(cx, cy);
+    await page.mouse.down();
+    await page.mouse.move(cx - 6, cy, { steps: 3 });
+    await page.mouse.move(cx - step, cy, { steps: 6 });
+    await page.mouse.up();
+    return box;
+  };
+  const bubble = page.getByRole("alertdialog");
+
+  const start = await drag();
+  await expect(bubble).toContainText("closer than 50 cm");
+  await bubble.getByRole("button", { name: "Go back" }).click();
+  await expect(bubble).toHaveCount(0);
+  await expect.poll(async () => (await bed.boundingBox())!.x).toBeCloseTo(start.x, 0);
+  await expect(page.getByRole("alert")).toHaveCount(0);
+
+  await drag();
+  await bubble.getByRole("button", { name: "Keep here" }).click();
+  await expect(bubble).toHaveCount(0);
+  await expect.poll(async () => (await bed.boundingBox())!.x).toBeLessThan(start.x - start.width / 4);
+  await expect(page.getByRole("alert")).toHaveCount(0);
+
+  // Onto the leek square: still refused, without a question.
+  await drag();
+  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(bubble).toHaveCount(0);
+});

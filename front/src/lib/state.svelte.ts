@@ -47,6 +47,9 @@ class App {
   /** The last refusal of a command that changes the plan (not a save failure),
    *  for the screens that word it themselves (a bar that goes back, S03 T12). */
   lastRefusal = $state<AppError | null>(null);
+  /** The « Keep here » / « Go back » bubble (S01 F-PLN-2), open while a bed
+   *  closer than the aisle waits for an answer. */
+  aisleQuestion = $state<{ answer: (keep: boolean) => void } | null>(null);
   view = $state<YearView | null>(null);
   /** Why the first load failed (a damaged data file): the shell says so instead
    *  of an endless « Loading… ». */
@@ -93,8 +96,12 @@ class App {
     if (result.status === "ok") this.toResolve = result.data;
   }
 
-  /** Runs a command that changes the plan and shows the view it returns. */
-  async modify(action: (year: number) => Promise<Result<YearView>>): Promise<boolean> {
+  /** Runs a command that changes the plan and shows the view it returns.
+   *  A refusal is reported, unless `asked` takes it as a question. */
+  async modify(
+    action: (year: number) => Promise<Result<YearView>>,
+    asked: (error: AppError) => boolean = () => false,
+  ): Promise<boolean> {
     this.saving = "saving";
     const result = await call(() => action(this.year));
     this.lastRefusal = null;
@@ -113,9 +120,31 @@ class App {
     } else {
       this.saving = "saved";
       this.lastRefusal = result.error;
-      this.report(result.error);
+      if (!asked(result.error)) this.report(result.error);
     }
     return false;
+  }
+
+  /** Places, moves or resizes a bed (S03 §15). Rust refuses a bed closer than
+   *  the aisle with `aisle_too_narrow`: the bubble asks (S01 F-PLN-2), « Keep
+   *  here » sends the same change with `keepClose`, « Go back » sends nothing. */
+  async place(
+    action: (year: number, keepClose: boolean) => Promise<Result<YearView>>,
+  ): Promise<"ok" | "refusal" | "cancelled"> {
+    let narrow = false;
+    const ok = await this.modify(
+      (year) => action(year, false),
+      (error) => (narrow = error.code === "aisle_too_narrow"),
+    );
+    if (ok) return "ok";
+    if (!narrow) return "refusal";
+    this.aisleQuestion?.answer(false);
+    const keep = await new Promise<boolean>((answer) => {
+      this.aisleQuestion = { answer };
+    });
+    this.aisleQuestion = null;
+    if (!keep) return "cancelled";
+    return (await this.modify((year) => action(year, true))) ? "ok" : "refusal";
   }
 
   /** « Retry » of the save indicator. */
