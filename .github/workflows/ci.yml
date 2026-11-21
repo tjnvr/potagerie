@@ -151,19 +151,25 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force e2e-app\results | Out-Null
-          $env:POTAGERIE_DATA_DIR = "$env:RUNNER_TEMP\diag"
-          $p = Start-Process -FilePath target\release\potagerie.exe -PassThru
-          Start-Sleep -Seconds 25
-          Write-Host "exited: $($p.HasExited) code: $($p.ExitCode)"
-          Write-Host "data folder: $(Test-Path "$env:RUNNER_TEMP\diag")"; Get-ChildItem "$env:RUNNER_TEMP\diag" -ErrorAction SilentlyContinue
-          Get-ChildItem "$env:LOCALAPPDATA\garden.potagerie" -Recurse -Depth 1 -ErrorAction SilentlyContinue | Select-Object -First 20 FullName
-          Get-CimInstance Win32_Process | Where-Object { $_.Name -match 'potagerie|msedgewebview2' } | ForEach-Object { "$($_.ProcessId) $($_.Name) $($_.CommandLine)".Substring(0, [Math]::Min(300, "$($_.ProcessId) $($_.Name) $($_.CommandLine)".Length)) }
           Add-Type -AssemblyName System.Windows.Forms, System.Drawing
-          $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-          $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
-          [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
-          $bmp.Save("e2e-app\results\desktop.png")
-          if (-not $p.HasExited) { Stop-Process -Id $p.Id }
+          foreach ($try in @('', '--disable-gpu', '--no-sandbox', '--disable-gpu --no-sandbox')) {
+            $name = if ($try) { $try -replace '[- ]', '' } else { 'plain' }
+            $env:POTAGERIE_DATA_DIR = "$env:RUNNER_TEMP\diag-$name"
+            $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = $try
+            $p = Start-Process -FilePath target\release\potagerie.exe -PassThru
+            Start-Sleep -Seconds 20
+            Write-Host "[$name] exited: $($p.HasExited) data folder: $(Test-Path $env:POTAGERIE_DATA_DIR)"
+            Get-CimInstance Win32_Process | Where-Object { $_.Name -match 'msedgewebview2' } | ForEach-Object { $s = "$($_.CommandLine)" -replace '.*--type=', 'type='; "  $($_.ProcessId) $($s.Substring(0, [Math]::Min(60, $s.Length)))" }
+            $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+            $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+            [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+            $bmp.Save("e2e-app\results\desktop-$name.png")
+            if (-not $p.HasExited) { Stop-Process -Id $p.Id }
+            Get-Process msedgewebview2 -ErrorAction SilentlyContinue | Stop-Process -Force
+            Start-Sleep -Seconds 2
+          }
+          Remove-Item Env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS
+          Get-ChildItem "$env:LOCALAPPDATA\garden.potagerie\EBWebView\Crashpad" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 20 FullName, Length
           & $env:NATIVE_DRIVER --version
           Get-ChildItem 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients' | ForEach-Object { "$($_.PSChildName) $((Get-ItemProperty $_.PSPath).name) $((Get-ItemProperty $_.PSPath).pv)" }
       - name: Diagnose a direct launch (temporary)

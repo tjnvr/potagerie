@@ -83,6 +83,17 @@ async function keep(id) {
     ?.cmd("GET", "/url")
     .then((url) => console.log(`${id}: page ${url}`))
     .catch(() => {});
+  // Temporary: which ways of finding an element work in this webview.
+  for (const [what, call] of [
+    ["script", () => app.execute("return document.querySelectorAll('button').length")],
+    ["css", () => app.cmd("POST", "/elements", { using: "css selector", value: "button" })],
+    ["xpath", () => app.cmd("POST", "/elements", { using: "xpath", value: "//button" })],
+    ["tag", () => app.cmd("POST", "/elements", { using: "tag name", value: "button" })],
+  ]) {
+    await call()
+      .then((v) => console.log(`${id}: ${what} -> ${JSON.stringify(v).slice(0, 300)}`))
+      .catch((e) => console.log(`${id}: ${what} failed: ${e.message}`));
+  }
 }
 
 /** Runs a step; on failure keeps what the window shows. */
