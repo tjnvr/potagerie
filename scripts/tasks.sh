@@ -10,6 +10,8 @@ BASE=${TASKS_BASE:-origin/main}
 HOME_DIR=${TASKS_HOME:-"$(cd "$ROOT/.." && pwd)/potagerie-tasks"}
 MAX=${TASKS_MAX:-2}
 STATUSES="Draft Ready Running Blocked Done"
+LABEL=garden.potagerie.tasks
+PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 
 die() { echo "tasks: $*" >&2; exit 1; }
 
@@ -168,5 +170,46 @@ case "${1:-board}" in
     # caffeinate keeps the Mac awake while the loop runs (macOS only).
     if command -v caffeinate > /dev/null; then exec caffeinate -is node "$ROOT/scripts/tasks-loop.mjs"; fi
     exec node "$ROOT/scripts/tasks-loop.mjs" ;;
-  *) die "usage: tasks.sh [board | run T<NN> | next | log T<NN> | clean | ui | loop]" ;;
+  install)
+    # macOS service: the loop starts at login, comes back if it stops, and keeps the Mac awake.
+    node_bin=$(command -v node) || die "node not found in PATH"
+    command -v claude > /dev/null || die "claude not found in PATH"
+    mkdir -p "$HOME/Library/LaunchAgents" "$HOME_DIR"
+    cat > "$PLIST" <<PLIST_END
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>$LABEL</string>
+  <key>ProgramArguments</key><array>
+    <string>/usr/bin/caffeinate</string><string>-is</string>
+    <string>$node_bin</string><string>$ROOT/scripts/tasks-loop.mjs</string>
+  </array>
+  <key>WorkingDirectory</key><string>$ROOT</string>
+  <key>EnvironmentVariables</key><dict>
+    <key>PATH</key><string>$PATH</string>
+    <key>TASKS_HOME</key><string>$HOME_DIR</string>
+    <key>TASKS_MAX</key><string>$MAX</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>60</integer>
+  <key>StandardOutPath</key><string>$HOME_DIR/loop.out</string>
+  <key>StandardErrorPath</key><string>$HOME_DIR/loop.out</string>
+</dict></plist>
+PLIST_END
+    launchctl bootout "gui/$(id -u)/$LABEL" 2> /dev/null || true
+    launchctl bootstrap "gui/$(id -u)" "$PLIST"
+    echo "loop installed as a macOS service ($LABEL): it runs now, at each login, and restarts if it stops."
+    echo "journal: $HOME_DIR/loop.log · stop it: scripts/tasks.sh uninstall" ;;
+  uninstall)
+    launchctl bootout "gui/$(id -u)/$LABEL" 2> /dev/null || true
+    rm -f "$PLIST"
+    echo "loop service removed" ;;
+  status)
+    if launchctl print "gui/$(id -u)/$LABEL" > /dev/null 2>&1; then
+      echo "service: installed ($(launchctl print "gui/$(id -u)/$LABEL" | sed -n 's/^[[:space:]]*state = //p' | head -n 1))"
+    else echo "service: not installed (scripts/tasks.sh install)"; fi
+    if [ -f "$HOME_DIR/limit.json" ]; then echo "Claude limit: $(tr -d '\n' < "$HOME_DIR/limit.json")"; fi
+    echo "--- last lines of $HOME_DIR/loop.log"; tail -n 8 "$HOME_DIR/loop.log" 2> /dev/null || true ;;
+  *) die "usage: tasks.sh [board | run T<NN> | next | log T<NN> | clean | ui | loop | install | uninstall | status]" ;;
 esac

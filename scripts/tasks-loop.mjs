@@ -33,6 +33,7 @@ writeFileSync(PID, String(process.pid));
 const bye = () => { try { if (readFileSync(PID, "utf8") === String(process.pid)) writeFileSync(PID, ""); } catch {} process.exit(0); };
 process.on("SIGINT", bye);
 process.on("SIGTERM", bye);
+process.on("SIGHUP", () => {}); // a closed terminal must not stop the loop
 
 const retries = () => { try { return JSON.parse(readFileSync(RETRY_FILE, "utf8")); } catch { return {}; } };
 const saveRetries = (r) => writeFileSync(RETRY_FILE, JSON.stringify(r));

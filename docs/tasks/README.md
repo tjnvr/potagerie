@@ -80,10 +80,14 @@ Worktrees and logs are in `../potagerie-tasks/` (outside the repository). `TASKS
 2. **Restarts**: an agent that stopped for another reason is restarted, twice at most; a task you answered in the board is resumed.
 3. **Next**: free slots (2) take the next `Ready` tasks.
 
-Stuck tasks (technical dead end) and tasks waiting for a `[functional]` answer are left alone. One loop at a time; its journal is `../potagerie-tasks/loop.log`. Leave it in a terminal tab, or in the background:
+Stuck tasks (technical dead end) and tasks waiting for a `[functional]` answer are left alone. One loop at a time; its journal is `../potagerie-tasks/loop.log`. Run it as a macOS service, so that it starts at login and comes back by itself if it stops (crash, closed terminal, reboot):
 
 ```
-nohup scripts/tasks.sh loop > /dev/null 2>&1 &
+scripts/tasks.sh install     # once; again after moving the repository or changing PATH
+scripts/tasks.sh status      # service state, Claude limit, last lines of the journal
+scripts/tasks.sh uninstall   # stop it for good
 ```
+
+`scripts/tasks.sh loop` still runs it in the current terminal, for a test.
 
 Settings: `TASKS_MAX` (agents at once, 2), `TASKS_LOOP_MINUTES` (5), `TASKS_LIMIT_HOURS` (5), `TASKS_LOOP_RETRIES` (2).
