@@ -43,5 +43,8 @@ Set `- Status: Running`, commit `docs(tasks): start T<NN>`.
 - Commit messages cite the task: `feat(front): aisle bubble (S01 F-PLN-2, T01)`.
 - No `Co-Authored-By`, no "generated with", anywhere.
 - Never edit another existing task file, never delete branches or worktrees, never force-push.
+- Never end your turn to wait for something (CI, a build, a timer): nobody wakes you up. Wait in the foreground, e.g. `gh run watch <id> --exit-status`, with a timeout.
+- Write a line in `Log` (and commit) at each milestone: tests written, code passing, pushed for CI, CI result. If you are stopped, the next run starts from there.
+- A branch you push to run CI (`task/T<NN>-…`) is yours to delete on `origin` once the task is done.
 - Another agent may be running at the same time on another task: pick new ids (`UC-xx`, task numbers) from `origin/main` and expect to renumber at step 2.
 - Report in French at the end of your output: done, blocked on a functional question, or stuck; and why.
