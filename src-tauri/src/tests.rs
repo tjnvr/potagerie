@@ -1101,3 +1101,42 @@ fn a_database_of_a_newer_version_is_reported_as_too_recent_and_never_erased() {
     assert_eq!(err["code"], "base_too_recent");
     assert_eq!(std::fs::read(&db).unwrap(), before);
 }
+
+/// The smoke tests of the real app (`e2e-app/`) answer the file windows
+/// with one file: the stand-in keeps the plugin name, so the `main`
+/// capability still allows it.
+#[test]
+fn the_dialog_stand_in_answers_the_file_and_is_allowed() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = dir.path().join("garden.json");
+    let builder = specta_builder::<MockRuntime>();
+    let app = mock_builder()
+        .plugin(smoke::dialog_stand_in(file.clone()))
+        .invoke_handler(builder.invoke_handler())
+        .build(context())
+        .expect("failed to build the app");
+    app.manage(AppState::open(&dir.path().join(DB_FILE)));
+    let window = WebviewWindowBuilder::new(&app, "main", Default::default())
+        .build()
+        .unwrap();
+    let options = json!({ "options": { "multiple": false, "directory": false } });
+    for cmd in ["plugin:dialog|save", "plugin:dialog|open"] {
+        let answer = invoke(&window, cmd, options.clone()).unwrap_or_else(|e| panic!("{cmd}: {e}"));
+        assert_eq!(answer, json!(file), "{cmd}");
+    }
+}
+
+#[test]
+fn the_data_folder_can_be_set_for_the_smoke_tests() {
+    let default = || Ok(std::path::PathBuf::from("default"));
+    let set = smoke::data_dir(Some("/tmp/smoke".into()), default).unwrap();
+    assert_eq!(set, Path::new("/tmp/smoke"));
+    assert_eq!(
+        smoke::data_dir(Some("".into()), default).unwrap(),
+        Path::new("default")
+    );
+    assert_eq!(
+        smoke::data_dir(None, default).unwrap(),
+        Path::new("default")
+    );
+}
