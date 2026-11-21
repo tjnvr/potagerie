@@ -37,6 +37,8 @@ The installers are not signed, so the system asks for a confirmation at the firs
 | `make check` | `cargo fmt --check`, clippy with `-D warnings`, `svelte-check`: what the CI checks |
 | `make fmt` | Formats the Rust code |
 | `make bindings` | Rewrites `bindings.ts` from the Rust commands (a test fails if it is out of date) |
+| `make e2e` | The use cases of the interface in Playwright (Chromium, WebKit), against fake commands |
+| `make e2e-app` | Linux or Windows only: builds the app and runs its smoke tests through `tauri-driver` (`e2e-app/`), in a temporary data folder. Needs `cargo install tauri-driver --locked` and the native driver: `WebKitWebDriver` on Linux (package `webkit2gtk-driver`), on Windows the `msedgedriver.exe` of the WebView2 version, its path in `NATIVE_DRIVER` |
 
 To work on the interface alone, `pnpm --dir front dev` opens it in a browser, on `http://localhost:5173`, with fake in-memory commands (`?example` to start from a filled garden, `?settings` or `?garden` to open a screen).
 
@@ -51,6 +53,7 @@ crates/catalogue/       crops.json (S02), embedded
 crates/store/           Store trait and SQLite implementation (rusqlite)
 crates/export/          garden JSON, timeline PNG and PDF (resvg, svg2pdf), embedded fonts
 src-tauri/              Tauri app: commands, capabilities, icons
+e2e-app/                smoke tests of the real app through tauri-driver (Linux, Windows)
 front/                  Svelte + TypeScript interface (Vite, pnpm)
   messages/en.json      all the texts of the interface, base language (Paraglide JS)
   messages/fr.json      their French translation

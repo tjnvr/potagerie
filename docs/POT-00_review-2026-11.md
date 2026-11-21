@@ -40,7 +40,7 @@ Scope: the code of lot 1 after the move to English (`crates/`, `src-tauri/`, `fr
 ## Known problems, not fixed
 
 1. **The canvases on claude.ai** (D01, D02) are still the French ones: the files in the repository are the reference, the canvases have to be re-imported by hand.
-2. **Not covered**: the real Tauri window (WebKit, WebView2) and touch were never exercised by these checks, only headless WebKit and Chrome; Undo / Redo is not built (F-PLN-6); the PDF has no header, plan thumbnail or task calendar yet (S01 F-EXP-2).
+2. **Not covered**: the macOS window (WKWebView) and touch are never exercised by these checks, only headless WebKit and Chrome (`tauri-driver` does not support macOS). Since T13 the real app runs on Windows (WebView2) and Linux (WebKitGTK) in CI, with the Rust commands and SQLite: first launch, a bed, a planting from a free slot, export, restart, import (APP-01 to APP-06 in the test matrix); the native file windows are answered by a test stand-in, not driven; Undo / Redo is not built (F-PLN-6); the PDF has no header, plan thumbnail or task calendar yet (S01 F-EXP-2).
 
 ## What was checked and found sound
 

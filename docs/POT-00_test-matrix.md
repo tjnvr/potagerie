@@ -8,6 +8,14 @@ against the Vite dev server with the in-memory fake of the Tauri commands (`?exa
 - In CI: the Ubuntu job of `.github/workflows/ci.yml` runs them after the unit tests; the traces of a failed run are uploaded.
 - A new use case = a row below + a `UC-xx` test with the same id (see `skills/spec-driven-delivery`, step 3 and 6).
 
+The smoke tests of the **real app** (`APP-xx`, `e2e-app/smoke.test.mjs`) drive the built binary through `tauri-driver`
+(WebDriver), with the real Rust commands and SQLite, in **WebView2 (Windows) and WebKitGTK (Linux)**. They use a fresh
+temporary data folder, and the "Open" and "Save as" windows answer one file of it (S05 §3): the native windows themselves are
+not driven. `tauri-driver` does not support macOS (WKWebView); touch is not driven either.
+
+- Locally, on Linux or Windows: `make e2e-app` (needs `tauri-driver` and the native driver, see the `Makefile`).
+- In CI: the `app` job of `.github/workflows/ci.yml`, on `ubuntu-24.04` and `windows-latest`; screenshots of failed steps are uploaded.
+
 ## Matrix
 
 | Id | Use case | Spec | Expected | Test |
@@ -31,7 +39,7 @@ against the Vite dev server with the in-memory fake of the Tauri commands (`?exa
 | UC-20 | Move / resize a bed by dragging, refusal goes back | F-PLN-6 | Position kept or restored with the reason | automated (e2e; the rules themselves are covered by `cargo test`) |
 | UC-21 | Delete a bed with plantings (confirmation) | F-PLN-4 | Warning with the count, then removal | automated |
 | UC-22 | Clear the plan, erase the data (double confirmation) | F-CPT-4 | Plan emptied / app data erased | automated (clear; erase is Rust-tested) |
-| UC-23 | Export and import a garden file | F-CPT-3 | Round trip, "older file" warning, "to resolve" list | Rust: `garden.rs` tests; the file dialog needs the real window |
+| UC-23 | Export and import a garden file | F-CPT-3 | Round trip, "older file" warning, "to resolve" list | Rust: `garden.rs` tests; real app: APP-04, APP-06 (the native file window answered by the test stand-in) |
 | A11Y | Axe audit (WCAG A and AA) of plan, garden, settings and catalogue | all | No serious or critical violation | automated (`front/e2e/a11y.spec.ts`) |
 | UC-24 | Damaged database: Retry / settings / erase | storage | Explanation screen, then a fresh garden | Rust: `src-tauri/src/tests.rs`; screen not automated |
 | UC-25 | Delete a bed that has plantings | F-PLN-7 | Warning shows the count of plantings deleted; Cancel keeps the bed | automated (e2e) |
@@ -56,7 +64,13 @@ against the Vite dev server with the in-memory fake of the Tauri commands (`?exa
 | LAY-07 | Phone: planting form opened from a free slot (chips, fields, select, link, segment strip) | accessibility | Every control at least 40 px | automated (`front/e2e/targets.spec.ts`) |
 | LAY-08 | Phone: garden screen (time slider, annotations checkbox, header, timeline) | accessibility | Every control at least 40 px; the 3D beds and note texts are scene content, not measured | automated (`front/e2e/targets.spec.ts`) |
 | MONKEY | Seeded random clicks, drags and keys | all | No page error, no console error | automated (`front/e2e/monkey.spec.ts`) |
-| UC-30 | Real Tauri window, touch, installed build | all | — | **manual** (never automated yet) |
+| APP-01 | Real app, first launch: no plot, create it | F-TER-1 | "No plot yet", then "0 / 10"; `potagerie.db` is in the temporary data folder | automated (`e2e-app/`, WebView2 and WebKitGTK) |
+| APP-02 | Real app: a click on free grass adds a bed | F-PLN-1 | Counter 0 → 1 | automated (`e2e-app/`) |
+| APP-03 | Real app: plant from a free slot | F-PLA-1 | Slot (keyboard Enter) → form → "Plant · …" adds one bar | automated (`e2e-app/`) |
+| APP-04 | Real app: export the garden | F-CPT-3 | "Garden exported.", the JSON file is written | automated (`e2e-app/`) |
+| APP-05 | Real app: restart | storage | The bed and the planting are still there | automated (`e2e-app/`) |
+| APP-06 | Real app: clear the plan, then import the file | F-PLN-4, F-CPT-3 | "Plan cleared.", then "Replace anyway" (older file), "Garden imported.", the bed and the bar are back | automated (`e2e-app/`) |
+| UC-30 | macOS window (WKWebView), touch, installed build, native file windows | all | — | **manual** (Windows and Linux windows: APP-01 to APP-06) |
 
 ## First analysis of the navigation (17 November 2026, done once)
 
@@ -88,7 +102,7 @@ e2e = Playwright against the fake of the commands (`?example`), which does not r
 |---|---|---|
 | F-CPT-1 Sign-in | — (removed) | n/a |
 | F-CPT-2 Saving | Rust: `sqlite.rs` (versions, stale copy, reopening), `commands` tests (restart); unit `state.test.ts` ("Saving failed" keeps the change, Retry runs it again) | Covered. The header indicator itself (three states) is not asserted in a browser |
-| F-CPT-3 Export / import | Rust: `garden.rs`, `garden_stress.rs`, `hostile_import.rs`, `tests.rs` (older file, invalid, incoherent import) | Covered in Rust. Settings screen: e2e **SET-02..05** (confirmation with summary, cautious button for an older file, issue list, "to resolve" band, unreadable / too recent / file refusals). The native file dialog itself is not driven (UC-23, UC-30 manual) |
+| F-CPT-3 Export / import | Rust: `garden.rs`, `garden_stress.rs`, `hostile_import.rs`, `tests.rs` (older file, invalid, incoherent import) | Covered in Rust. Settings screen: e2e **SET-02..05** (confirmation with summary, cautious button for an older file, issue list, "to resolve" band, unreadable / too recent / file refusals). Real app: export, then import after clearing, in WebView2 and WebKitGTK (APP-04, APP-06). The native file window itself is not driven (UC-30 manual) |
 | F-CPT-4 Erase | Rust: `tests.rs` (damaged database erased), `store` `replace_and_clear`; e2e UC-22, **SET-06** (clear the plan), **SET-07** (erase: each of the two steps can be cancelled, the second erases) | Covered |
 | F-TER-1 Plot creation | e2e UC-01 (defaults), **SET-09..13** (defaults, "cannot be changed" warning, cell size in the preview, side under 1 m refused, 25 / 100 cm cells and 30 / 80 cm aisle kept); Rust `placement.rs` (dimensions, aisle) | Covered |
 | F-PLN-1 Beds | Rust: `eleventh_bed_refused`, `placement.rs`, `names_have_1_to_30_characters`, `length_not_a_multiple...`; e2e UC-02, UC-15, UC-16, **REQ-03** (tray greyed out at 10 with its message), **REQ-05** (rename, empty refused) | Covered. Partial requirement: the same-name warning does not exist |
