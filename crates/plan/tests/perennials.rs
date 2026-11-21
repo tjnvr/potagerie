@@ -6,9 +6,7 @@ mod common;
 use catalogue::{Catalogue, Crop};
 use chrono::NaiveDate;
 use common::*;
-use plan::{
-    Appearance, Mode, Occupation, PlanError, Planting, Slot, Stage, TaskType, YearView,
-};
+use plan::{Appearance, Mode, Occupation, PlanError, Planting, Slot, Stage, TaskType, YearView};
 
 fn fruit(id: &str) -> &'static Crop {
     Catalogue::v1().crop(id).unwrap()
@@ -221,7 +219,10 @@ fn a_lifespan_out_of_range_is_refused() {
     for years in [0, 21] {
         let mut s = raspberry();
         s.perennial.as_mut().unwrap().lifespan_years = years;
-        assert!(matches!(s.check(), Err(PlanError::OutOfRange { .. })), "{years}");
+        assert!(
+            matches!(s.check(), Err(PlanError::OutOfRange { .. })),
+            "{years}"
+        );
     }
 }
 
