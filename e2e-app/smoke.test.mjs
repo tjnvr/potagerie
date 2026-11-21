@@ -6,7 +6,7 @@
 // The app gets a fresh temporary data folder (POTAGERIE_DATA_DIR), never the
 // real potagerie.db, and its "Open" and "Save as" windows answer one file of
 // that folder (POTAGERIE_DIALOG_FILE): WebDriver cannot drive native windows.
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -29,7 +29,8 @@ const ENTER = "";
 const DATA = mkdtempSync(join(tmpdir(), "potagerie-smoke-"));
 const FILE = join(DATA, "garden.json");
 
-const button = (label) => `//button[normalize-space()='${label}']`;
+/** A button by its accessible name: its text, or its `aria-label` for an icon button. */
+const button = (label) => `//button[normalize-space()='${label}' or @aria-label='${label}']`;
 const inSettings = (xpath) => `//*[@role='dialog' and .//*[@id='settings-title']]${xpath}`;
 
 let driver;
@@ -39,13 +40,31 @@ let app;
 /** Starts the app and waits for its interface (the first screen or the tabs). */
 async function launch() {
   // WebView2 on a machine without a GPU (CI runner) hangs before showing the page.
-  app = await Session.start(BASE, APP, WINDOWS ? [WEBVIEW2_ARGS] : []);
+  const start = Session.start(BASE, APP, WINDOWS ? [WEBVIEW2_ARGS] : []);
+  // Temporary: what WebView2 runs while msedgedriver waits for it.
+  if (WINDOWS) setTimeout(windowsProcesses, 20_000).unref();
+  app = await start;
   try {
     await app.find("//button", 60_000);
   } catch (e) {
     await keep("launch");
     throw e;
   }
+}
+
+/** Temporary: the WebView2 processes, their flags, and a screenshot of the desktop. */
+function windowsProcesses() {
+  mkdirSync(RESULTS, { recursive: true });
+  const script = `
+    Get-CimInstance Win32_Process | Where-Object { $_.Name -match 'potagerie|msedge' } | ForEach-Object { "$($_.ProcessId) $($_.ParentProcessId) $($_.Name) $($_.CommandLine)" }
+    Get-ChildItem Env: | Where-Object { $_.Name -match 'WEBVIEW2' } | ForEach-Object { "env $($_.Name)=$($_.Value)" }
+    Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+    $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+    $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+    [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+    $bmp.Save("${join(RESULTS, "desktop.png")}")`;
+  const out = spawnSync("pwsh", ["-NoProfile", "-Command", script], { encoding: "utf8" });
+  console.log(`processes:\n${out.stdout}${out.stderr}`);
 }
 
 async function counter() {
