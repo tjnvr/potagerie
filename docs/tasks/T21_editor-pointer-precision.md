@@ -1,6 +1,6 @@
 # T21 · Plan editor: the bed lands exactly under the pointer
 
-- Status: Ready
+- Status: Running
 - Owner: agent
 - Depends on: —
 - Refs: S01 F-PLN-6 (plan editor), §5 (mouse and touch first) · D01 E03 · S05 §4 (drag in the webview) · `front/src/lib/editor/drag.ts`
