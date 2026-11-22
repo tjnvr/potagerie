@@ -1197,3 +1197,179 @@ fn the_webview2_arguments_of_the_driver_reach_the_main_window() {
         assert_eq!(ctx.config().app.windows[0].additional_browser_args, None);
     }
 }
+
+fn history_step(window: &WebviewWindow<MockRuntime>, cmd: &str) -> Result<Value, Value> {
+    invoke(window, cmd, json!({ "year": year() }))
+}
+
+fn names_and_x(view: &Value) -> Vec<(String, u64)> {
+    view["beds"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|b| {
+            (
+                b["name"].as_str().unwrap().to_owned(),
+                b["x"].as_u64().unwrap(),
+            )
+        })
+        .collect()
+}
+
+fn buttons(view: &Value) -> (bool, bool) {
+    (
+        view["can_undo"].as_bool().unwrap(),
+        view["can_redo"].as_bool().unwrap(),
+    )
+}
+
+/// Undo / Redo of the editor (S01 F-PLN-6, S05 §18): each change of the
+/// beds is one step, undone and redone in order, through the real store.
+#[test]
+fn the_changes_of_the_editor_are_undone_and_redone() {
+    let dir = tempfile::tempdir().unwrap();
+    let (_app, window) = app(&dir.path().join(DB_FILE));
+    let view = invoke(&window, "create_plot", plot_args()).unwrap();
+    assert_eq!(buttons(&view), (false, false));
+    let err = history_step(&window, "undo").unwrap_err();
+    assert_eq!(err["code"], "history_empty");
+
+    let view = place(&window, "bed", "Bed A", 50, 50).unwrap();
+    let id = view["beds"][0]["id"].as_str().unwrap().to_owned();
+    let view = move_close(&window, &id, 400, 50, false).unwrap();
+    assert_eq!(buttons(&view), (true, false));
+    let view = invoke(
+        &window,
+        "modify_bed",
+        json!({ "year": year(), "id": id, "name": "Tomatoes", "keepClose": false }),
+    )
+    .unwrap();
+    assert_eq!(names_and_x(&view), [("Tomatoes".to_owned(), 400)]);
+
+    let view = history_step(&window, "undo").unwrap();
+    assert_eq!(names_and_x(&view), [("Bed A".to_owned(), 400)]);
+    assert_eq!(buttons(&view), (true, true));
+    let view = history_step(&window, "undo").unwrap();
+    assert_eq!(names_and_x(&view), [("Bed A".to_owned(), 50)]);
+    let view = history_step(&window, "undo").unwrap();
+    assert!(names_and_x(&view).is_empty(), "the creation is undone too");
+    assert_eq!(buttons(&view), (false, true));
+    let err = history_step(&window, "undo").unwrap_err();
+    assert_eq!(err["code"], "history_empty");
+
+    history_step(&window, "redo").unwrap();
+    let view = history_step(&window, "redo").unwrap();
+    assert_eq!(names_and_x(&view), [("Bed A".to_owned(), 400)]);
+    // A fresh view: the store holds it and the buttons follow.
+    let view = invoke(&window, "view_year", json!({ "year": year() })).unwrap();
+    assert_eq!(names_and_x(&view), [("Bed A".to_owned(), 400)]);
+    assert_eq!(buttons(&view), (true, true));
+
+    // A new change drops what was left to redo.
+    let view = move_close(&window, &id, 600, 50, false).unwrap();
+    assert_eq!(buttons(&view), (true, false));
+    let err = history_step(&window, "redo").unwrap_err();
+    assert_eq!(err["code"], "history_empty");
+}
+
+/// A deleted bed comes back with its plantings.
+#[test]
+fn undoing_a_deletion_brings_the_bed_back_with_its_plantings() {
+    let dir = tempfile::tempdir().unwrap();
+    let (_app, window) = app(&dir.path().join(DB_FILE));
+    let bed = bed_of_six(&window);
+    let date = format!("{}-04-01", year() + 1);
+    invoke(
+        &window,
+        "create_planting",
+        json!({ "year": year(), "planting": planting_input("lettuce", &bed, 1, 3, "open_ground", date) }),
+    )
+    .unwrap();
+    let view = invoke(&window, "delete_bed", json!({ "year": year(), "id": bed })).unwrap();
+    assert!(names_and_x(&view).is_empty());
+    history_step(&window, "undo").unwrap();
+    let view = invoke(&window, "view_year", json!({ "year": year() + 1 })).unwrap();
+    assert_eq!(view["beds"].as_array().unwrap().len(), 1);
+    assert_eq!(view["plantings"].as_array().unwrap().len(), 1);
+}
+
+/// A change made outside the editor empties the history: undoing never takes
+/// back a note, the settings, an import or erased data.
+#[test]
+fn other_changes_empty_the_history() {
+    let dir = tempfile::tempdir().unwrap();
+    let (_app, window) = app(&dir.path().join(DB_FILE));
+    let id = start_with_a_bed(&window);
+    let day = format!("{}-12-01", year());
+    let view = invoke(
+        &window,
+        "create_annotation",
+        json!({ "year": year(), "annotation":
+            annotation("note", &day, Value::Null, json!(id), "Mulch") }),
+    )
+    .unwrap();
+    assert_eq!(buttons(&view), (false, false));
+    let err = history_step(&window, "undo").unwrap_err();
+    assert_eq!(err["code"], "history_empty");
+    let view = invoke(&window, "view_year", json!({ "year": year() })).unwrap();
+    assert_eq!(view["beds"].as_array().unwrap().len(), 1);
+
+    move_close(&window, &id, 400, 50, false).unwrap();
+    let view = invoke(
+        &window,
+        "modify_plot",
+        json!({ "year": year(), "plot": { "length_cm": 1200, "width_cm": 650, "aisle_cm": 50 } }),
+    )
+    .unwrap();
+    assert_eq!(buttons(&view), (false, false));
+
+    move_close(&window, &id, 50, 50, false).unwrap();
+    let file = dir.path().join("garden.json");
+    invoke(&window, "export_garden", json!({ "path": file })).unwrap();
+    let view = invoke(
+        &window,
+        "import_garden",
+        json!({ "year": year(), "path": file }),
+    )
+    .unwrap();
+    assert_eq!(buttons(&view), (false, false));
+
+    move_close(&window, &id, 400, 50, false).unwrap();
+    invoke(&window, "erase_data", json!({})).unwrap();
+    let view = invoke(&window, "create_plot", plot_args()).unwrap();
+    assert_eq!(buttons(&view), (false, false));
+    let err = history_step(&window, "undo").unwrap_err();
+    assert_eq!(err["code"], "history_empty");
+}
+
+/// A bed drawn on the grass is created at its size in one change: one step.
+#[test]
+fn a_drawn_bed_is_one_step() {
+    let dir = tempfile::tempdir().unwrap();
+    let (_app, window) = app(&dir.path().join(DB_FILE));
+    invoke(&window, "create_plot", plot_args()).unwrap();
+    let view = invoke(
+        &window,
+        "create_bed",
+        json!({ "year": year(), "bedType": "square", "name": "Square A", "x": 100, "y": 100,
+                "size": { "length_cm": 250, "width_cm": 90 }, "keepClose": false }),
+    )
+    .unwrap();
+    let bed = &view["beds"][0];
+    assert_eq!(
+        (&bed["length_cm"], &bed["width_cm"]),
+        (&json!(250), &json!(90))
+    );
+    let view = history_step(&window, "undo").unwrap();
+    assert!(names_and_x(&view).is_empty());
+
+    // The size follows the rules of a resize.
+    let err = invoke(
+        &window,
+        "create_bed",
+        json!({ "year": year(), "bedType": "bed", "name": "Bed A", "x": 0, "y": 0,
+                "size": { "length_cm": 260, "width_cm": 120 }, "keepClose": false }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "length_invalid");
+}

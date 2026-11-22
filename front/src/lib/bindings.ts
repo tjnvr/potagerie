@@ -18,11 +18,12 @@ export const commands = {
 	 */
 	modifyPlot: (year: number, plot: PlotEdit, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("modify_plot", { year, plot }, options)),
 	/**
-	 *  Drops a new bed from the tray at `(x, y)`, at its default size (F-PLN-6).
+	 *  Drops a new bed from the tray at `(x, y)`, at its default size (F-PLN-6),
+	 *  or at `size` for a bed drawn on the grass, in one step of Undo.
 	 *  The default name ("Bed A") is chosen and translated by the interface.
 	 *  `keep_close`: the user chose "Keep here" for a narrow aisle (S03 §15).
 	 */
-	createBed: (year: number, bedType: TypeBed, name: string, x: number, y: number, keepClose: boolean, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("create_bed", { year, bedType, name, x, y, keepClose }, options)),
+	createBed: (year: number, bedType: TypeBed, name: string, x: number, y: number, size: SizeInput | null, keepClose: boolean, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("create_bed", { year, bedType, name, x, y, size, keepClose }, options)),
 	/**
 	 *  Renames a bed and/or changes its layout from `year` on (S03 §7).
 	 *  `keep_close` as for `create_bed`.
@@ -105,6 +106,13 @@ export const commands = {
 	clearPlan: (year: number, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("clear_plan", { year }, options)),
 	/**  Deletes every data of the app, after double confirmation (F-CPT-4). */
 	eraseData: (options?: InvokeOptions) => typedError<null, AppError>(__TAURI_INVOKE("erase_data", undefined, options)),
+	/**
+	 *  Undo of the plan editor (S01 F-PLN-6, S05 §18): puts back the plan as it
+	 *  was before the last change to the beds. `history_empty` when there is none.
+	 */
+	undo: (year: number, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("undo", { year }, options)),
+	/**  Redo of the plan editor: puts back the last undone change. */
+	redo: (year: number, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("redo", { year }, options)),
 };
 
 /* Types */
@@ -242,6 +250,8 @@ export type ErrorCode = "year_past" | "too_many_beds" | "bed_unknown" | "plantin
 "text_invalid" | 
 /**  A period ends before it starts, or has no end. */
 "annotation_dates_invalid" | 
+/**  Undo or Redo with nothing to undo or redo (S05 §18). */
+"history_empty" | 
 /**  The database could not be read or written. */
 "saving" | 
 /**  The plan changed since it was read; reload and retry. */
@@ -438,6 +448,12 @@ export type ShortcutsView = {
 	quarter: ZoneView | null,
 };
 
+/**  The size of a bed drawn on the grass. */
+export type SizeInput = {
+	length_cm: number,
+	width_cm: number,
+};
+
 export type SlotView = {
 	bed_id: BedId,
 	segment_start: number,
@@ -513,6 +529,12 @@ export type YearView = {
 	annotations: AnnotationView[],
 	/**  Tasks dated in `year` (S03 §11). */
 	tasks: TaskView[],
+	/**
+	 *  The Undo and Redo buttons of the editor are active (S05 §18): `false`
+	 *  here, filled by the app from its history.
+	 */
+	can_undo: boolean,
+	can_redo: boolean,
 };
 
 /**  A zone of segments. */

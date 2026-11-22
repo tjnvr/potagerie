@@ -55,6 +55,8 @@ pub fn specta_builder<R: tauri::Runtime>() -> Builder<R> {
             commands::import_garden,
             commands::clear_plan,
             commands::erase_data,
+            commands::undo,
+            commands::redo,
         ])
 }
 

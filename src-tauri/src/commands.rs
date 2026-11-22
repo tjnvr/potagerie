@@ -9,8 +9,8 @@ use catalogue::Catalogue;
 use chrono::{DateTime, Local, NaiveDate, Utc};
 use export::TimelineFormat;
 use plan::{
-    Annotation, AnnotationId, BedId, CellCm, Geometry, HarvestView, Incoherence, Layout, Mode,
-    Plan, PlanId, Planting, PlantingId, Plot, TypeAnnotation, TypeBed, YearView, Zone,
+    Annotation, AnnotationId, BedId, CellCm, Geometry, HarvestView, History, Incoherence, Layout,
+    Mode, Plan, PlanId, Planting, PlantingId, Plot, TypeAnnotation, TypeBed, YearView, Zone,
 };
 use serde::{Deserialize, Serialize};
 use specta::Type;
@@ -30,6 +30,8 @@ pub struct AppState {
     /// Why the database could not be opened, when it could not: the error code
     /// (`base_unreadable`, or `base_too_recent` for a newer app version) and the detail.
     open_error: Mutex<Option<(ErrorCode, String)>>,
+    /// Undo / Redo of the editor (S05 §18), in memory only.
+    history: Mutex<History>,
 }
 
 /// The open store, locked.
@@ -63,6 +65,7 @@ impl AppState {
             store: Mutex::new(store),
             db_path: db_path.to_path_buf(),
             open_error: Mutex::new(error),
+            history: Mutex::new(History::default()),
         }
     }
 
@@ -91,6 +94,10 @@ impl AppState {
             .clone()
             .unwrap_or((ErrorCode::BaseUnreadable, String::new()));
         AppError::new(code, why)
+    }
+
+    fn history(&self) -> MutexGuard<'_, History> {
+        self.history.lock().unwrap_or_else(|e| e.into_inner())
     }
 
     /// Deletes every stored data. A database that could not be opened is removed
@@ -126,24 +133,77 @@ fn today() -> NaiveDate {
     Local::now().date_naive()
 }
 
-fn view(plan: Option<&Plan>, year: i32) -> YearView {
-    YearView::build(plan, year, today(), Catalogue::v1())
+/// The view of `year`, with the Undo and Redo buttons of the history.
+fn view(state: &AppState, plan: Option<&Plan>, year: i32, today: NaiveDate) -> YearView {
+    let mut view = YearView::build(plan, year, today, Catalogue::v1());
+    if let Some(plan) = plan {
+        let history = state.history();
+        view.can_undo = history.can_undo(plan.version, today);
+        view.can_redo = history.can_redo(plan.version, today);
+    }
+    view
+}
+
+fn load(store: &SqliteStore) -> Result<Plan, AppError> {
+    store
+        .load()?
+        .ok_or_else(|| AppError::new(ErrorCode::PlotAbsent, "create the plot first"))
 }
 
 /// Loads the plan, applies `change`, saves it and returns the view of `year`.
+/// A change made outside the editor empties its history (S05 §18).
 fn change(
     state: &AppState,
     year: i32,
     change: impl FnOnce(&mut Plan, NaiveDate) -> Result<(), AppError>,
 ) -> Result<YearView, AppError> {
+    write(state, year, false, change)
+}
+
+/// [`change`] for the editor: the change becomes a step of Undo (S05 §18).
+fn edit(
+    state: &AppState,
+    year: i32,
+    change: impl FnOnce(&mut Plan, NaiveDate) -> Result<(), AppError>,
+) -> Result<YearView, AppError> {
+    write(state, year, true, change)
+}
+
+fn write(
+    state: &AppState,
+    year: i32,
+    undoable: bool,
+    change: impl FnOnce(&mut Plan, NaiveDate) -> Result<(), AppError>,
+) -> Result<YearView, AppError> {
     let mut store = state.store()?;
-    let mut plan = store
-        .load()?
-        .ok_or_else(|| AppError::new(ErrorCode::PlotAbsent, "create the plot first"))?;
+    let before = load(&store)?;
+    let mut plan = before.clone();
     let today = today();
     change(&mut plan, today)?;
     store.save(&mut plan, Utc::now())?;
-    Ok(YearView::build(Some(&plan), year, today, Catalogue::v1()))
+    if undoable {
+        state.history().record(before, plan.version, today);
+    } else {
+        state.history().clear();
+    }
+    Ok(view(state, Some(&plan), year, today))
+}
+
+/// Undo (`redo: false`) or Redo of the editor (S05 §18).
+fn history_step(state: &AppState, year: i32, redo: bool) -> Result<YearView, AppError> {
+    let mut store = state.store()?;
+    let current = load(&store)?;
+    let today = today();
+    let save = |plan: &mut Plan| store.save(plan, Utc::now());
+    let mut history = state.history();
+    let plan = if redo {
+        history.redo(current, today, save)
+    } else {
+        history.undo(current, today, save)
+    }?
+    .ok_or_else(|| AppError::new(ErrorCode::HistoryEmpty, "nothing to undo or redo"))?;
+    drop(history);
+    Ok(view(state, Some(&plan), year, today))
 }
 
 // ---------- Inputs and outputs ----------
@@ -190,6 +250,13 @@ pub struct GeometryInput {
     pub bed_type: TypeBed,
     pub x: u32,
     pub y: u32,
+    pub length_cm: u32,
+    pub width_cm: u32,
+}
+
+/// The size of a bed drawn on the grass.
+#[derive(Debug, Clone, Copy, Deserialize, Type)]
+pub struct SizeInput {
     pub length_cm: u32,
     pub width_cm: u32,
 }
@@ -506,7 +573,7 @@ pub fn catalogue() -> Vec<CropView> {
 #[specta::specta]
 pub fn view_year(state: State<'_, AppState>, year: i32) -> Result<YearView, AppError> {
     let plan = state.store()?.load()?;
-    Ok(view(plan.as_ref(), year))
+    Ok(view(&state, plan.as_ref(), year, today()))
 }
 
 /// Creates the plot, and with it the plan (E2, F-TER-1).
@@ -535,7 +602,8 @@ pub fn create_plot(
     plot.validate()?;
     let mut plan = Plan::new(PlanId::generate(), plot, Utc::now());
     store.save(&mut plan, Utc::now())?;
-    Ok(view(Some(&plan), year))
+    state.history().clear();
+    Ok(view(&state, Some(&plan), year, today()))
 }
 
 /// Changes the dimensions of the plot and the aisle width. The case size
@@ -553,11 +621,13 @@ pub fn modify_plot(
     })
 }
 
-/// Drops a new bed from the tray at `(x, y)`, at its default size (F-PLN-6).
+/// Drops a new bed from the tray at `(x, y)`, at its default size (F-PLN-6),
+/// or at `size` for a bed drawn on the grass, in one step of Undo.
 /// The default name ("Bed A") is chosen and translated by the interface.
 /// `keep_close`: the user chose "Keep here" for a narrow aisle (S03 §15).
 #[tauri::command]
 #[specta::specta]
+#[allow(clippy::too_many_arguments)]
 pub fn create_bed(
     state: State<'_, AppState>,
     year: i32,
@@ -565,11 +635,13 @@ pub fn create_bed(
     name: String,
     x: u32,
     y: u32,
+    size: Option<SizeInput>,
     keep_close: bool,
 ) -> Result<YearView, AppError> {
-    change(&state, year, |plan, today| {
+    edit(&state, year, |plan, today| {
         let before = plan.clone();
-        let (length_cm, width_cm) = default_size(bed_type);
+        let (length_cm, width_cm) =
+            size.map_or_else(|| default_size(bed_type), |s| (s.length_cm, s.width_cm));
         plan::check_name(&name)?;
         let name = name.trim().to_string();
         plan.add_bed(
@@ -602,7 +674,7 @@ pub fn modify_bed(
     geometry: Option<GeometryInput>,
     keep_close: bool,
 ) -> Result<YearView, AppError> {
-    change(&state, year, |plan, today| {
+    edit(&state, year, |plan, today| {
         if let Some(geometry) = geometry {
             let before = plan.clone();
             plan.set_layout(id, year, Layout::Present(geometry.into()), today)?;
@@ -631,7 +703,7 @@ pub fn move_bed(
     y: u32,
     keep_close: bool,
 ) -> Result<YearView, AppError> {
-    change(&state, year, |plan, today| {
+    edit(&state, year, |plan, today| {
         let before = plan.clone();
         let mut geometry = plan
             .beds
@@ -672,7 +744,7 @@ pub fn plantings_exceeding(
 #[tauri::command]
 #[specta::specta]
 pub fn delete_bed(state: State<'_, AppState>, year: i32, id: BedId) -> Result<YearView, AppError> {
-    change(&state, year, |plan, today| {
+    edit(&state, year, |plan, today| {
         plan.delete_bed(id, year, today)?;
         Ok(())
     })
@@ -1060,7 +1132,8 @@ pub fn import_garden(
     // `read_garden` refused a broken structure; the other incoherences are
     // kept as they are (S03 §13) and were listed by `read_import`.
     state.store()?.replace(&plan)?;
-    Ok(view(Some(&plan), year))
+    state.history().clear();
+    Ok(view(&state, Some(&plan), year, today()))
 }
 
 /// Empties the plan from `year` on (F-PLN-4): every bed of that year,
@@ -1079,5 +1152,22 @@ pub fn clear_plan(state: State<'_, AppState>, year: i32) -> Result<YearView, App
 #[tauri::command]
 #[specta::specta]
 pub fn erase_data(state: State<'_, AppState>) -> Result<(), AppError> {
-    state.erase()
+    state.erase()?;
+    state.history().clear();
+    Ok(())
+}
+
+/// Undo of the plan editor (S01 F-PLN-6, S05 §18): puts back the plan as it
+/// was before the last change to the beds. `history_empty` when there is none.
+#[tauri::command]
+#[specta::specta]
+pub fn undo(state: State<'_, AppState>, year: i32) -> Result<YearView, AppError> {
+    history_step(&state, year, false)
+}
+
+/// Redo of the plan editor: puts back the last undone change.
+#[tauri::command]
+#[specta::specta]
+pub fn redo(state: State<'_, AppState>, year: i32) -> Result<YearView, AppError> {
+    history_step(&state, year, true)
 }

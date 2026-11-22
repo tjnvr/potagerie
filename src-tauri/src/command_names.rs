@@ -27,4 +27,6 @@ pub const COMMANDS: &[&str] = &[
     "import_garden",
     "clear_plan",
     "erase_data",
+    "undo",
+    "redo",
 ];

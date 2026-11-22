@@ -43,6 +43,10 @@ pub struct YearView {
     pub annotations: Vec<AnnotationView>,
     /// Tasks dated in `year` (S03 §11).
     pub tasks: Vec<TaskView>,
+    /// The Undo and Redo buttons of the editor are active (S05 §18): `false`
+    /// here, filled by the app from its history.
+    pub can_undo: bool,
+    pub can_redo: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -268,6 +272,8 @@ impl YearView {
                 slots: Vec::new(),
                 annotations: Vec::new(),
                 tasks: Vec::new(),
+                can_undo: false,
+                can_redo: false,
             };
         };
 
@@ -404,6 +410,8 @@ impl YearView {
             slots,
             annotations,
             tasks,
+            can_undo: false,
+            can_redo: false,
         }
     }
 }

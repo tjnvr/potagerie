@@ -47,6 +47,8 @@ pub enum ErrorCode {
     TextInvalid,
     /// A period ends before it starts, or has no end.
     AnnotationDatesInvalid,
+    /// Undo or Redo with nothing to undo or redo (S05 §18).
+    HistoryEmpty,
     // From storage.
     /// The database could not be read or written.
     Saving,

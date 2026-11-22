@@ -29,6 +29,8 @@
     "allow-import-garden",
     "allow-clear-plan",
     "allow-erase-data",
+    "allow-undo",
+    "allow-redo",
     "dialog:allow-open",
     "dialog:allow-save"
   ]

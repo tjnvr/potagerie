@@ -11,6 +11,7 @@ mod coherence;
 mod conflicts;
 mod days;
 mod error;
+mod history;
 mod ids;
 mod layouts;
 mod legacy;
@@ -34,6 +35,7 @@ pub use clearing::Cleared;
 pub use coherence::Incoherence;
 pub use conflicts::{ConflictDetail, conflict};
 pub use error::PlanError;
+pub use history::{History, MAX_UNDO_STEPS};
 pub use ids::{AnnotationId, BedId, PlanId, PlantingId};
 pub use legacy::upgrade_legacy_json;
 pub use model::{
