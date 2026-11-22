@@ -1,6 +1,6 @@
 # T08 · Undo / Redo
 
-- Status: Ready
+- Status: Running
 - Owner: agent
 - Depends on: —
 - Refs: S01 F-PLN-6 (after lot 1)
