@@ -1373,3 +1373,62 @@ fn a_drawn_bed_is_one_step() {
     .unwrap_err();
     assert_eq!(err["code"], "length_invalid");
 }
+
+/// Duplicate and Paste (S01 F-PLN-6, S05 §20): one step of Undo, a bed of the
+/// type and size of the original next to it, with a trimmed name; a refusal
+/// (`name_invalid`, `too_many_beds`) changes nothing.
+#[test]
+fn a_pasted_bed_lands_next_to_the_original_and_is_undone() {
+    let dir = tempfile::tempdir().unwrap();
+    let (_app, window) = app(&dir.path().join(DB_FILE));
+    invoke(&window, "create_plot", plot_args()).unwrap();
+    place(&window, "planter", "Planter A", 0, 0).unwrap();
+    let original =
+        json!({ "bed_type": "planter", "x": 0, "y": 0, "length_cm": 200, "width_cm": 120 });
+    let paste = |name: &str| {
+        invoke(
+            &window,
+            "paste_bed",
+            json!({ "year": year(), "name": name, "original": original }),
+        )
+    };
+    let view = paste(" Planter B ").unwrap();
+    let copy = view["beds"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|b| b["name"] == "Planter B")
+        .unwrap();
+    assert_eq!(
+        (
+            &copy["bed_type"],
+            &copy["x"],
+            &copy["y"],
+            &copy["length_cm"],
+            &copy["width_cm"]
+        ),
+        (
+            &json!("planter"),
+            &json!(250),
+            &json!(0),
+            &json!(200),
+            &json!(120)
+        )
+    );
+    assert_eq!(buttons(&view), (true, false));
+    let view = history_step(&window, "undo").unwrap();
+    assert_eq!(names_and_x(&view), [("Planter A".to_owned(), 0)]);
+
+    let err = paste("").unwrap_err();
+    assert_eq!(err["code"], "name_invalid");
+    for n in 0..9 {
+        let view = paste(&format!("Copy {n}")).unwrap();
+        assert_eq!(view["beds"].as_array().unwrap().len(), n + 2);
+    }
+    let version =
+        invoke(&window, "view_year", json!({ "year": year() })).unwrap()["version"].clone();
+    let err = paste("Copy 10").unwrap_err();
+    assert_eq!(err["code"], "too_many_beds");
+    let view = invoke(&window, "view_year", json!({ "year": year() })).unwrap();
+    assert_eq!(view["version"], version);
+}

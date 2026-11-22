@@ -35,6 +35,7 @@ pub fn specta_builder<R: tauri::Runtime>() -> Builder<R> {
             commands::create_plot,
             commands::modify_plot,
             commands::create_bed,
+            commands::paste_bed,
             commands::modify_bed,
             commands::move_bed,
             commands::plantings_exceeding,

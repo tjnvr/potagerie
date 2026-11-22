@@ -36,6 +36,7 @@ pub enum ErrorCode {
     BedOutsidePlot,
     BedOverlaps,
     AisleTooNarrow,
+    NoFreeSpot,
     // From the app.
     /// A command needs a plot, and none was created yet (E2).
     PlotAbsent,
@@ -113,6 +114,7 @@ impl From<PlanError> for AppError {
             PlanError::OutsidePlot { .. } => ErrorCode::BedOutsidePlot,
             PlanError::BedsOverlap { .. } => ErrorCode::BedOverlaps,
             PlanError::AisleTooNarrow { .. } => ErrorCode::AisleTooNarrow,
+            PlanError::NoFreeSpot { .. } => ErrorCode::NoFreeSpot,
         };
         Self::new(code, error.to_string())
     }

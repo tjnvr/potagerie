@@ -618,3 +618,134 @@ test("UC-36 plan: Undo and Redo of the header take back and redo the changes to 
   await expect(redo).toBeDisabled();
   await expect(page.getByRole("alert")).toHaveCount(0);
 });
+
+// Duplicate, copy and paste a bed (S01 F-PLN-6, S03 §15 "Copy of a bed", T24).
+// The modifier depends on the platform (S05 §20): it is set in the page, so the
+// keys are the same whatever machine runs the suite.
+async function onPlatform(page: Page, platform: "MacIntel" | "Win32") {
+  await page.addInitScript((p) => {
+    Object.defineProperty(Navigator.prototype, "platform", { get: () => p });
+  }, platform);
+}
+
+async function selectLeekSquare(page: Page) {
+  await page.getByRole("button", { name: "Plan", exact: true }).click();
+  await page.getByRole("button", { name: /^Leek square, / }).click();
+  await expect(page.getByRole("heading", { name: "Leek square", exact: true })).toBeVisible();
+}
+
+const copyHeading = (page: Page) => page.getByRole("heading", { name: "Square A", exact: true });
+
+test("UC-43 plan: Duplicate in the bar and in the panel adds a selected copy next to the bed", async ({ page }) => {
+  await open(page);
+  await selectLeekSquare(page);
+  const counter = page.locator(".counter").first();
+  await expect(counter).toContainText("8 / 10");
+
+  const bar = page.getByRole("toolbar", { name: "Actions on Leek square" });
+  await bar.getByRole("button", { name: "Duplicate" }).click();
+  await expect(counter).toContainText("9 / 10");
+  // The copy is selected: same type and size, a default name, below the original.
+  await expect(copyHeading(page)).toBeVisible();
+  const copy = page.getByRole("button", { name: "Square A, 1 × 1 m" });
+  const original = page.getByRole("button", { name: /^Leek square, 1 × 1 m/ });
+  const [o, c] = [await original.boundingBox(), await copy.boundingBox()];
+  expect(Math.abs(c!.x - o!.x)).toBeLessThan(2);
+  expect(c!.y).toBeGreaterThan(o!.y + o!.height);
+  await expect(page.getByRole("toolbar", { name: "Actions on Square A" })).toBeVisible();
+
+  // From the panel, of the copy: a second copy, named with the next letter.
+  await page.locator("aside").getByRole("button", { name: "Duplicate" }).click();
+  await expect(counter).toContainText("10 / 10");
+  await expect(page.getByRole("heading", { name: "Square B", exact: true })).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+
+  // One step of Undo each.
+  await page.getByRole("button", { name: "Undo the last action" }).click();
+  await expect(counter).toContainText("9 / 10");
+});
+
+for (const p of [
+  { name: "macOS", platform: "MacIntel", mod: "Meta", other: "Control", paste: "⌘V" },
+  { name: "Windows", platform: "Win32", mod: "Control", other: "Meta", paste: "Ctrl+V" },
+] as const) {
+  test(`UC-44 plan (${p.name}): the keys of the platform duplicate, copy and paste, never while typing`, async ({ page }) => {
+    await onPlatform(page, p.platform);
+    await open(page);
+    await selectLeekSquare(page);
+    const counter = page.locator(".counter").first();
+
+    // In the name field, the keys belong to the field.
+    const name = page.getByLabel("Name", { exact: true });
+    await name.focus();
+    for (const k of ["d", "c", "v"]) await page.keyboard.press(`${p.mod}+${k}`);
+    await expect(counter).toContainText("8 / 10");
+    await expect(page.getByText(/copied/)).toHaveCount(0);
+    // The field may have pasted the text of the system clipboard: put the name back.
+    await name.fill("Leek square");
+    await name.blur();
+    await expect(page.getByRole("heading", { name: "Leek square", exact: true })).toBeVisible();
+
+    // The modifier of the other platform does nothing.
+    await page.keyboard.press(`${p.other}+d`);
+    await expect(counter).toContainText("8 / 10");
+
+    await page.keyboard.press(`${p.mod}+d`);
+    await expect(counter).toContainText("9 / 10");
+    await expect(copyHeading(page)).toBeVisible();
+    await page.keyboard.press(`${p.mod}+z`);
+    await expect(counter).toContainText("8 / 10");
+
+    // Copy, then paste with nothing selected.
+    await page.getByRole("button", { name: /^Leek square, / }).click();
+    await page.keyboard.press(`${p.mod}+c`);
+    await expect(page.getByRole("alert")).toHaveText(
+      `Leek square copied. Paste it with ${p.paste}, in this year or another one.`,
+    );
+    await page.getByRole("button", { name: "Deselect" }).click();
+    await page.keyboard.press(`${p.mod}+v`);
+    await expect(counter).toContainText("9 / 10");
+    await expect(copyHeading(page)).toBeVisible();
+    await page.keyboard.press(`${p.mod}+v`);
+    await expect(counter).toContainText("10 / 10");
+  });
+}
+
+test("UC-45 plan: a bed copied in one year is pasted in another", async ({ page }) => {
+  await onPlatform(page, "Win32");
+  await open(page);
+  await selectLeekSquare(page);
+  const year = page.locator("button[aria-pressed=true]").filter({ hasText: /^20\d\d$/ });
+  const current = Number(await year.innerText());
+  await page.keyboard.press("Control+c");
+  await page.getByRole("button", { name: "Deselect" }).click();
+
+  await page.getByRole("button", { name: String(current + 1), exact: true }).click();
+  await expect(year).toHaveText(String(current + 1));
+  await page.keyboard.press("Control+v");
+  await expect(page.locator(".counter").first()).toContainText("9 / 10");
+  await expect(copyHeading(page)).toBeVisible();
+
+  // A past year is read only: nothing is pasted.
+  await page.getByRole("button", { name: String(current - 1), exact: true }).click();
+  await expect(page.getByText(/read only/i).first()).toBeVisible();
+  await page.keyboard.press("Control+v");
+  await expect(page.getByText("Past seasons can no longer be changed.")).toHaveCount(0);
+});
+
+test("UC-46 plan: at 10 beds, nothing is pasted or duplicated and a message says why", async ({ page }) => {
+  await onPlatform(page, "Win32");
+  await open(page, `${EXAMPLE}&dense`);
+  await page.getByRole("button", { name: "Plan", exact: true }).click();
+  const counter = page.locator(".counter").first();
+  await expect(counter).toContainText("10 / 10");
+  await page.getByRole("button", { name: /^Leek square, / }).click();
+  await page.getByRole("toolbar", { name: "Actions on Leek square" }).getByRole("button", { name: "Duplicate" }).click();
+  await expect(page.getByRole("alert")).toHaveText(/10 beds at most per season/);
+  await page.keyboard.press("Control+c");
+  await page.keyboard.press("Control+v");
+  await expect(page.getByRole("alert")).toHaveText(/10 beds at most per season/);
+  await expect(counter).toContainText("10 / 10");
+  // The original stays selected.
+  await expect(page.getByRole("heading", { name: "Leek square", exact: true })).toBeVisible();
+});

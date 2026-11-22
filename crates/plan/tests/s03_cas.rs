@@ -1,4 +1,4 @@
-//! The test cases T1 to T14 and T20 of S03 §12 (T15 to T19 are in
+//! The test cases T1 to T14, T20 and T21 of S03 §12 (T15 to T19 are in
 //! `perennials.rs`). Expected values are copied as they are
 //! in the spec.
 
@@ -406,4 +406,111 @@ fn t20_two_beds_with_the_same_name_are_flagged() {
     plan.beds.get_mut(&b).unwrap().name = "Leeks".into();
     assert_eq!(flagged(&plan, 2027), Vec::<plan::BedId>::new());
     assert_eq!(flagged(&plan, 2026), vec![a, dd]);
+}
+
+/// T21 · Plot 20 × 10 m; bed A 3 × 1.2 m at (0, 0) in 2027, with a planting.
+/// A duplicated three times in 2027 (S03 §15, "Copy of a bed")
+/// → 1st copy at (350, 0), 2nd at (0, 170), 3rd at (700, 0); each 3 × 1.2 m,
+/// of the type of A, with no planting. A copied in 2027, then moved in 2028
+/// to (1000, 500), and pasted in 2028 on a plot with only A: (350, 0). With a
+/// bed B added in 2029 at (350, 0), the same paste lands at (0, 170). Plot
+/// 4 × 2 m with A alone: `no_free_spot`. A year with 10 beds: `too_many_beds`.
+/// A refusal changes nothing.
+#[test]
+fn t21_a_copied_bed_lands_on_the_first_free_spot() {
+    use plan::{Geometry, Layout, Plan, PlanId, Plot, TypeBed};
+    let at = |x, y| Geometry {
+        bed_type: TypeBed::Mound,
+        x,
+        y,
+        length_cm: 300,
+        width_cm: 120,
+    };
+    let empty = |plot: Plot| Plan::new(PlanId::from_uuid(uuid::Uuid::from_u128(1)), plot, now());
+    let with_a = |plot: Plot| {
+        let mut plan = empty(plot);
+        plan.add_bed(bed_id(1), "A".into(), 2027, at(0, 0), today())
+            .unwrap();
+        plan
+    };
+    let a = at(0, 0);
+
+    // Duplicated three times in 2027.
+    let mut plan = with_a(plot());
+    plan.add_planting(
+        planting_id(1),
+        planting("lettuce", bed_id(1), 1, 2, Mode::OpenGround, d(2027, 4, 1)),
+    )
+    .unwrap();
+    let mut placed = Vec::new();
+    for n in 2..=4 {
+        let g = plan
+            .paste_bed(bed_id(n), format!("C{n}"), 2027, &a, today())
+            .unwrap();
+        assert_eq!(plan.beds[&bed_id(n)].layout_in(2027), Some(&g));
+        placed.push((g.x, g.y, g.length_cm, g.width_cm, g.bed_type));
+    }
+    assert_eq!(
+        placed,
+        vec![
+            (350, 0, 300, 120, TypeBed::Mound),
+            (0, 170, 300, 120, TypeBed::Mound),
+            (700, 0, 300, 120, TypeBed::Mound),
+        ]
+    );
+    assert!(plan.plantings.values().all(|p| p.bed_id == bed_id(1)));
+
+    // Copied in 2027, A moved in 2028, pasted in 2028.
+    let mut plan = with_a(plot());
+    plan.set_layout(bed_id(1), 2028, Layout::Present(at(1000, 500)), today())
+        .unwrap();
+    let mut pasted = plan.clone();
+    let g = pasted
+        .paste_bed(bed_id(2), "C".into(), 2028, &a, today())
+        .unwrap();
+    assert_eq!((g.x, g.y), (350, 0));
+    assert_eq!(pasted.beds[&bed_id(2)].layout_in(2027), None);
+
+    // A bed B in 2029 where the copy would go: the copy keeps the aisle in 2029 too.
+    plan.add_bed(bed_id(3), "B".into(), 2029, at(350, 0), today())
+        .unwrap();
+    let g = plan
+        .paste_bed(bed_id(2), "C".into(), 2028, &a, today())
+        .unwrap();
+    assert_eq!((g.x, g.y), (0, 170));
+
+    // No free spot.
+    let small = Plot {
+        length_cm: 400,
+        width_cm: 200,
+        ..plot()
+    };
+    let mut plan = with_a(small);
+    let before = plan.clone();
+    assert_eq!(
+        plan.paste_bed(bed_id(2), "C".into(), 2027, &a, today()),
+        Err(PlanError::NoFreeSpot { year: 2027 })
+    );
+    assert_eq!(plan, before);
+    assert_eq!(PlanError::NoFreeSpot { year: 2027 }.code(), "no_free_spot");
+
+    // Ten beds.
+    let mut plan = empty(plot());
+    for n in 1..=10u32 {
+        let (col, row) = ((n - 1) % 5, (n - 1) / 5);
+        plan.add_bed(
+            bed_id(u128::from(n)),
+            format!("B{n}"),
+            2027,
+            at(col * 350, row * 170),
+            today(),
+        )
+        .unwrap();
+    }
+    let before = plan.clone();
+    assert!(matches!(
+        plan.paste_bed(bed_id(11), "C".into(), 2027, &a, today()),
+        Err(PlanError::TooManyBeds { year: 2027, .. })
+    ));
+    assert_eq!(plan, before);
 }

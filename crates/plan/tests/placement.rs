@@ -235,6 +235,53 @@ fn a_plot_that_no_longer_holds_its_beds_is_refused() {
     assert_eq!(plan.plot.cell_cm, CellCm::C50);
 }
 
+/// A copy off the grid, next to a bed that is not on it either, and the
+/// largest plot read cell by cell when it holds no spot (S03 §15).
+#[test]
+fn a_copy_off_the_grid_and_a_full_large_plot() {
+    let mut plan = empty();
+    put(&mut plan, 1, 2027, at(13, 7, 300, 95));
+    let g = plan
+        .paste_bed(bed_id(2), "C".into(), 2027, &at(13, 7, 300, 95), today())
+        .unwrap();
+    assert_eq!((g.x, g.y, g.length_cm, g.width_cm), (363, 7, 300, 95));
+
+    // Left of the original fits when right and below do not.
+    let mut plan = empty();
+    put(&mut plan, 1, 2027, at(1700, 880, 300, 120));
+    let g = plan
+        .paste_bed(
+            bed_id(2),
+            "C".into(),
+            2027,
+            &at(1700, 880, 300, 120),
+            today(),
+        )
+        .unwrap();
+    assert_eq!((g.x, g.y), (1350, 880));
+
+    let mut plan = Plan::new(
+        PlanId::from_uuid(Uuid::from_u128(1)),
+        Plot {
+            length_cm: 10_000,
+            width_cm: 10_000,
+            cell_cm: CellCm::C25,
+            aisle_cm: 30,
+        },
+        now(),
+    );
+    put(&mut plan, 1, 2027, at(0, 0, 10_000, 9_900));
+    // In 2027 the strip under the first bed holds the copy, but a bed comes
+    // there in 2030 and the copy would still be on the plan then.
+    put(&mut plan, 2, 2030, at(0, 9_930, 10_000, 70));
+    let before = plan.clone();
+    assert_eq!(
+        plan.paste_bed(bed_id(3), "C".into(), 2027, &at(0, 9_930, 100, 70), today()),
+        Err(PlanError::NoFreeSpot { year: 2027 })
+    );
+    assert_eq!(plan, before);
+}
+
 #[test]
 fn a_larger_aisle_can_make_the_plan_invalid() {
     let mut plan = empty();

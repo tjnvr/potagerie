@@ -6,8 +6,11 @@
   import type { BedView, PlotView, TypeBed } from "../bindings";
   import { m } from "../paraglide/messages.js";
   import { formatMeters } from "../beds";
+  import Icon from "../shell/Icon.svelte";
+  import { withKeys } from "./shortcuts";
   import {
     cmPerPixel,
+    cmToPixels,
     ControllerDrag,
     deposer,
     HANDLE_HIT_MOUSE_PX,
@@ -39,6 +42,7 @@
     onbeforeplot = () => {},
     onplace = () => {},
     ondraw = () => {},
+    onduplicate = () => {},
   }: {
     plot: PlotView;
     beds: BedView[];
@@ -54,6 +58,8 @@
     onplace?: (point: Point) => void;
     /** A zone drawn by dragging on free grass, snapped to the cases. */
     ondraw?: (geo: Geo) => void;
+    /** « Duplicate » of the bar under the selected bed (F-PLN-6). */
+    onduplicate?: (bed: BedView) => void;
   } = $props();
 
   // A click on the grass first clears the selection; only a click made with
@@ -159,6 +165,26 @@
   const sorted = $derived([...beds].sort((a, b) => Number(a.id === geste?.id) - Number(b.id === geste?.id)));
   const active = $derived(beds.find((p) => p.id === selectionId) ?? null);
   const stepFromMeter = $derived(100 / plot.cell_cm);
+
+  // The bar of the selected bed (D01 E03, S05 §20): under it, or above it
+  // when it would start below the plan, clear of the hit circles of the handles;
+  // hidden while the bed is in hand.
+  const BAR_PX = 44;
+  const bar = $derived.by(() => {
+    if (!active || readOnly || geste) return null;
+    const size = { width: widthPx, height: heightPx };
+    const zones = handleZones(geoOf(active), scale, hitPx);
+    const low = Math.max(active.y + active.width_cm, ...zones.map((z) => z.cy + z.r));
+    const high = Math.min(active.y, ...zones.map((z) => z.cy - z.r));
+    const bottom = cmToPixels({ x: active.x + active.length_cm / 2, y: low }, size, box);
+    const above = cmToPixels({ x: active.x, y: high }, size, box).y - 4 - BAR_PX;
+    const below = bottom.y + 4;
+    return {
+      left: Math.min(Math.max(bottom.x, 70), widthPx - 70),
+      // Hanging under the plan, over its help line, hides less than covering beds.
+      top: below <= heightPx || above < 0 ? below : above,
+    };
+  });
 
   const controller = new ControllerDrag({ onArmed: () => (armed = geste?.id ?? null) });
 
@@ -339,6 +365,7 @@
   let pressedWith = "mouse";
 </script>
 
+<div class="wrap">
 <svg
   bind:this={svg}
   bind:clientWidth={widthPx}
@@ -465,8 +492,50 @@
     />
   {/if}
 </svg>
+{#if bar && active}
+  {@const chosen = active}
+  <div class="bar" role="toolbar" aria-label={m.bed_actions({ name: chosen.name })} style:left="{bar.left}px" style:top="{bar.top}px">
+    <button title={withKeys(m.bed_duplicate(), "duplicate")} onclick={() => onduplicate(chosen)}><Icon name="copy" size={16} />{m.bed_duplicate()}</button>
+  </div>
+{/if}
+</div>
 
 <style>
+  .wrap {
+    position: relative;
+  }
+
+  .bar {
+    position: absolute;
+    z-index: 2;
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 16px;
+    background: var(--ink);
+    box-shadow: 0 8px 20px rgba(31, 58, 46, 0.25);
+    transform: translateX(-50%);
+  }
+
+  .bar button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 11px;
+    background: transparent;
+    color: #ffffff;
+    font: 600 13px var(--font);
+    cursor: pointer;
+  }
+
+  .bar button:hover,
+  .bar button:focus-visible {
+    background: rgba(255, 255, 255, 0.14);
+  }
+
   .plan {
     display: block;
     width: 100%;

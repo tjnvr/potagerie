@@ -1,6 +1,6 @@
 import { formatCivil } from "./dates";
 import { localeTag } from "./locale";
-import { commands, type AnnotationView, type AppError, type SlotView, type IncoherenceView, type BedId, type PlantingView, type SuggestionView, type YearView } from "./bindings";
+import { commands, type AnnotationView, type AppError, type SlotView, type IncoherenceView, type BedId, type GeometryInput, type PlantingView, type SuggestionView, type YearView } from "./bindings";
 import { isFailureSaving, translateError } from "./errors";
 
 
@@ -56,6 +56,9 @@ class App {
   loadFailure = $state<AppError | null>(null);
   saving = $state<Saving>("saved");
   message = $state<Message | null>(null);
+  /** The bed copied with Cmd+C (S05 §20): its type, place and size in the
+   *  year it was copied in, kept until the app closes, whatever the year. */
+  copiedBed = $state<GeometryInput | null>(null);
   #retry: (() => Promise<void>) | null = null;
   /** The bed the editor selects when it opens (« Move » of the bed panel). */
   #bedToSelect: BedId | null = null;

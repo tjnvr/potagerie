@@ -25,6 +25,12 @@ export const commands = {
 	 */
 	createBed: (year: number, bedType: TypeBed, name: string, x: number, y: number, size: SizeInput | null, keepClose: boolean, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("create_bed", { year, bedType, name, x, y, size, keepClose }, options)),
 	/**
+	 *  Duplicate and Paste (S01 F-PLN-6): a bed of the type and size of
+	 *  `original`, the copied bed as it was in the year of the copy, on the first
+	 *  free spot of S03 §15, in one step of Undo. The name is chosen by the interface.
+	 */
+	pasteBed: (year: number, name: string, original: GeometryInput, options?: InvokeOptions) => typedError<YearView, AppError>(__TAURI_INVOKE("paste_bed", { year, name, original }, options)),
+	/**
 	 *  Renames a bed and/or changes its layout from `year` on (S03 §7).
 	 *  `keep_close` as for `create_bed`.
 	 */
@@ -241,7 +247,7 @@ export type DatesPreview = {
  *  Stable error codes. The codes of [`PlanError`] are kept exactly as the
  *  `plan` crate names them (`PlanError::code`).
  */
-export type ErrorCode = "year_past" | "too_many_beds" | "bed_unknown" | "planting_unknown" | "bed_existing" | "planting_existing" | "crop_unknown" | "zone_invalid" | "bed_absent" | "zone_outside_bed" | "conflict" | "pot_days_required" | "out_of_range" | "manual_end_invalid" | "occupation_empty" | "length_invalid" | "plot_invalid" | "aisle_invalid" | "width_invalid" | "name_invalid" | "bed_outside_plot" | "bed_overlaps" | "aisle_too_narrow" | 
+export type ErrorCode = "year_past" | "too_many_beds" | "bed_unknown" | "planting_unknown" | "bed_existing" | "planting_existing" | "crop_unknown" | "zone_invalid" | "bed_absent" | "zone_outside_bed" | "conflict" | "pot_days_required" | "out_of_range" | "manual_end_invalid" | "occupation_empty" | "length_invalid" | "plot_invalid" | "aisle_invalid" | "width_invalid" | "name_invalid" | "bed_outside_plot" | "bed_overlaps" | "aisle_too_narrow" | "no_free_spot" | 
 /**  A command needs a plot, and none was created yet (E2). */
 "plot_absent" | "plot_existing" | 
 /**  The case size must be 25, 50 or 100 cm. */

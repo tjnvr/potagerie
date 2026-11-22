@@ -10,10 +10,10 @@ docs/
 ├── POT-00_test-matrix.md                   ← use cases and their automated tests (e2e), first navigation analysis
 ├── tasks/                                  ← work handed to agents, one file per task (see tasks/README.md)
 ├── specs/
-│   ├── POT-S01_functional-spec_v1.11.md     ← current versions
+│   ├── POT-S01_functional-spec_v1.12.md     ← current versions
 │   ├── POT-S02_crop-catalogue_v0.5.md
-│   ├── POT-S03_rules-and-calculations_v0.20.md
-│   ├── POT-S05_technical-spec_v0.24.md
+│   ├── POT-S03_rules-and-calculations_v0.21.md
+│   ├── POT-S05_technical-spec_v0.25.md
 │   └── archives/                           ← previous versions (the ones before v1.6 / v0.4 / v0.11 / v0.12 are in French)
 ├── design/
 │   ├── POT-D01_key-screens_v1.2/           ← current version (one folder per canvas)
@@ -60,10 +60,10 @@ Specific to prototypes:
 
 | Code | Document | Version | Status | Link |
 |---|---|---|---|---|
-| S01 | V1 functional spec (installed app, no account, desktop, mobile and sync lots) | 1.11 | Draft | [specs/POT-S01_functional-spec_v1.11.md](specs/POT-S01_functional-spec_v1.11.md) |
+| S01 | V1 functional spec (installed app, no account, desktop, mobile and sync lots) | 1.12 | Draft | [specs/POT-S01_functional-spec_v1.12.md](specs/POT-S01_functional-spec_v1.12.md) |
 | S02 | Crop catalogue (67 annual crops and the first red fruits, 6 reference) | 0.5 | Draft | [specs/POT-S02_crop-catalogue_v0.5.md](specs/POT-S02_crop-catalogue_v0.5.md) |
-| S03 | Rules and calculations (dates, stages, conflicts, quantities, layouts, slots, suggestions, tasks, validation after a merge; plot and placement of the beds; sunlight in an annex) | 0.20 | Draft | [specs/POT-S03_rules-and-calculations_v0.20.md](specs/POT-S03_rules-and-calculations_v0.20.md) |
-| S05 | Technical spec (Rust + Svelte, desktop then mobile Tauri app, serverless CRDT sync) | 0.24 | Draft | [specs/POT-S05_technical-spec_v0.24.md](specs/POT-S05_technical-spec_v0.24.md) |
+| S03 | Rules and calculations (dates, stages, conflicts, quantities, layouts, slots, suggestions, tasks, validation after a merge; plot and placement of the beds; sunlight in an annex) | 0.21 | Draft | [specs/POT-S03_rules-and-calculations_v0.21.md](specs/POT-S03_rules-and-calculations_v0.21.md) |
+| S05 | Technical spec (Rust + Svelte, desktop then mobile Tauri app, serverless CRDT sync) | 0.25 | Draft | [specs/POT-S05_technical-spec_v0.25.md](specs/POT-S05_technical-spec_v0.25.md) |
 | P01 | Isometric rendering prototype (SVG or Canvas?) | 0.2 | Draft | [prototypes/POT-P01_iso-rendering_v0.2/](prototypes/POT-P01_iso-rendering_v0.2/README.md) · [page](https://claude.ai/artifact/PBrzt3qta6sHKisnhfZWMv) |
 | D01 | Key V1 screens (E03 editor, E05 computer and phone, E07, visual direction) | 1.2 | Draft | [design/POT-D01_key-screens_v1.2/](design/POT-D01_key-screens_v1.2/README.md) · [canvas](https://claude.ai/artifact/DoHRUtcujzwPF6bfjdQtSN) (older French version, not maintained) |
 | D02 | Additional V1 screens (E02, E06, E07 computer, E09, E10 computer and phone, E11, cross-cutting states) | 0.2 | Draft | [design/POT-D02_additional-screens_v0.2/](design/POT-D02_additional-screens_v0.2/README.md) |

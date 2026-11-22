@@ -15,6 +15,7 @@
     | "play"
     | "pause"
     | "rotate"
+    | "copy"
     | "back"
     | "undo"
     | "redo";
@@ -43,6 +44,9 @@
   {:else if name === "rotate"}
     <path d="M15.5 8A6 6 0 1 0 16 12" stroke-width="2" />
     <path d="M16 3.5V8h-4.5" stroke-width="2" />
+  {:else if name === "copy"}
+    <rect x="7" y="7" width="10" height="10" rx="2" />
+    <path d="M13 4H5a1 1 0 0 0-1 1v8" />
   {:else if name === "back"}
     <path d="M12 4.5L6.5 10l5.5 5.5" stroke-width="2" />
   {:else if name === "garden"}

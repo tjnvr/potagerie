@@ -263,7 +263,7 @@ export function simulerTauri(): void {
 
   // Undo / Redo (S05 §18): whole snapshots, as Rust keeps whole documents.
   type Snapshot = { beds: BedView[]; plantings: PlantingView[] };
-  const EDITOR = ["create_bed", "move_bed", "modify_bed", "delete_bed"];
+  const EDITOR = ["create_bed", "paste_bed", "move_bed", "modify_bed", "delete_bed"];
   let undoList: Snapshot[] = [];
   let redoList: Snapshot[] = [];
   const snapshot = (): Snapshot => structuredClone({ beds, plantings });
@@ -427,6 +427,38 @@ export function simulerTauri(): void {
         const created = bed(String(args.name), type, Number(args.x), Number(args.y), l, h);
         verifier(created.id, created, args.keepClose === true);
         beds = [...beds, created];
+        version++;
+        return view(year);
+      }
+      case "paste_bed": {
+        // As Rust (`Plan::paste_bed`, S03 §15 "Copy of a bed"), on one year:
+        // 10 beds first, then next to the original, then the cells row by row.
+        modifiable(year);
+        const name = String(args.name).trim();
+        if (name.length < 1 || [...name].length > 30) refusal("name_invalid");
+        if (beds.length >= 10) refusal("too_many_beds");
+        const o = args.original as Geometry;
+        const t = plot!;
+        const a = t.aisle_cm;
+        const spots = [
+          [o.x + o.length_cm + a, o.y],
+          [o.x, o.y + o.width_cm + a],
+          [o.x - a - o.length_cm, o.y],
+          [o.x, o.y - a - o.width_cm],
+        ];
+        for (let y = 0; y <= t.width_cm; y += t.cell_cm) {
+          for (let x = 0; x <= t.length_cm; x += t.cell_cm) spots.push([x, y]);
+        }
+        const free = spots.find(
+          ([x, y]) =>
+            x! >= 0 &&
+            y! >= 0 &&
+            x! + o.length_cm <= t.length_cm &&
+            y! + o.width_cm <= t.width_cm &&
+            beds.every((b) => !tooClose({ ...o, x: x!, y: y! }, b, a)),
+        );
+        if (!free) refusal("no_free_spot");
+        beds = [...beds, bed(name, o.bed_type, free[0]!, free[1]!, o.length_cm, o.width_cm)];
         version++;
         return view(year);
       }

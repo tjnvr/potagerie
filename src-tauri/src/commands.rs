@@ -662,6 +662,25 @@ pub fn create_bed(
     })
 }
 
+/// Duplicate and Paste (S01 F-PLN-6): a bed of the type and size of
+/// `original`, the copied bed as it was in the year of the copy, on the first
+/// free spot of S03 §15, in one step of Undo. The name is chosen by the interface.
+#[tauri::command]
+#[specta::specta]
+pub fn paste_bed(
+    state: State<'_, AppState>,
+    year: i32,
+    name: String,
+    original: GeometryInput,
+) -> Result<YearView, AppError> {
+    edit(&state, year, |plan, today| {
+        plan::check_name(&name)?;
+        let name = name.trim().to_string();
+        plan.paste_bed(BedId::generate(), name, year, &original.into(), today)?;
+        Ok(())
+    })
+}
+
 /// Renames a bed and/or changes its layout from `year` on (S03 §7).
 /// `keep_close` as for `create_bed`.
 #[tauri::command]

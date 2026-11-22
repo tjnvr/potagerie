@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
   cmPerPixel,
+  cmToPixels,
   ControllerDrag,
   deposer,
   pixelsToCm,
@@ -51,6 +52,20 @@ describe("pixelsToCm", () => {
     const top = (600 - 694 * k) / 2;
     expect(pixelsToCm({ x: 0, y: top }, tall, box)).toEqual({ x: expect.closeTo(-22), y: expect.closeTo(-22) });
     expect(pixelsToCm({ x: 572, y: top + 694 * k }, tall, box)).toEqual({ x: expect.closeTo(1122), y: expect.closeTo(672) });
+  });
+});
+
+describe("cmToPixels", () => {
+  test("is the reverse of pixelsToCm, letterbox included", () => {
+    for (const r of [rect, { left: 52, top: 199, width: 972, height: 448 }, { left: 0, top: 0, width: 572, height: 600 }]) {
+      for (const p of [{ x: -22, y: -22 }, { x: 550, y: 325 }, { x: 1122, y: 672 }, { x: 100, y: 0 }]) {
+        const px = cmToPixels(p, r, box);
+        const back = pixelsToCm({ x: px.x + r.left, y: px.y + r.top }, r, box);
+        expect(back.x).toBeCloseTo(p.x);
+        expect(back.y).toBeCloseTo(p.y);
+      }
+    }
+    expect(cmToPixels({ x: -22, y: -22 }, rect, box)).toEqual({ x: 0, y: 0 });
   });
 });
 

@@ -38,6 +38,16 @@ export function pixelsToCm(p: Point, rect: Rect, box: Box): Point {
   };
 }
 
+/** Centimetres of the plan to pixels from the top left of the element: the
+ *  reverse of `pixelsToCm`, to lay HTML over the drawing. */
+export function cmToPixels(p: Point, size: { width: number; height: number }, box: Box): Point {
+  const k = cmPerPixel({ left: 0, top: 0, ...size }, box);
+  return {
+    x: (size.width - box.width / k) / 2 + (p.x - box.x) / k,
+    y: (size.height - box.height / k) / 2 + (p.y - box.y) / k,
+  };
+}
+
 /** The nearest multiple of the case size. */
 export function roundedCase(cm: number, step: number): number {
   return Math.round(cm / step) * step;

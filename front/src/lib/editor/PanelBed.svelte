@@ -21,6 +21,7 @@
     onmodify,
     onmove,
     shortcuts = false,
+    onduplicate,
   }: {
     view: YearView;
     bed: BedView;
@@ -30,6 +31,8 @@
     onmove?: () => void;
     /** In the editor, Escape and Delete stand for two buttons: their tooltips say so. */
     shortcuts?: boolean;
+    /** « Duplicate » (F-PLN-6): only in the editor. */
+    onduplicate?: () => void;
   } = $props();
 
   const TYPES: TypeBed[] = ["bed", "square", "mound", "planter"];
@@ -248,6 +251,11 @@
 
   {#if !view.read_only}
     <p class="help">{m.panel_follow()}</p>
+    {#if onduplicate}
+      <button class="button" title={withKeys(m.bed_duplicate(), "duplicate")} onclick={onduplicate}>
+        <Icon name="copy" size={16} />{m.bed_duplicate()}
+      </button>
+    {/if}
     <button class="button danger" title={shortcuts ? withKeys(m.delete(), "delete") : undefined} onclick={() => (suppression = true)}>
       <Icon name="trash" size={16} />{m.delete()}
     </button>

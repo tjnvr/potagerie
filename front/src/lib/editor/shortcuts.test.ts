@@ -46,7 +46,34 @@ describe("undo and redo shortcuts", () => {
     expect(shortcut(key("z"), MAC)).toBeNull();
     expect(shortcut(key("z", { ctrl: true, alt: true }), PC)).toBeNull();
     expect(shortcut(key("z", { ctrl: true, meta: true }), MAC)).toBeNull();
-    expect(shortcut(key("c", { meta: true }), MAC)).toBeNull();
+    expect(shortcut(key("x", { meta: true }), MAC)).toBeNull();
+  });
+});
+
+describe("copy, paste and duplicate shortcuts", () => {
+  test("C, V and D with Cmd on macOS, with Ctrl elsewhere", () => {
+    for (const [mods, mac] of [[{ meta: true }, MAC], [{ ctrl: true }, PC]] as const) {
+      expect(shortcut(key("c", mods), mac)).toEqual({ action: "copy" });
+      expect(shortcut(key("v", mods), mac)).toEqual({ action: "paste" });
+      expect(shortcut(key("d", mods), mac)).toEqual({ action: "duplicate" });
+      // Caps Lock reports the capital letter.
+      expect(shortcut(key("C", mods), mac)).toEqual({ action: "copy" });
+    }
+  });
+
+  test("the other modifier, Shift, Alt or no modifier do nothing", () => {
+    expect(shortcut(key("c", { ctrl: true }), MAC)).toBeNull();
+    expect(shortcut(key("v", { meta: true }), PC)).toBeNull();
+    expect(shortcut(key("c"), PC)).toBeNull();
+    expect(shortcut(key("v", { meta: true, shift: true }), MAC)).toBeNull();
+    expect(shortcut(key("d", { ctrl: true, alt: true }), PC)).toBeNull();
+  });
+
+  test("ignored while typing in a field", () => {
+    for (const k of ["c", "v", "d"]) {
+      expect(shortcut(key(k, { meta: true }, document.createElement("input")), MAC)).toBeNull();
+      expect(shortcut(key(k, { ctrl: true }, document.createElement("textarea")), PC)).toBeNull();
+    }
   });
 });
 
@@ -103,5 +130,9 @@ describe("keys shown in the tooltips", () => {
     expect(keysOf("redo", PC)).toBe("Ctrl+Y");
     expect(keysOf("delete", PC)).toBe("Delete");
     expect(keysOf("escape", PC)).toBe("Esc");
+    expect(keysOf("duplicate", MAC)).toBe("⌘D");
+    expect(keysOf("duplicate", PC)).toBe("Ctrl+D");
+    expect(keysOf("paste", MAC)).toBe("⌘V");
+    expect(keysOf("paste", PC)).toBe("Ctrl+V");
   });
 });

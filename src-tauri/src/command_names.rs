@@ -7,6 +7,7 @@ pub const COMMANDS: &[&str] = &[
     "create_plot",
     "modify_plot",
     "create_bed",
+    "paste_bed",
     "modify_bed",
     "move_bed",
     "plantings_exceeding",

@@ -99,6 +99,9 @@ pub enum PlanError {
         year: i32,
         aisle_cm: u32,
     },
+    /// No spot of the plot holds the copy of a bed while keeping the aisle (S03 §15).
+    #[error("no free spot for the copy in {year}")]
+    NoFreeSpot { year: i32 },
 }
 
 impl PlanError {
@@ -131,6 +134,7 @@ impl PlanError {
             Self::OutsidePlot { .. } => "bed_outside_plot",
             Self::BedsOverlap { .. } => "bed_overlaps",
             Self::AisleTooNarrow { .. } => "aisle_too_narrow",
+            Self::NoFreeSpot { .. } => "no_free_spot",
         }
     }
 }

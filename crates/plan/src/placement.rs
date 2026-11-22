@@ -3,7 +3,7 @@
 
 use crate::error::PlanError;
 use crate::ids::BedId;
-use crate::model::{Geometry, MAX_NAME_CHARS, MIN_WIDTH_CM, Plan, Plot};
+use crate::model::{Geometry, Layout, MAX_NAME_CHARS, MIN_WIDTH_CM, Plan, Plot};
 
 /// Aisle widths offered by S01 F-PLN-2, in cm.
 pub const AISLE_CHOICES: [u32; 3] = [30, 50, 80];
@@ -187,6 +187,72 @@ impl Plan {
 }
 
 impl Plan {
+    /// Adds a copy of a bed, for Duplicate and Paste (S03 §15, "Copy of a
+    /// bed"): the type and size of `original` (the bed as it was copied, maybe
+    /// in another year), with no planting, on the first spot that keeps the
+    /// aisle in every checked year. Returns where it landed. Refused, with the
+    /// plan untouched: `too_many_beds` first, then `no_free_spot`.
+    pub fn paste_bed(
+        &mut self,
+        id: BedId,
+        name: String,
+        year: i32,
+        original: &Geometry,
+        today: chrono::NaiveDate,
+    ) -> Result<Geometry, PlanError> {
+        // The past year, the length and the 10 beds do not depend on the spot.
+        let mut after = self.clone();
+        after.add_bed(id, name, year, original.clone(), today)?;
+        let spot = self
+            .free_spot(year, original)
+            .ok_or(PlanError::NoFreeSpot { year })?;
+        if let Some(bed) = after.beds.get_mut(&id) {
+            bed.layouts.insert(year, Layout::Present(spot.clone()));
+        }
+        after.check_placements(year)?;
+        *self = after;
+        Ok(spot)
+    }
+
+    /// Next to `original` (right, below, left, above, one aisle away), then
+    /// the cells of the plot row by row: the first spot inside the plot that
+    /// keeps the aisle with every bed of every year from `year` on.
+    fn free_spot(&self, year: i32, original: &Geometry) -> Option<Geometry> {
+        let others: Vec<&Geometry> = self
+            .checked_years(year)
+            .flat_map(|y| self.beds_in(y).into_iter().map(|(_, _, g)| g))
+            .collect();
+        let (x, y) = (i64::from(original.x), i64::from(original.y));
+        let (l, w) = (i64::from(original.length_cm), i64::from(original.width_cm));
+        let aisle = i64::from(self.plot.aisle_cm);
+        let beside = [
+            (x + l + aisle, y),
+            (x, y + w + aisle),
+            (x - aisle - l, y),
+            (x, y - aisle - w),
+        ];
+        let step = self.plot.cell_cm.cm() as usize;
+        let (length, width) = (self.plot.length_cm, self.plot.width_cm);
+        let cells = (0..=width).step_by(step).flat_map(move |cy| {
+            (0..=length)
+                .step_by(step)
+                .map(move |cx| (i64::from(cx), i64::from(cy)))
+        });
+        beside.into_iter().chain(cells).find_map(|(cx, cy)| {
+            let spot = Geometry {
+                x: u32::try_from(cx).ok()?,
+                y: u32::try_from(cy).ok()?,
+                ..original.clone()
+            };
+            let fits = u64::from(spot.x) + u64::from(spot.length_cm) <= u64::from(length)
+                && u64::from(spot.y) + u64::from(spot.width_cm) <= u64::from(width);
+            let free = others
+                .iter()
+                .all(|other| keeps_aisle(&spot, other, self.plot.aisle_cm));
+            (fits && free).then_some(spot)
+        })
+    }
+
     /// Changes the dimensions and the aisle width; the case size stays (S03 §4).
     /// Refused, with the plan untouched, if the new plot is invalid or no
     /// longer holds the beds of any year: the plot is one for the whole garden

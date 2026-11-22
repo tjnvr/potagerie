@@ -3,7 +3,7 @@
 import { m } from "../paraglide/messages.js";
 
 export type Shortcut =
-  | { action: "undo" | "redo" | "escape" | "delete" | "next" | "previous" }
+  | { action: "undo" | "redo" | "copy" | "paste" | "duplicate" | "escape" | "delete" | "next" | "previous" }
   /** By one cell along `dx` / `dy`, or by one metre with Shift. */
   | { action: "move"; dx: number; dy: number; metre: boolean };
 
@@ -27,8 +27,11 @@ const ARROWS: Record<string, [number, number]> = {
   ArrowDown: [0, 1],
 };
 
+const WITH_MODIFIER: Record<string, "copy" | "paste" | "duplicate"> = { c: "copy", v: "paste", d: "duplicate" };
+
 /** Cmd+Z undoes and Shift+Cmd+Z redoes on macOS; Ctrl+Z undoes and Ctrl+Y or
- *  Shift+Ctrl+Z redo elsewhere. Escape, Delete / Backspace, the arrows (Shift:
+ *  Shift+Ctrl+Z redo elsewhere. C, V and D with the same modifier copy,
+ *  paste and duplicate. Escape, Delete / Backspace, the arrows (Shift:
  *  one metre) and Tab / Shift+Tab, without a modifier. */
 export function shortcut(e: Key, mac = isMac()): Shortcut | null {
   if (e.altKey || typing(e.target)) return null;
@@ -39,6 +42,8 @@ export function shortcut(e: Key, mac = isMac()): Shortcut | null {
     const key = e.key.toLowerCase();
     if (key === "z") return { action: e.shiftKey ? "redo" : "undo" };
     if (key === "y" && !mac && !e.shiftKey) return { action: "redo" };
+    // Copy, paste and duplicate a bed (S05 §21).
+    if (!e.shiftKey && key in WITH_MODIFIER) return { action: WITH_MODIFIER[key]! };
     return null;
   }
   const arrow = ARROWS[e.key];
@@ -52,8 +57,12 @@ export function shortcut(e: Key, mac = isMac()): Shortcut | null {
 
 /** The keys of a shortcut as the tooltips show them: the symbols of macOS,
  *  the names of the keys elsewhere. */
-export function keysOf(action: "undo" | "redo" | "delete" | "escape", mac = isMac()): string {
+export function keysOf(action: "undo" | "redo" | "paste" | "duplicate" | "delete" | "escape", mac = isMac()): string {
   switch (action) {
+    case "paste":
+      return mac ? "⌘V" : "Ctrl+V";
+    case "duplicate":
+      return mac ? "⌘D" : "Ctrl+D";
     case "undo":
       return mac ? "⌘Z" : "Ctrl+Z";
     case "redo":

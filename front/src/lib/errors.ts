@@ -27,6 +27,7 @@ const messages: Record<ErrorCode, () => string> = {
   bed_outside_plot: m.error_bed_outside_plot,
   bed_overlaps: m.error_bed_overlaps,
   aisle_too_narrow: m.error_aisle_too_narrow,
+  no_free_spot: m.error_no_free_spot,
   plot_absent: m.error_plot_absent,
   plot_existing: m.error_plot_existing,
   case_invalid: m.error_cell_invalid,

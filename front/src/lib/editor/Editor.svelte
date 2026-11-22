@@ -1,7 +1,7 @@
 <script lang="ts">
   // Plan tab: the editor (E03). Top view, tray (Bed, Square, Mound, Planter),
   // right panel with the selected bed (E06) or the balance of the plan.
-  import { commands, type BedView, type SizeInput, type TypeBed, type YearView } from "../bindings";
+  import { commands, type BedView, type GeometryInput, type SizeInput, type TypeBed, type YearView } from "../bindings";
   import Confirmation from "../shell/Confirmation.svelte";
   import CreationPlot from "../shell/CreationPlot.svelte";
   import Icon from "../shell/Icon.svelte";
@@ -25,7 +25,7 @@
     type TypePointer,
   } from "./drag";
   import PanelBed from "./PanelBed.svelte";
-  import { shortcut } from "./shortcuts";
+  import { keysOf, shortcut } from "./shortcuts";
   import PlanViewTop, { type Ghost } from "./PlanViewTop.svelte";
 
   let { view }: { view: YearView } = $props();
@@ -61,6 +61,25 @@
     }
   }
 
+  /** Duplicate and Paste (S01 F-PLN-6): Rust adds a copy of `original` on the
+   *  first free spot (S03 §15) and the copy stays selected. */
+  async function paste(original: GeometryInput) {
+    const name = nameByDefault(original.bed_type, view.beds);
+    const before = new Set(view.beds.map((p) => p.id));
+    const ok = await app.modify((year) => commands.pasteBed(year, name, original));
+    if (ok && app.view) {
+      selectionId = app.view.beds.find((p) => !before.has(p.id))?.id ?? null;
+    }
+  }
+
+  function geometryOf(bed: BedView): GeometryInput {
+    return { bed_type: bed.bed_type, x: bed.x, y: bed.y, length_cm: bed.length_cm, width_cm: bed.width_cm };
+  }
+
+  function duplicate(bed: BedView) {
+    void paste(geometryOf(bed));
+  }
+
   /** The tray without a pointer drag (keyboard, plain click): first free spot. */
   async function add(type: TypeBed) {
     if (!view.plot) return;
@@ -92,8 +111,8 @@
     await poser(scope ?? "bed", zone.x, zone.y, { length_cm: zone.length_cm, width_cm: zone.width_cm });
   }
 
-  /** The shortcuts of the editor (S01 F-PLN-6, S05 §20), never while typing,
-   *  nor while a question or another window is open over the editor. */
+  /** The shortcuts of the editor (S01 F-PLN-6, S05 §20 and §21), never while
+   *  typing, nor while a question or another window is open over the editor. */
   function onkeydown(e: KeyboardEvent) {
     const s = shortcut(e);
     if (!s || e.defaultPrevented || !view.plot) return;
@@ -105,6 +124,23 @@
       case "redo":
         e.preventDefault();
         void (s.action === "undo" ? app.undo() : app.redo());
+        return;
+      // With nothing to copy or paste, the key is left to the system.
+      case "copy":
+        if (!selection) return;
+        e.preventDefault();
+        app.copiedBed = geometryOf(selection);
+        app.informer(m.bed_copied({ name: selection.name, keys: keysOf("paste") }));
+        return;
+      case "paste":
+        if (!app.copiedBed || view.read_only || top?.busy()) return;
+        e.preventDefault();
+        void paste(app.copiedBed);
+        return;
+      case "duplicate":
+        // The editor's, not the browser's bookmark.
+        e.preventDefault();
+        if (selection && !view.read_only && !top?.busy()) duplicate(selection);
         return;
       case "escape":
         if (cancelPlanter() || top?.cancelGesture()) e.preventDefault();
@@ -281,6 +317,7 @@
         onbeforeplot={() => app.report({ code: "bed_outside_plot", detail: "" })}
         onplace={poserHere}
         ondraw={drawZone}
+        onduplicate={duplicate}
       />
       {#if view.beds.length === 0}
         <p class="help">{m.plan_empty()}</p>
@@ -335,6 +372,7 @@
           shortcuts
           onclose={() => (selectionId = null)}
           onmodify={modify}
+          onduplicate={() => selection && duplicate(selection)}
         />
       {:else if account}
         <aside class="summary">

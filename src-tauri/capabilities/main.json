@@ -9,6 +9,7 @@
     "allow-create-plot",
     "allow-modify-plot",
     "allow-create-bed",
+    "allow-paste-bed",
     "allow-modify-bed",
     "allow-move-bed",
     "allow-plantings-exceeding",
