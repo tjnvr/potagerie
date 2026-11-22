@@ -36,3 +36,14 @@ Whatever the window size, zoom, scroll and screen density, a bed dragged or drop
 ## Questions
 
 ## Log
+
+- 2026-11-22 · Cause found. The plan is `width: 100%; max-height: 70vh`: when the window is low, or the plot more square than the space, the SVG element is wider (or taller) than its drawing, and the SVG centres the drawing with empty bands (`preserveAspectRatio` `xMidYMid meet`, the default). `pixelsToCm` stretched the pointer over the whole element, so the pointer was off by up to 137 cm (3 cells) near the edges of the plot, growing away from the centre (measured: 1440 × 640, element 972 px wide, drawing 738.5 px). The handles were sized with the same wrong scale. The other suspects were checked and are not the cause: the grab offset (`shift`) is kept during a move; `devicePixelRatio`, scroll and page zoom do not matter (`clientX` and `getBoundingClientRect` are both CSS pixels of the viewport); the preview and the drop use the same geometry, so there is no jump on release.
+- 2026-11-22 · Tests written: `drag.test.ts` (letterbox wide and tall, `cmPerPixel`), failing before the fix (137 cm off). e2e `front/e2e/pointer.spec.ts` PTR-01..04 at 1440 × 900, 1440 × 640 and 360 × 800, density 2, Chromium and WebKit: 8 failed before the fix (all at 1440 × 640), 24 passed after.
+- 2026-11-22 · Code passing: `pixelsToCm` maps to the centred drawing with one scale for both axes (`cmPerPixel`), the handles use that scale, `versCm` returns `null` outside the drawing (the empty bands are no longer "on the plan").
+
+### Decisions
+
+- The fix is in the conversion (`pixelsToCm`), not in the CSS: it holds for any element size, and it keeps the layout as it is.
+- An item of the tray stays held by its centre: the tray button is not the bed at scale, so its centre is the only point that matches; PTR-01 asserts it lands centred on the cells under the pointer.
+- New test ids use the prefix `PTR-` (free on `origin/main`) rather than `UC-38+`, which the other editor tasks running at the same time may take.
+- Touch (T22) and the handles' hit areas (T23) are left to their tasks; the e2e tests here use the mouse.
