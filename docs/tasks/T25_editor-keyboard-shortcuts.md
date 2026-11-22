@@ -1,6 +1,6 @@
 # T25 · Plan editor: keyboard shortcuts
 
-- Status: Running
+- Status: Done
 - Owner: agent
 - Depends on: T08
 - Refs: S01 F-PLN-6 (plan editor), §5 (mouse and touch first) · D01 E03 · S05 §4 (drag in the webview)
@@ -18,11 +18,11 @@ The plan editor can be driven from the keyboard for the common actions, without 
 
 ## Acceptance
 
-- [ ] Each shortcut above, with e2e tests (macOS and other platforms' modifier), including: ignored in an input, arrow move refused on overlap, Escape during a drag restores the bed.
-- [ ] Moves made with the arrows are undoable like a drag (T08).
-- [ ] Tooltips show the shortcuts (en and fr).
-- [ ] Matrix rows, ids free on `origin/main`.
-- [ ] Full local gate green (`skills/spec-driven-delivery`, step 5).
+- [x] Each shortcut above, with e2e tests (macOS and other platforms' modifier), including: ignored in an input, arrow move refused on overlap, Escape during a drag restores the bed.
+- [x] Moves made with the arrows are undoable like a drag (T08).
+- [x] Tooltips show the shortcuts (en and fr).
+- [x] Matrix rows, ids free on `origin/main`.
+- [x] Full local gate green (`skills/spec-driven-delivery`, step 5).
 
 ## Scope
 
@@ -51,3 +51,5 @@ The plan editor can be driven from the keyboard for the common actions, without 
 - Tooltips: Undo, Redo (header), Delete and Deselect (panel, editor only: the garden's panel has no shortcuts). Format "{label} ({keys})"; macOS symbols ⌘Z, ⇧⌘Z, ⌫; elsewhere Ctrl+Z, Ctrl+Y, Delete / Suppr; Esc / Échap.
 - No visible help text for the arrows and Tab beyond the landing page: Tim asked for tooltips only.
 - e2e set `navigator.platform` in the page so both platforms are tested on any machine; UC-37 sets the name by script, because on a macOS host Playwright plays Cmd+Z as the browser's own undo of the last typing.
+
+- 2026-11-22: Done. v0.13.0. Specs: S01 v1.11 (F-PLN-6: Escape, Delete / Backspace, arrows and Shift + arrow, Tab / Shift+Tab, modifier per platform, tooltips), S05 v0.24 (§4, §20). Front: `shortcuts.ts` (keys per platform, tooltip keys), one key listener in `Editor.svelte`, `PlanViewTop` (cancel a gesture, keyboard move, focus a bed), `PanelBed.askDelete` and tooltips, header tooltips, `AisleBubble` takes its Escape; messages en / fr; landing page line (en / fr). Checked: full local gate green (fmt, clippy, cargo test, check, 257 unit tests, build, 397 e2e passed, 13 skipped; Chromium and WebKit); `origin/main` brought nothing, so no second run. Screenshots in headless WebKit at 1440 and 360 px, English and French: Tab selects, a refused Shift+arrow flashes pale red with the reason, Delete opens the confirmation. NOT checked: the real Tauri window (WKWebView: whether its Edit menu takes Cmd+Z or Backspace first), a real Windows / Linux keyboard (platform simulated through `navigator.platform`), touch, an installed build; the landing page screenshots were not retaken.
