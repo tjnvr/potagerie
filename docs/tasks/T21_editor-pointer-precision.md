@@ -41,6 +41,7 @@ Whatever the window size, zoom, scroll and screen density, a bed dragged or drop
 - 2026-11-22 · Tests written: `drag.test.ts` (letterbox wide and tall, `cmPerPixel`), failing before the fix (137 cm off). e2e `front/e2e/pointer.spec.ts` PTR-01..04 at 1440 × 900, 1440 × 640 and 360 × 800, density 2, Chromium and WebKit: 8 failed before the fix (all at 1440 × 640), 24 passed after.
 - 2026-11-22 · Code passing: `pixelsToCm` maps to the centred drawing with one scale for both axes (`cmPerPixel`), the handles use that scale, `versCm` returns `null` outside the drawing (the empty bands are no longer "on the plan").
 - 2026-11-22 · Done, v0.11.1 (patch: a fix). No spec changed (S01 v1.9, S05 v0.21 already say the bed follows the pointer; this was a defect). Rebased on T08 (v0.11.0), matrix conflict resolved (UC-36, UC-37 kept, PTR rows added). Checked: full local gate green after the rebase (fmt, clippy, cargo test, check, 226 unit tests, build, e2e 353 passed, 3 skipped as before). NOT checked: touch (T22), the real Tauri window and an installed build, browser zoom other than 100 %, screenshots of the functional check (the e2e tests read the positions in the browser instead). Extra paths: none outside `Scope`.
+- 2026-11-22 · CI green: `main` (run 45020582389, the first run was cancelled by the next push), tag `v0.11.1` (45020474313), release (45020474378, pre-release with the dmg, exe and msi). Landing page unchanged: nothing new to show.
 
 ### Decisions
 
