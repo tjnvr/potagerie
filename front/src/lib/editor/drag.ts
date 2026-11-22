@@ -20,11 +20,21 @@ export const LONG_PRESS_DELAY_MS = 450;
  *  so a handle never proposes a width Rust would call invalid. */
 export const WIDTH_MIN_CM = 10;
 
-/** Pixels of the screen to centimetres of the plan. */
+/** Centimetres of the plan per pixel of the screen. The SVG keeps the
+ *  proportions of its `viewBox` (`xMidYMid meet`): the drawing fills the
+ *  element on one axis only, and the same scale applies to both. */
+export function cmPerPixel(rect: Rect, box: Box): number {
+  return Math.max(box.width / Math.max(rect.width, 1), box.height / Math.max(rect.height, 1));
+}
+
+/** Pixels of the screen to centimetres of the plan. When the element is wider
+ *  (or taller) than the drawing, the drawing is centred in it: the empty bands
+ *  on the sides are not part of the plan. */
 export function pixelsToCm(p: Point, rect: Rect, box: Box): Point {
+  const k = cmPerPixel(rect, box);
   return {
-    x: box.x + ((p.x - rect.left) / rect.width) * box.width,
-    y: box.y + ((p.y - rect.top) / rect.height) * box.height,
+    x: box.x + (p.x - rect.left - (rect.width - box.width / k) / 2) * k,
+    y: box.y + (p.y - rect.top - (rect.height - box.height / k) / 2) * k,
   };
 }
 

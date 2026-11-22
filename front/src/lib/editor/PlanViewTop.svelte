@@ -7,6 +7,7 @@
   import { m } from "../paraglide/messages.js";
   import { formatMeters } from "../beds";
   import {
+    cmPerPixel,
     ControllerDrag,
     deposer,
     pixelsToCm,
@@ -121,6 +122,7 @@
 
   let svg: SVGSVGElement;
   let widthPx = $state(600);
+  let heightPx = $state(360);
   let geste = $state<Geste | null>(null);
   let refuse = $state<string | null>(null);
   let armed = $state<string | null>(null);
@@ -134,7 +136,7 @@
     height: plot.width_cm + 2 * marge,
   });
   /** Centimetres per screen pixel, to keep handles the same size on screen. */
-  const scale = $derived(box.width / Math.max(widthPx, 1));
+  const scale = $derived(cmPerPixel({ left: 0, top: 0, width: widthPx, height: heightPx }, box));
   const rowsX = $derived(
     Array.from({ length: Math.floor(plot.length_cm / plot.cell_cm) - 1 }, (_, i) => (i + 1) * plot.cell_cm),
   );
@@ -148,13 +150,12 @@
 
   const controller = new ControllerDrag({ onArmed: () => (armed = geste?.id ?? null) });
 
-  /** Pixels of the screen to centimetres of the plan, or `null` outside the plan. */
+  /** Pixels of the screen to centimetres of the plan, or `null` outside the
+   *  drawing (the element may be wider than it, see `pixelsToCm`). */
   export function versCm(clientX: number, clientY: number): Point | null {
-    const rect = svg.getBoundingClientRect();
-    if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) {
-      return null;
-    }
-    return pixelsToCm({ x: clientX, y: clientY }, rect, box);
+    const p = pixelsToCm({ x: clientX, y: clientY }, svg.getBoundingClientRect(), box);
+    const inside = p.x >= box.x && p.x <= box.x + box.width && p.y >= box.y && p.y <= box.y + box.height;
+    return inside ? p : null;
   }
 
   function enCm(e: PointerEvent): Point {
@@ -274,6 +275,7 @@
 <svg
   bind:this={svg}
   bind:clientWidth={widthPx}
+  bind:clientHeight={heightPx}
   class="plan"
   viewBox="{box.x} {box.y} {box.width} {box.height}"
   role="group"

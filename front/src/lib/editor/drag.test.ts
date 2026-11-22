@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
+  cmPerPixel,
   ControllerDrag,
   deposer,
   pixelsToCm,
@@ -21,6 +22,37 @@ describe("pixelsToCm", () => {
     const centre = pixelsToCm({ x: 386, y: 223.5 }, rect, box);
     expect(centre.x).toBeCloseTo(550);
     expect(centre.y).toBeCloseTo(325);
+  });
+
+  // The plan has `max-height: 70vh`: in a low window the element is wider than
+  // its drawing, which the SVG centres (`xMidYMid meet`) with empty bands on the
+  // sides. 1144 × 694 cm in 972 × 448 px: 448 / 694 px per cm, the drawing is
+  // 738.5 px wide, starting 116.75 px from the left of the element.
+  test("follows the drawing when the element is wider than it (letterbox)", () => {
+    const wide = { left: 52, top: 199, width: 972, height: 448 };
+    const k = 448 / 694;
+    const left = 52 + (972 - 1144 * k) / 2;
+    expect(pixelsToCm({ x: left, y: 199 }, wide, box).x).toBeCloseTo(-22);
+    expect(pixelsToCm({ x: left + 1144 * k, y: 647 }, wide, box)).toEqual({ x: expect.closeTo(1122), y: expect.closeTo(672) });
+    // The cell 100 cm from the left of the plot, mid-height.
+    const p = pixelsToCm({ x: left + (22 + 100) * k, y: 199 + (22 + 325) * k }, wide, box);
+    expect(p.x).toBeCloseTo(100);
+    expect(p.y).toBeCloseTo(325);
+  });
+
+  test("follows the drawing when the element is taller than it", () => {
+    const tall = { left: 0, top: 0, width: 572, height: 600 };
+    const k = 572 / 1144;
+    const top = (600 - 694 * k) / 2;
+    expect(pixelsToCm({ x: 0, y: top }, tall, box)).toEqual({ x: expect.closeTo(-22), y: expect.closeTo(-22) });
+    expect(pixelsToCm({ x: 572, y: top + 694 * k }, tall, box)).toEqual({ x: expect.closeTo(1122), y: expect.closeTo(672) });
+  });
+});
+
+describe("cmPerPixel", () => {
+  test("is the scale of the drawing, the same on both axes", () => {
+    expect(cmPerPixel(rect, box)).toBeCloseTo(2);
+    expect(cmPerPixel({ left: 0, top: 0, width: 972, height: 448 }, box)).toBeCloseTo(694 / 448);
   });
 });
 
