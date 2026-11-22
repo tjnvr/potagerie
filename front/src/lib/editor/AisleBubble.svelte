@@ -13,7 +13,14 @@
   });
 </script>
 
-<svelte:window onkeydown={(e) => e.key === "Escape" && answer(false)} />
+<!-- The key is taken (`preventDefault`): it must not also deselect the bed (S05 §20). -->
+<svelte:window
+  onkeydown={(e) => {
+    if (e.key !== "Escape") return;
+    e.preventDefault();
+    answer(false);
+  }}
+/>
 
 <div class="bubble" role="alertdialog" aria-labelledby="aisle-bubble-text">
   <span class="icon"><Icon name="alert" size={18} /></span>

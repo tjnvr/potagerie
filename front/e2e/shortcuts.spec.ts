@@ -159,6 +159,13 @@ test("UC-40 plan: the arrows move the selected bed by a cell, Shift by a metre, 
   await expect(page.getByRole("button", { name: "Go back" })).toBeVisible();
   await page.getByRole("button", { name: "Go back" }).click();
   await expect.poll(() => geo(page, "Leek square")).toEqual(start);
+  // Escape on the bubble is « Go back » too, and only that: the bed stays selected.
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByRole("button", { name: "Go back" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "Go back" })).toHaveCount(0);
+  await expect.poll(() => geo(page, "Leek square")).toEqual(start);
+  await expect(bed(page, "Leek square")).toHaveAttribute("aria-pressed", "true");
 
   // Left of the plot: refused without a call.
   await select(page, "Back of the garden");
@@ -212,7 +219,7 @@ test("UC-41 plan: Tab and Shift+Tab select the next and the previous bed, then l
   await expect(beds.nth(1)).toBeFocused();
   await page.keyboard.press("Shift+Tab");
   await expect(beds.nth(0)).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByRole("heading", { name: await beds.nth(0).locator("text").innerText() })).toBeVisible();
+  await expect(page.getByRole("heading", { name: (await beds.nth(0).locator("text").textContent())! })).toBeVisible();
 
   // Before the first one, Shift+Tab leaves the plan; the selection stays.
   await page.keyboard.press("Shift+Tab");
@@ -234,8 +241,13 @@ for (const p of PLATFORMS) {
     await openPlan(page, p.platform);
     await select(page, "Leek square");
     const name = page.getByLabel("Name", { exact: true });
-    await name.fill("Herbs");
-    await name.dispatchEvent("change");
+    // Set by script, not typed: on a macOS host, Playwright plays Cmd+Z as the
+    // browser's own undo of the last typing, even outside the field.
+    await name.evaluate((input: HTMLInputElement) => {
+      input.value = "Herbs";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    });
     const renamed = page.getByRole("heading", { name: "Herbs", exact: true });
     const original = page.getByRole("heading", { name: "Leek square", exact: true });
     await expect(renamed).toBeVisible();

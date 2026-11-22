@@ -12,6 +12,7 @@
   import { cursor } from "../time";
   import { dateShort, formatM2, formatMeters, nameCrop, nameOfType } from "../beds";
   import type { Geo, Response } from "./drag";
+  import { withKeys } from "./shortcuts";
 
   let {
     view,
@@ -19,6 +20,7 @@
     onclose,
     onmodify,
     onmove,
+    shortcuts = false,
   }: {
     view: YearView;
     bed: BedView;
@@ -26,6 +28,8 @@
     onmodify: (id: string, geo: Geo, nature: "move" | "resize") => Promise<Response>;
     /** « Move » (F-VIS-7): only from the garden, the editor already moves the bed. */
     onmove?: () => void;
+    /** In the editor, Escape and Delete stand for two buttons: their tooltips say so. */
+    shortcuts?: boolean;
   } = $props();
 
   const TYPES: TypeBed[] = ["bed", "square", "mound", "planter"];
@@ -89,6 +93,11 @@
     }
   }
 
+  /** Delete / Backspace (S01 F-PLN-6): the same confirmation as the button. */
+  export function askDelete() {
+    if (!view.read_only) suppression = true;
+  }
+
   async function remove() {
     suppression = false;
     const ok = await app.modify((year) => commands.deleteBed(year, bed.id));
@@ -102,7 +111,7 @@
       <p class="kicker">{m.panel_selection()}</p>
       <h2>{bed.name}</h2>
     </div>
-    <button class="rond" aria-label={m.panel_close()} onclick={onclose}><Icon name="close" size={16} /></button>
+    <button class="rond" aria-label={m.panel_close()} title={shortcuts ? withKeys(m.panel_close(), "escape") : undefined} onclick={onclose}><Icon name="close" size={16} /></button>
   </div>
 
   <div class="puces">
@@ -239,7 +248,7 @@
 
   {#if !view.read_only}
     <p class="help">{m.panel_follow()}</p>
-    <button class="button danger" onclick={() => (suppression = true)}>
+    <button class="button danger" title={shortcuts ? withKeys(m.delete(), "delete") : undefined} onclick={() => (suppression = true)}>
       <Icon name="trash" size={16} />{m.delete()}
     </button>
   {/if}

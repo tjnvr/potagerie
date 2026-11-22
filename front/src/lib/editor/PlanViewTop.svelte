@@ -252,30 +252,65 @@
     if (!geste?.sending) geste = null;
   }
 
-  async function key(e: KeyboardEvent, p: BedView) {
+  /** Enter and Space select the focused bed; the other keys are the editor's
+   *  shortcuts (S05 §20). */
+  function key(e: KeyboardEvent, p: BedView) {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       onselect(p.id);
-      return;
     }
-    if (e.key === "Escape") {
-      onselect(null);
-      return;
+  }
+
+  /** Escape: drops the gesture in progress (move, resize, zone drawn on the
+   *  grass), nothing is sent and the bed is back in its place. `false` when
+   *  there was none, or when Rust is already judging the drop. */
+  export function cancelGesture(): boolean {
+    if (band || bandStart) {
+      const drawing = band !== null;
+      band = null;
+      bandStart = null;
+      // The release that follows on the grass is not a click that adds a bed.
+      drew = drawing;
+      if (drawing) return true;
     }
-    const step = plot.cell_cm;
-    const delta: Record<string, Point> = {
-      ArrowLeft: { x: -step, y: 0 },
-      ArrowRight: { x: step, y: 0 },
-      ArrowUp: { x: 0, y: -step },
-      ArrowDown: { x: 0, y: step },
-    };
-    const d = delta[e.key];
-    if (!d || readOnly || selectionId !== p.id) return;
-    e.preventDefault();
-    const target = { ...geoOf(p), x: p.x + d.x, y: p.y + d.y };
-    await deposer(geoOf(p), target, (g) => onmodify(p.id, g, "move")).then((issue) => {
+    if (!geste || geste.sending) return false;
+    controller.cancel();
+    armed = null;
+    geste = null;
+    return true;
+  }
+
+  // A keyboard move waiting for Rust: the next arrow waits for its answer.
+  let nudging = false;
+
+  /** A gesture or a keyboard move is in progress. */
+  export function busy(): boolean {
+    return geste !== null || nudging;
+  }
+
+  /** The arrows: the selected bed moved by (`dx`, `dy`) cm, judged like a
+   *  drop (S05 §20). A refusal turns it pale red and it stays. */
+  export async function nudge(dx: number, dy: number): Promise<void> {
+    if (readOnly || !active || busy()) return;
+    const p = active;
+    nudging = true;
+    try {
+      const issue = await deposer(geoOf(p), { ...geoOf(p), x: p.x + dx, y: p.y + dy }, (g) =>
+        onmodify(p.id, g, "move"),
+      );
       if (issue.response === "before-plot") onbeforeplot();
-    });
+      if (issue.response === "refusal" || issue.response === "before-plot") {
+        refuse = p.id;
+        setTimeout(() => (refuse = null), 1200);
+      }
+    } finally {
+      nudging = false;
+    }
+  }
+
+  /** Tab: the focus follows the bed it selects. */
+  export function focusBed(id: string): void {
+    svg.querySelector<SVGGElement>(`g.bed[data-id="${CSS.escape(id)}"]`)?.focus();
   }
 
   /** Chromium moves a touch to the nearest element that listens for mouse
@@ -361,6 +396,7 @@
     <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
     <g
       class="bed"
+      data-id={bed.id}
       class:chosen
       class:refuse={refuse === bed.id}
       class:armed={armed === bed.id}

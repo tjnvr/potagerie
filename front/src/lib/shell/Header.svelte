@@ -10,6 +10,7 @@
   import { goTo, allerToday, cursor, today } from "../time";
   import Icon, { type NameIcon } from "./Icon.svelte";
   import Logo from "./Logo.svelte";
+  import { withKeys } from "../editor/shortcuts";
 
   const yearInProgress = $derived(Number($today.slice(0, 4)));
   /** A season of the selector: the cursor goes to the same day of that year. */
@@ -72,7 +73,7 @@
       <button
         class="rond"
         aria-label={m.undo()}
-        title={m.undo()}
+        title={withKeys(m.undo(), "undo")}
         disabled={!app.view.can_undo}
         onclick={() => app.undo()}
       >
@@ -81,7 +82,7 @@
       <button
         class="rond"
         aria-label={m.redo()}
-        title={m.redo()}
+        title={withKeys(m.redo(), "redo")}
         disabled={!app.view.can_redo}
         onclick={() => app.redo()}
       >

@@ -35,6 +35,7 @@
   const account = $derived(view.plot ? summary(view.plot, view.beds) : null);
 
   let top: PlanViewTop | undefined = $state();
+  let panel: PanelBed | undefined = $state();
   // « Move » from the garden's bed panel opens the editor on that bed (F-VIS-7).
   let selectionId = $state<string | null>(app.takeBedToSelect());
   let ghost = $state<Ghost | null>(null);
@@ -91,14 +92,69 @@
     await poser(scope ?? "bed", zone.x, zone.y, { length_cm: zone.length_cm, width_cm: zone.width_cm });
   }
 
-  /** Cmd+Z / Ctrl+Z and the redo keys (S01 F-PLN-6), never while typing, nor
-   *  while a question or another window is open over the editor. */
+  /** The shortcuts of the editor (S01 F-PLN-6, S05 §20), never while typing,
+   *  nor while a question or another window is open over the editor. */
   function onkeydown(e: KeyboardEvent) {
-    const action = shortcut(e);
+    const s = shortcut(e);
+    if (!s || e.defaultPrevented || !view.plot) return;
     const covered = app.settingsOpen || app.catalogueOpen || app.exportOpen || app.plantingOpen || app.noteOpen;
-    if (!action || covered || shortening || app.aisleQuestion) return;
+    const dialog = document.querySelector('dialog[open], [role="dialog"], [role="alertdialog"]');
+    if (covered || dialog || shortening || app.aisleQuestion) return;
+    switch (s.action) {
+      case "undo":
+      case "redo":
+        e.preventDefault();
+        void (s.action === "undo" ? app.undo() : app.redo());
+        return;
+      case "escape":
+        if (cancelPlanter() || top?.cancelGesture()) e.preventDefault();
+        else selectionId = null;
+        return;
+      case "delete":
+        if (!selection || view.read_only || top?.busy()) return;
+        e.preventDefault();
+        panel?.askDelete();
+        return;
+      case "move": {
+        if (!selection || view.read_only) return;
+        e.preventDefault();
+        // One metre is a whole number of cells: a cell is 25, 50 or 100 cm.
+        const step = s.metre ? Math.max(100, view.plot.cell_cm) : view.plot.cell_cm;
+        void top?.nudge(s.dx * step, s.dy * step);
+        return;
+      }
+      case "next":
+      case "previous":
+        tab(e, s.action === "next");
+    }
+  }
+
+  /** Tab / Shift+Tab from the plan (or from nowhere): the next or previous bed
+   *  is selected and focused. Past the last or the first one, or from another
+   *  control, the key is the browser's: the focus is never trapped. */
+  function tab(e: KeyboardEvent, forward: boolean) {
+    const focus = document.activeElement;
+    const onPlan = !focus || focus === document.body || focus.closest("svg.plan") !== null;
+    if (!onPlan || top?.busy()) return;
+    const ids = view.beds.map((p) => p.id);
+    const current = focus?.closest("g.bed")?.getAttribute("data-id") ?? selectionId;
+    const i = current ? ids.indexOf(current) : -1;
+    const next = i === -1 ? (forward ? 0 : ids.length - 1) : i + (forward ? 1 : -1);
+    const id = ids[next];
+    if (id === undefined) return;
     e.preventDefault();
-    void (action === "undo" ? app.undo() : app.redo());
+    selectionId = id;
+    top?.focusBed(id);
+  }
+
+  /** Escape during a drag from the tray: the item goes back, nothing is put down. */
+  function cancelPlanter(): boolean {
+    if (!typePlanter) return false;
+    planter.cancel();
+    typePlanter = null;
+    scope = null;
+    ghost = null;
+    return true;
   }
 
   // Drag from the tray: the same long press on a finger, the same pointer logic.
@@ -272,7 +328,14 @@
 
     <div class="lateral">
       {#if selection}
-        <PanelBed {view} bed={selection} onclose={() => (selectionId = null)} onmodify={modify} />
+        <PanelBed
+          bind:this={panel}
+          {view}
+          bed={selection}
+          shortcuts
+          onclose={() => (selectionId = null)}
+          onmodify={modify}
+        />
       {:else if account}
         <aside class="summary">
           <h2>{m.summary_title()}</h2>
