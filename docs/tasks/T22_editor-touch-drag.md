@@ -1,6 +1,6 @@
 # T22 · Plan editor: dragging with a finger follows it
 
-- Status: Ready
+- Status: Running
 - Owner: agent
 - Depends on: T21
 - Refs: S01 F-PLN-6 (plan editor), §5 (mouse and touch first) · D01 E03 · S05 §4 (drag in the webview)
