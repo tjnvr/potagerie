@@ -1,6 +1,6 @@
 # T08 · Undo / Redo
 
-- Status: Running
+- Status: Done
 - Owner: agent
 - Depends on: —
 - Refs: S01 F-PLN-6 (after lot 1)
@@ -54,3 +54,6 @@ Each action of the editor can be undone and redone from the header.
 - 50 steps at most; `history_empty` (translated) when there is nothing to undo or redo; the interface stays silent about it for a shortcut pressed with nothing left.
 - Shortcuts accept Cmd or Ctrl on every platform (T25 may narrow it to the platform's key); ignored in inputs, text areas, selects, editable elements, and while a window (settings, catalogue, forms) or a question (shortening, aisle bubble) is open. The buttons show in the Plan tab only, as on D01 E03, between the season controls and the save indicator; no shortcut in tooltips yet (T25).
 - The buttons also work on a past season shown read-only: the steps undone were made on the current or a future year.
+- On a phone the two buttons sit next to "Today", so that the first row keeps the logo, the save mark, Catalogue and Settings.
+
+- 2026-11-22: Done. v0.11.0. Specs: S01 v1.10 (F-PLN-6 Undo / Redo with shortcuts, out of the "after lot 1" list), S05 v0.22 (`undo`, `redo`, `can_undo` / `can_redo`, `create_bed` `size`, error `history_empty`, §18). Rust: `plan::History`, `AppState.history`, editor commands recorded, every other write empties it. Front: header buttons (Plan tab), `shortcuts.ts`, simulation, messages en / fr, one landing page line (en / fr). Checked: full local gate green after the rebase (fmt, clippy, cargo test, check, 223 unit tests, build, 329 e2e); screenshots in headless WebKit at 1440 and 360 px, English and French (the first 360 px shot pushed Catalogue and Settings onto an extra row: fixed). NOT checked: the real Tauri window (WKWebView, and whether its Edit menu catches Cmd+Z first), touch, an installed build; the landing page screenshots were not retaken.
