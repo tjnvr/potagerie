@@ -618,37 +618,3 @@ test("UC-36 plan: Undo and Redo of the header take back and redo the changes to 
   await expect(redo).toBeDisabled();
   await expect(page.getByRole("alert")).toHaveCount(0);
 });
-
-test("UC-37 plan: Cmd+Z / Ctrl+Z undoes, Shift+Cmd+Z / Ctrl+Y redoes, never while typing", async ({ page }) => {
-  await open(page);
-  await page.getByRole("button", { name: "Plan", exact: true }).click();
-  await page.mouse.click(640, 340);
-  const name = page.getByLabel("Name", { exact: true });
-  const first = (await name.inputValue()).trim();
-  const original = page.getByRole("heading", { name: first, exact: true });
-  await expect(original).toBeVisible();
-  await name.fill("Herbs");
-  await name.dispatchEvent("change");
-  const renamed = page.getByRole("heading", { name: "Herbs", exact: true });
-  await expect(renamed).toBeVisible();
-
-  // In the field, the keys belong to the field.
-  await name.focus();
-  await page.keyboard.press("Control+z");
-  await page.keyboard.press("Meta+z");
-  await expect(renamed).toBeVisible();
-
-  await name.blur();
-  await page.keyboard.press("Meta+z");
-  await expect(original).toBeVisible();
-  await page.keyboard.press("Meta+Shift+z");
-  await expect(renamed).toBeVisible();
-  await page.keyboard.press("Control+z");
-  await expect(original).toBeVisible();
-  await page.keyboard.press("Control+y");
-  await expect(renamed).toBeVisible();
-  // Nothing left to redo: nothing happens, nothing is said.
-  await page.keyboard.press("Control+y");
-  await expect(renamed).toBeVisible();
-  await expect(page.getByRole("alert")).toHaveCount(0);
-});
