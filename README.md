@@ -2,7 +2,7 @@
 
 An installed app to plan a vegetable garden: a single user, no account and no server. The core is written in Rust, the interface in Svelte 5 + TypeScript, and everything is packaged by Tauri v2 (macOS and Windows in lot 1).
 
-The documentation (specs, designs, prototypes) is in [`docs/`](docs/POT-00_index.md). The technical reference is [S05](docs/specs/POT-S05_technical-spec_v0.22.md).
+The documentation (specs, designs, prototypes) is in [`docs/`](docs/POT-00_index.md). The technical reference is [S05](docs/specs/POT-S05_technical-spec_v0.23.md).
 
 ## Install
 
