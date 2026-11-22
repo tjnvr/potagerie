@@ -13,7 +13,7 @@ State of the requirements of S01 (§4) in the app at lot 1, read in the code on 
 | F-PLN-2 Aisles | Done | Plan and garden; `create_bed`, `move_bed`, `modify_bed` (`keep_close`) | The width is adjustable; a bed placed, moved or resized closer than the aisle asks "Keep here" or "Go back" (T01, S03 v0.18 §15) |
 | F-PLN-4 A plan that evolves by season | Done | Plan, "read only" banner; `view_year`, `clear_plan` | Carry-over to the following years, past seasons read-only |
 | F-PLN-5 Plan summary | Done | Plan, right-hand panel | Plot, workable, aisles, beds |
-| F-PLN-6 Place and size | Partial | Plan; `move_bed`, `undo`, `redo` | Drag, handles (40 px touch targets, no long press, T23), add by tap and Undo / Redo (T08) present; no rotate, no duplicate (after lot 1) |
+| F-PLN-6 Place and size | Partial | Plan; `move_bed`, `undo`, `redo` | Drag, handles (40 px touch targets, no long press, T23), add by tap, Undo / Redo (T08) and keyboard shortcuts (Escape, Delete, arrows, Tab, T25) present; no rotate, no duplicate (after lot 1) |
 | F-CAT-1 Content | Partial | `catalogue` | The 67 annual crops of S02 and, since S02 v0.5 (T18), raspberry and strawberry; the other red fruits (redcurrant, blackcurrant, gooseberry, thornless blackberry, blueberry) come with T19 |
 | F-CAT-2 Crop sheet | Done | Catalogue, "Sheet" | Schema of S02 |
 | F-CAT-3 Browsing | Done | Catalogue; `crops_of_season` | Filter by family and "in season now" |
