@@ -33,6 +33,7 @@ const messages: Record<ErrorCode, () => string> = {
   annotation_unknown: m.error_annotation_unknown,
   text_invalid: m.note_error_text,
   annotation_dates_invalid: m.note_error_dates,
+  history_empty: m.error_history_empty,
   saving: m.error_saving,
   version_stale: m.error_version_stale,
   base_too_recent: m.error_base_too_recent,

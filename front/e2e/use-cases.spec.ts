@@ -584,3 +584,71 @@ test("UC-35 plan: two beds with the same name are allowed, and flagged in their 
   await expect(page.getByRole("heading", { name: "Herbs" })).toBeVisible();
   await expect(warning).toHaveCount(0);
 });
+
+test("UC-36 plan: Undo and Redo of the header take back and redo the changes to the beds", async ({ page }) => {
+  await open(page);
+  const undo = page.getByRole("button", { name: "Undo the last action" });
+  const redo = page.getByRole("button", { name: "Redo", exact: true });
+  // Only in the Plan tab.
+  await toGarden(page);
+  await expect(undo).toHaveCount(0);
+  await page.getByRole("button", { name: "Plan", exact: true }).click();
+  await expect(undo).toBeDisabled();
+  await expect(redo).toBeDisabled();
+
+  const counter = page.locator(".counter").first();
+  await page.getByRole("button", { name: /^Square/ }).click();
+  await expect(counter).toContainText("9 / 10");
+  await page.getByRole("button", { name: /^Leek square, / }).click();
+  await page.getByRole("button", { name: "Delete", exact: true }).first().click();
+  await page.getByRole("button", { name: "Delete the bed" }).click();
+  await expect(counter).toContainText("8 / 10");
+
+  // The deletion, then the addition.
+  await undo.click();
+  await expect(counter).toContainText("9 / 10");
+  await expect(redo).toBeEnabled();
+  await undo.click();
+  await expect(counter).toContainText("8 / 10");
+  await expect(undo).toBeDisabled();
+  await redo.click();
+  await expect(counter).toContainText("9 / 10");
+  await redo.click();
+  await expect(counter).toContainText("8 / 10");
+  await expect(redo).toBeDisabled();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+});
+
+test("UC-37 plan: Cmd+Z / Ctrl+Z undoes, Shift+Cmd+Z / Ctrl+Y redoes, never while typing", async ({ page }) => {
+  await open(page);
+  await page.getByRole("button", { name: "Plan", exact: true }).click();
+  await page.mouse.click(640, 340);
+  const name = page.getByLabel("Name", { exact: true });
+  const first = (await name.inputValue()).trim();
+  const original = page.getByRole("heading", { name: first, exact: true });
+  await expect(original).toBeVisible();
+  await name.fill("Herbs");
+  await name.dispatchEvent("change");
+  const renamed = page.getByRole("heading", { name: "Herbs", exact: true });
+  await expect(renamed).toBeVisible();
+
+  // In the field, the keys belong to the field.
+  await name.focus();
+  await page.keyboard.press("Control+z");
+  await page.keyboard.press("Meta+z");
+  await expect(renamed).toBeVisible();
+
+  await name.blur();
+  await page.keyboard.press("Meta+z");
+  await expect(original).toBeVisible();
+  await page.keyboard.press("Meta+Shift+z");
+  await expect(renamed).toBeVisible();
+  await page.keyboard.press("Control+z");
+  await expect(original).toBeVisible();
+  await page.keyboard.press("Control+y");
+  await expect(renamed).toBeVisible();
+  // Nothing left to redo: nothing happens, nothing is said.
+  await page.keyboard.press("Control+y");
+  await expect(renamed).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+});

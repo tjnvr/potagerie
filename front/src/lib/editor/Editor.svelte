@@ -1,7 +1,7 @@
 <script lang="ts">
   // Plan tab: the editor (E03). Top view, tray (Bed, Square, Mound, Planter),
   // right panel with the selected bed (E06) or the balance of the plan.
-  import { commands, type BedView, type TypeBed, type YearView } from "../bindings";
+  import { commands, type BedView, type SizeInput, type TypeBed, type YearView } from "../bindings";
   import Confirmation from "../shell/Confirmation.svelte";
   import CreationPlot from "../shell/CreationPlot.svelte";
   import Icon from "../shell/Icon.svelte";
@@ -25,6 +25,7 @@
     type TypePointer,
   } from "./drag";
   import PanelBed from "./PanelBed.svelte";
+  import { shortcut } from "./shortcuts";
   import PlanViewTop, { type Ghost } from "./PlanViewTop.svelte";
 
   let { view }: { view: YearView } = $props();
@@ -47,10 +48,12 @@
     if (selectionId && !view.beds.some((p) => p.id === selectionId)) selectionId = null;
   });
 
-  async function poser(type: TypeBed, x: number, y: number) {
+  /** A new bed at its default size, or at `size` for a drawn one. */
+  async function poser(type: TypeBed, x: number, y: number, size: SizeInput | null = null) {
     const name = nameByDefault(type, view.beds);
     const before = new Set(view.beds.map((p) => p.id));
-    const ok = (await app.place((year, keepClose) => commands.createBed(year, type, name, x, y, keepClose))) === "ok";
+    const ok =
+      (await app.place((year, keepClose) => commands.createBed(year, type, name, x, y, size, keepClose))) === "ok";
     if (ok && app.view) {
       // The new bed stays selected (F-PLN-6).
       selectionId = app.view.beds.find((p) => !before.has(p.id))?.id ?? null;
@@ -81,26 +84,21 @@
     await poser(type, pos.x, pos.y);
   }
 
-  /** A zone drawn on the grass: a bed of the chosen type, then resized to the zone. */
+  /** A zone drawn on the grass: a bed of the chosen type at the zone's size,
+   *  in one change (one step of Undo). */
   async function drawZone(zone: { x: number; y: number; length_cm: number; width_cm: number }) {
     if (!view.plot || complete) return;
-    const type = scope ?? "bed";
-    // Created on a free spot (its default size may not fit where the zone starts,
-    // near the edge), then moved and resized to the zone in one change.
-    const spot = positionFree(view.plot, view.beds, type);
-    if (!spot) {
-      app.informer(m.plan_no_free_space());
-      return;
-    }
-    const before = new Set(view.beds.map((p) => p.id));
-    await poser(type, spot.x, spot.y);
-    const id = selectionId;
-    const bed = id && !before.has(id) ? app.view?.beds.find((b) => b.id === id) : null;
-    if (id && bed) {
-      await app.place((year, keepClose) =>
-        commands.modifyBed(year, id, null, { bed_type: bed.bed_type, ...zone }, keepClose),
-      );
-    }
+    await poser(scope ?? "bed", zone.x, zone.y, { length_cm: zone.length_cm, width_cm: zone.width_cm });
+  }
+
+  /** Cmd+Z / Ctrl+Z and the redo keys (S01 F-PLN-6), never while typing, nor
+   *  while a question or another window is open over the editor. */
+  function onkeydown(e: KeyboardEvent) {
+    const action = shortcut(e);
+    const covered = app.settingsOpen || app.catalogueOpen || app.exportOpen || app.plantingOpen || app.noteOpen;
+    if (!action || covered || shortening || app.aisleQuestion) return;
+    e.preventDefault();
+    void (action === "undo" ? app.undo() : app.redo());
   }
 
   // Drag from the tray: the same long press on a finger, the same pointer logic.
@@ -177,6 +175,8 @@
         );
   }
 </script>
+
+<svelte:window {onkeydown} />
 
 {#if !view.plot}
   <CreationPlot />

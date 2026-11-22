@@ -147,6 +147,16 @@ class App {
     return (await this.modify((year) => action(year, true))) ? "ok" : "refusal";
   }
 
+  /** Undo / Redo of the editor (S01 F-PLN-6): Rust puts back the plan. With
+   *  nothing left (a shortcut pressed anyway), nothing is said. */
+  async undo(): Promise<void> {
+    await this.modify((year) => commands.undo(year), (error) => error.code === "history_empty");
+  }
+
+  async redo(): Promise<void> {
+    await this.modify((year) => commands.redo(year), (error) => error.code === "history_empty");
+  }
+
   /** « Retry » of the save indicator. */
   async retry(): Promise<void> {
     await this.#retry?.();

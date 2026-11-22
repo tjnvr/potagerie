@@ -66,6 +66,30 @@
 
   <div class="space"></div>
 
+  {#if app.tab === "plan" && app.view?.plot}
+    <!-- Undo / Redo of the editor (S01 F-PLN-6, D01 E03). -->
+    <div class="history">
+      <button
+        class="rond"
+        aria-label={m.undo()}
+        title={m.undo()}
+        disabled={!app.view.can_undo}
+        onclick={() => app.undo()}
+      >
+        <Icon name="undo" size={18} />
+      </button>
+      <button
+        class="rond"
+        aria-label={m.redo()}
+        title={m.redo()}
+        disabled={!app.view.can_redo}
+        onclick={() => app.redo()}
+      >
+        <Icon name="redo" size={18} />
+      </button>
+    </div>
+  {/if}
+
   <div class="state" role="status">
     {#if app.saving === "saved"}
       <span class="ok"><Icon name="check" size={16} /></span><span class="label">{m.state_saved()}</span>
@@ -209,6 +233,16 @@
     border-radius: 50%;
     border: 1px solid var(--line);
     background: var(--white);
+  }
+
+  .history {
+    display: flex;
+    gap: 8px;
+  }
+
+  .rond:disabled {
+    opacity: 0.4;
+    cursor: default;
   }
 
   /* Very narrow: only the mark of the save state stays visible, so that the

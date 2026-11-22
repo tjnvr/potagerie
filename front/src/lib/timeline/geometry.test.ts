@@ -220,6 +220,8 @@ function view(year: number, over: Partial<YearView> = {}): YearView {
     slots: [],
     annotations: [],
     tasks: [],
+    can_undo: false,
+    can_redo: false,
     ...over,
   };
 }

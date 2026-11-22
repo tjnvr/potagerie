@@ -15,7 +15,9 @@
     | "play"
     | "pause"
     | "rotate"
-    | "back";
+    | "back"
+    | "undo"
+    | "redo";
 </script>
 
 <script lang="ts">
@@ -72,6 +74,10 @@
     <path d="M5 5l10 10M15 5L5 15" stroke-width="2" />
   {:else if name === "plus"}
     <path d="M10 4v12M4 10h12" stroke-width="2" />
+  {:else if name === "undo"}
+    <path d="M7 5L3.5 8.5 7 12M4 8.5h8a4 4 0 0 1 0 8H9" />
+  {:else if name === "redo"}
+    <path d="M13 5l3.5 3.5L13 12M16 8.5H8a4 4 0 0 0 0 8h3" />
   {:else if name === "retry"}
     <path d="M7 5L3.5 8.5 7 12M4 8.5h8a4 4 0 0 1 0 8H9" />
   {/if}

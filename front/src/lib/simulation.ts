@@ -240,6 +240,8 @@ export function simulerTauri(): void {
         (a) => a.date_start < `${year + 1}-01-01` && (a.date_end ?? a.date_start) >= `${year}-01-01`,
       ),
       tasks: [],
+      can_undo: false,
+      can_redo: false,
     };
   }
 
@@ -259,7 +261,45 @@ export function simulerTauri(): void {
   const params = new URLSearchParams(location.search);
   let failureSaving = params.has("failure");
 
+  // Undo / Redo (S05 §18): whole snapshots, as Rust keeps whole documents.
+  type Snapshot = { beds: BedView[]; plantings: PlantingView[] };
+  const EDITOR = ["create_bed", "move_bed", "modify_bed", "delete_bed"];
+  let undoList: Snapshot[] = [];
+  let redoList: Snapshot[] = [];
+  const snapshot = (): Snapshot => structuredClone({ beds, plantings });
+  const restore = (s: Snapshot) => ({ beds, plantings } = s);
+
   mockIPC((cmd, payload) => {
+    const before = snapshot();
+    const versionBefore = version;
+    if (cmd === "undo" || cmd === "redo") {
+      const [from, to] = cmd === "undo" ? [undoList, redoList] : [redoList, undoList];
+      const s = from.pop();
+      if (!s) refusal("history_empty");
+      to.push(before);
+      restore(s);
+      version++;
+      return withHistory(view(Number((payload as Args | undefined)?.year ?? annee0)));
+    }
+    const response = handle(cmd, payload);
+    if (EDITOR.includes(cmd)) {
+      undoList = [...undoList, before].slice(-50);
+      redoList = [];
+    } else if (version !== versionBefore || cmd === "erase_data") {
+      undoList = [];
+      redoList = [];
+    }
+    return withHistory(response);
+  });
+
+  function withHistory(response: unknown): unknown {
+    if (response && typeof response === "object" && "can_undo" in response) {
+      return { ...response, can_undo: undoList.length > 0, can_redo: redoList.length > 0 };
+    }
+    return response;
+  }
+
+  function handle(cmd: string, payload: unknown): unknown {
     const args = (payload ?? {}) as Args;
     const year = Number(args.year ?? annee0);
     if (failureSaving && cmd !== "view_year" && cmd !== "catalogue" && !cmd.startsWith("plugin:")) {
@@ -381,7 +421,9 @@ export function simulerTauri(): void {
       case "create_bed": {
         modifiable(year);
         const type = args.bedType as TypeBed;
-        const [l, h] = SIZES[type];
+        const size = args.size as { length_cm: number; width_cm: number } | null;
+        const [l, h] = size ? [size.length_cm, size.width_cm] : SIZES[type];
+        if (plot && l % plot.cell_cm !== 0) refusal("length_invalid");
         const created = bed(String(args.name), type, Number(args.x), Number(args.y), l, h);
         verifier(created.id, created, args.keepClose === true);
         beds = [...beds, created];
@@ -445,5 +487,5 @@ export function simulerTauri(): void {
         throw { code: "file", detail: `${cmd} is not simulated` };
       }
     }
-  });
+  }
 }
