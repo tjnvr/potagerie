@@ -289,6 +289,10 @@
     .today {
       order: 12;
     }
+    /* Next to « Today », so that the first row keeps the logo and its marks. */
+    .history {
+      order: 13;
+    }
     .state {
       font-size: 12px;
     }
