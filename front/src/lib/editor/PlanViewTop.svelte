@@ -104,6 +104,8 @@
     nature: "move" | "resize";
     origin: Geo;
     shift: Point;
+    /** The pointer that holds the bed: another finger is not part of the gesture. */
+    pointerId: number;
     handle?: Handle;
     preview: Geo;
     sending: boolean;
@@ -167,7 +169,8 @@
   }
 
   function start(e: PointerEvent, p: BedView, nature: Geste["nature"], handle?: Handle) {
-    if (e.button !== 0 || geste?.sending) return;
+    // A second finger on the plan leaves the bed in hand to the first one.
+    if (e.button !== 0 || geste?.sending || (geste && geste.pointerId !== e.pointerId)) return;
     e.stopPropagation();
     svg.setPointerCapture(e.pointerId);
     const origin = geoOf(p);
@@ -177,6 +180,7 @@
       nature,
       origin,
       shift: { x: pointer.x - p.x, y: pointer.y - p.y },
+      pointerId: e.pointerId,
       handle,
       preview: origin,
       sending: false,
@@ -186,7 +190,7 @@
   }
 
   function bouge(e: PointerEvent) {
-    if (!geste || geste.sending) return;
+    if (!geste || geste.sending || e.pointerId !== geste.pointerId) return;
     const movement = controller.move({ x: e.clientX, y: e.clientY });
     if (movement === "abandon") {
       geste = null;
@@ -207,7 +211,7 @@
   }
 
   async function raised(e: PointerEvent) {
-    if (!geste || geste.sending) return;
+    if (!geste || geste.sending || e.pointerId !== geste.pointerId) return;
     if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId);
     const end = controller.release();
     armed = null;
@@ -229,7 +233,8 @@
     }
   }
 
-  function cancelled() {
+  function cancelled(e: PointerEvent) {
+    if (geste && e.pointerId !== geste.pointerId) return;
     controller.cancel();
     armed = null;
     if (!geste?.sending) geste = null;
@@ -270,6 +275,10 @@
     svg.addEventListener("touchmove", stop, { passive: false });
     return () => svg.removeEventListener("touchmove", stop);
   });
+
+  // A long press with a finger or a pen grabs a bed: it must not open the
+  // context menu (Windows touch screens, Android). The mouse keeps its own.
+  let pressedWith = "mouse";
 </script>
 
 <svg
@@ -280,6 +289,8 @@
   viewBox="{box.x} {box.y} {box.width} {box.height}"
   role="group"
   aria-label={m.plan_aria({ count: beds.length })}
+  onpointerdowncapture={(e) => (pressedWith = e.pointerType)}
+  oncontextmenu={(e) => pressedWith !== "mouse" && e.preventDefault()}
   onpointermove={(e) => {
     growBand(e);
     bouge(e);

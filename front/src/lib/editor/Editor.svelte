@@ -102,19 +102,26 @@
   }
 
   // Drag from the tray: the same long press on a finger, the same pointer logic.
+  // Only the pointer that took the item carries it: a second finger is ignored.
   const planter = new ControllerDrag({ onArmed: () => {} });
   let typePlanter: TypeBed | null = null;
+  let pointerPlanter = -1;
+  // The long press of a finger or a pen takes the item: no context menu.
+  let pressedWith = "mouse";
 
   function startPlanter(e: PointerEvent, type: TypeBed) {
+    pressedWith = e.pointerType;
     if (e.button !== 0 || complete || view.read_only) return;
+    if (typePlanter && e.pointerId !== pointerPlanter) return;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     typePlanter = type;
+    pointerPlanter = e.pointerId;
     scope = type;
     planter.press(e.pointerType as TypePointer, { x: e.clientX, y: e.clientY });
   }
 
   function bougePlanter(e: PointerEvent) {
-    if (!typePlanter) return;
+    if (!typePlanter || e.pointerId !== pointerPlanter) return;
     const movement = planter.move({ x: e.clientX, y: e.clientY });
     if (movement === "abandon") {
       typePlanter = null;
@@ -130,7 +137,7 @@
 
   async function raisedPlanter(e: PointerEvent) {
     const type = typePlanter;
-    if (!type) return;
+    if (!type || e.pointerId !== pointerPlanter) return;
     const button = e.currentTarget as HTMLElement;
     if (button.hasPointerCapture(e.pointerId)) button.releasePointerCapture(e.pointerId);
     const end = planter.release();
@@ -145,7 +152,8 @@
     }
   }
 
-  function cancelledPlanter() {
+  function cancelledPlanter(e: PointerEvent) {
+    if (e.pointerId !== pointerPlanter) return;
     planter.cancel();
     typePlanter = null;
     scope = null;
@@ -244,6 +252,7 @@
                 onpointermove={bougePlanter}
                 onpointerup={raisedPlanter}
                 onpointercancel={cancelledPlanter}
+                oncontextmenu={(e) => pressedWith !== "mouse" && e.preventDefault()}
                 onclick={(e) => e.detail === 0 && add(type)}
               >
                 <span class="name">{nameOfType(type)}</span>
@@ -417,6 +426,7 @@
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
+    -webkit-touch-callout: none;
     cursor: grab;
   }
 
