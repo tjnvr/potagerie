@@ -3,7 +3,7 @@
 // Every few minutes: resume answered tasks, restart crashed agents, start the next Ready tasks.
 // When Claude says its usage limit is reached, sleep until the reset (5 h if unknown), then go on.
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync, appendFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync, appendFileSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import {
   ROOT, HOME, MAX, fetchOrigin, readTasks, lastRun, limitReset, readLimit, writeLimit, clearLimit, publish,
@@ -23,14 +23,22 @@ const say = (msg) => {
   appendFileSync(LOG, line + "\n");
 };
 
-// One loop at a time.
-try {
-  process.kill(Number(readFileSync(PID, "utf8")), 0);
-  console.error(`tasks: a loop is already running (pid ${readFileSync(PID, "utf8").trim()}), see ${LOG}`);
+// One loop at a time. An empty or unreadable pid file means no loop (pid 0 would mean "my own group").
+const otherLoop = () => {
+  try {
+    const pid = Number(readFileSync(PID, "utf8").trim());
+    if (!Number.isInteger(pid) || pid <= 0 || pid === process.pid) return 0;
+    process.kill(pid, 0);
+    return pid;
+  } catch { return 0; }
+};
+const running = otherLoop();
+if (running) {
+  console.error(`tasks: a loop is already running (pid ${running}), see ${LOG}`);
   process.exit(1);
-} catch {}
+}
 writeFileSync(PID, String(process.pid));
-const bye = () => { try { if (readFileSync(PID, "utf8") === String(process.pid)) writeFileSync(PID, ""); } catch {} process.exit(0); };
+const bye = () => { try { if (readFileSync(PID, "utf8").trim() === String(process.pid)) unlinkSync(PID); } catch {} process.exit(0); };
 process.on("SIGINT", bye);
 process.on("SIGTERM", bye);
 process.on("SIGHUP", () => {}); // a closed terminal must not stop the loop

@@ -27,7 +27,7 @@ export function fetchOrigin(force = false) {
 export function alive(id) {
   const p = join(HOME, "pids", `${id}.pid`);
   if (!existsSync(p)) return false;
-  try { process.kill(Number(readFileSync(p, "utf8").trim()), 0); return true; } catch { return false; }
+  try { const pid = Number(readFileSync(p, "utf8").trim()); if (!(pid > 0)) return false; process.kill(pid, 0); return true; } catch { return false; }
 }
 
 export const field = (text, name) => (text.match(new RegExp(`^- ${name}: *(.*)$`, "m"))?.[1] ?? "").trim();
@@ -194,7 +194,7 @@ export function clearLimit() { try { unlinkSync(LIMIT_FILE); } catch {} }
 export function loopState() {
   const p = join(HOME, "loop.pid");
   let running = false;
-  try { process.kill(Number(readFileSync(p, "utf8")), 0); running = true; } catch {}
+  try { const pid = Number(readFileSync(p, "utf8").trim()); if (pid > 0) { process.kill(pid, 0); running = true; } } catch {}
   return { running, limit: readLimit() };
 }
 
