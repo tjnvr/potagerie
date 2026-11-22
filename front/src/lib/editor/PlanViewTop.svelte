@@ -312,7 +312,10 @@
   viewBox="{box.x} {box.y} {box.width} {box.height}"
   role="group"
   aria-label={m.plan_aria({ count: beds.length })}
-  onpointerdowncapture={(e) => (pressedWith = e.pointerType)}
+  onpointerdowncapture={(e) => {
+    pressedWith = e.pointerType;
+    if (e.pointerType === "touch") touched = true;
+  }}
   oncontextmenu={(e) => pressedWith !== "mouse" && e.preventDefault()}
   onpointermove={(e) => {
     growBand(e);
@@ -323,9 +326,6 @@
     raised(e);
   }}
   onpointercancel={cancelled}
-  onpointerdowncapture={(e) => {
-    if (e.pointerType === "touch") touched = true;
-  }}
 >
   <rect
     class="grass"
