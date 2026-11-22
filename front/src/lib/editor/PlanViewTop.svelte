@@ -278,6 +278,16 @@
     });
   }
 
+  /** Chromium moves a touch to the nearest element that listens for mouse
+   *  presses on itself; Svelte delegates its listeners to the document, so a
+   *  handle's press would go to the bed under it. A listener on the handle
+   *  keeps the finger on it (S05 §19). */
+  function tappable(node: Element) {
+    const nothing = () => {};
+    node.addEventListener("mousedown", nothing);
+    return () => node.removeEventListener("mousedown", nothing);
+  }
+
   // A finger that holds a bed must not scroll the page: `touch-action`
   // is not honoured on every SVG engine, so the touchmove is stopped too.
   $effect(() => {
@@ -398,6 +408,7 @@
             r={h.r}
             style:cursor={CURSORS[h.name]}
             onpointerdown={(e) => start(e, active, "resize", h.name)}
+            {@attach tappable}
           />
           <circle class="handle" cx={h.x} cy={h.y} r={6 * scale} />
         {/each}
