@@ -10,6 +10,10 @@
     cmPerPixel,
     ControllerDrag,
     deposer,
+    HANDLE_HIT_MOUSE_PX,
+    HANDLE_HIT_TOUCH_PX,
+    handlePoint,
+    handleZones,
     pixelsToCm,
     positionDropped,
     resize,
@@ -111,16 +115,22 @@
     sending: boolean;
   };
 
-  const HANDLES: { name: Handle; fx: number; fy: number; cursor: string }[] = [
-    { name: "nw", fx: 0, fy: 0, cursor: "nwse-resize" },
-    { name: "n", fx: 0.5, fy: 0, cursor: "ns-resize" },
-    { name: "ne", fx: 1, fy: 0, cursor: "nesw-resize" },
-    { name: "e", fx: 1, fy: 0.5, cursor: "ew-resize" },
-    { name: "se", fx: 1, fy: 1, cursor: "nwse-resize" },
-    { name: "s", fx: 0.5, fy: 1, cursor: "ns-resize" },
-    { name: "sw", fx: 0, fy: 1, cursor: "nesw-resize" },
-    { name: "w", fx: 0, fy: 0.5, cursor: "ew-resize" },
-  ];
+  const CURSORS: Record<Handle, string> = {
+    nw: "nwse-resize",
+    n: "ns-resize",
+    ne: "nesw-resize",
+    e: "ew-resize",
+    se: "nwse-resize",
+    s: "ns-resize",
+    sw: "nesw-resize",
+    w: "ew-resize",
+  };
+
+  // Touch targets of 40 px at least (S05 §19): on a touch screen, or as soon
+  // as a finger has touched the plan.
+  const coarse = typeof matchMedia === "function" && matchMedia("(any-pointer: coarse)").matches;
+  let touched = $state(false);
+  const hitPx = $derived(coarse || touched ? HANDLE_HIT_TOUCH_PX : HANDLE_HIT_MOUSE_PX);
 
   let svg: SVGSVGElement;
   let widthPx = $state(600);
@@ -175,18 +185,20 @@
     svg.setPointerCapture(e.pointerId);
     const origin = geoOf(p);
     const pointer = enCm(e);
+    // Held by the top left of the bed for a move, by the handle for a resize.
+    const held = handle ? handlePoint(origin, handle) : { x: p.x, y: p.y };
     geste = {
       id: p.id,
       nature,
       origin,
-      shift: { x: pointer.x - p.x, y: pointer.y - p.y },
+      shift: { x: pointer.x - held.x, y: pointer.y - held.y },
       pointerId: e.pointerId,
       handle,
       preview: origin,
       sending: false,
     };
     armed = null;
-    controller.press(e.pointerType as TypePointer, { x: e.clientX, y: e.clientY });
+    controller.press(e.pointerType as TypePointer, { x: e.clientX, y: e.clientY }, { immediate: nature === "resize" });
   }
 
   function bouge(e: PointerEvent) {
@@ -206,7 +218,7 @@
               ...geste.origin,
               ...positionDropped(pointer, geste.shift, step),
             }
-          : resize(geste.origin, geste.handle!, pointer, step);
+          : resize(geste.origin, geste.handle!, pointer, step, geste.shift);
     }
   }
 
@@ -270,7 +282,8 @@
   // is not honoured on every SVG engine, so the touchmove is stopped too.
   $effect(() => {
     const stop = (e: TouchEvent) => {
-      if (controller.state === "armed" || controller.state === "dragged") e.preventDefault();
+      const resizing = geste?.nature === "resize" && controller.state !== "rest";
+      if (resizing || controller.state === "armed" || controller.state === "dragged") e.preventDefault();
     };
     svg.addEventListener("touchmove", stop, { passive: false });
     return () => svg.removeEventListener("touchmove", stop);
@@ -300,6 +313,9 @@
     raised(e);
   }}
   onpointercancel={cancelled}
+  onpointerdowncapture={(e) => {
+    if (e.pointerType === "touch") touched = true;
+  }}
 >
   <rect
     class="grass"
@@ -372,22 +388,18 @@
         {m.panel_dimensions({ length: formatMeters(g.length_cm), width: formatMeters(g.width_cm) })}
       </text>
       {#if !readOnly}
-        {#each HANDLES as h (h.name)}
+        {#each handleZones(g, scale, hitPx) as h (h.name)}
           <circle
             class="handle-zone"
             role="presentation"
-            cx={g.x + h.fx * g.length_cm}
-            cy={g.y + h.fy * g.width_cm}
-            r={18 * scale}
-            style:cursor={h.cursor}
+            data-handle={h.name}
+            cx={h.cx}
+            cy={h.cy}
+            r={h.r}
+            style:cursor={CURSORS[h.name]}
             onpointerdown={(e) => start(e, active, "resize", h.name)}
           />
-          <circle
-            class="handle"
-            cx={g.x + h.fx * g.length_cm}
-            cy={g.y + h.fy * g.width_cm}
-            r={6 * scale}
-          />
+          <circle class="handle" cx={h.x} cy={h.y} r={6 * scale} />
         {/each}
       {/if}
     {/if}

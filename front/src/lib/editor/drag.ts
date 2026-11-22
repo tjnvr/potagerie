@@ -63,7 +63,10 @@ export function positionSincePlanter(
  * case (a whole number of cases, at least one); the width is free to the
  * centimetre (S01 F-PLN-1).
  */
-export function resize(g: Geo, handle: Handle, pointer: Point, step: number): Geo {
+export function resize(g: Geo, handle: Handle, held: Point, step: number, gap: Point = { x: 0, y: 0 }): Geo {
+  // `gap` is how far from its edge the handle was pressed: kept, the edge
+  // moves with the pointer instead of jumping to it (S05 §19).
+  const pointer = { x: held.x - gap.x, y: held.y - gap.y };
   const right = g.x + g.length_cm;
   const low = g.y + g.width_cm;
   let { x, y, length_cm, width_cm } = g;
@@ -82,6 +85,60 @@ export function resize(g: Geo, handle: Handle, pointer: Point, step: number): Ge
     y = low - width_cm;
   }
   return { x, y, length_cm, width_cm };
+}
+
+/** Where a handle is drawn: a corner, or the middle of a side. */
+export function handlePoint(g: Geo, handle: Handle): Point {
+  const fx = handle.includes("w") ? 0 : handle.includes("e") ? 1 : 0.5;
+  const fy = handle.includes("n") ? 0 : handle.includes("s") ? 1 : 0.5;
+  return { x: g.x + fx * g.length_cm, y: g.y + fy * g.width_cm };
+}
+
+/** Across, in screen pixels, the circle that takes the press of a handle:
+ *  at least 40 px on a touch screen (S01 §5), smaller with a mouse. */
+export const HANDLE_HIT_TOUCH_PX = 44;
+export const HANDLE_HIT_MOUSE_PX = 36;
+
+/** A handle: its dot at (`x`, `y`) and the circle that takes the press,
+ *  centred at (`cx`, `cy`), of radius `r`, all in centimetres. */
+export type HandleZone = { name: Handle; x: number; y: number; cx: number; cy: number; r: number };
+
+const HANDLES: Handle[] = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
+
+/**
+ * The handles of a bed and their hit circles, `hitPx` across on the screen
+ * (`scale` centimetres per pixel). A circle reaches at most a quarter of the
+ * bed into it, pushed outwards when the bed is small on the screen, so that
+ * its middle stays free to move it; the middle handle of a side too short to
+ * keep it apart from the corners is left out (S05 §19).
+ */
+export function handleZones(g: Geo, scale: number, hitPx: number): HandleZone[] {
+  const r = (hitPx / 2) * scale;
+  // Room for a middle circle between the two corner ones.
+  const roomX = g.length_cm >= 4 * r;
+  const roomY = g.width_cm >= 4 * r;
+  return HANDLES.filter((h) => (h === "n" || h === "s" ? roomX : h === "e" || h === "w" ? roomY : true)).map(
+    (name) => {
+      const p = handlePoint(g, name);
+      const sx = name.includes("w") ? -1 : name.includes("e") ? 1 : 0;
+      const sy = name.includes("n") ? -1 : name.includes("s") ? 1 : 0;
+      let ox = 0;
+      let oy = 0;
+      if (sx !== 0 && sy !== 0) {
+        // A corner pushed out along its diagonal by `o`: the circle crosses the
+        // two sides at sqrt(r² - o²) - o from the corner; that is set to `t`.
+        const t = Math.min(r, g.length_cm / 4, g.width_cm / 4);
+        const o = (-t + Math.sqrt(2 * r * r - t * t)) / 2;
+        ox = o;
+        oy = o;
+      } else if (sx !== 0) {
+        ox = r - Math.min(r, g.length_cm / 4);
+      } else {
+        oy = r - Math.min(r, g.width_cm / 4);
+      }
+      return { name, x: p.x, y: p.y, cx: p.x + sx * ox, cy: p.y + sy * oy, r };
+    },
+  );
 }
 
 /** Rust takes unsigned positions: a negative one is left of or above the
@@ -124,12 +181,14 @@ export class ControllerDrag {
     this.#timers = options.timer ?? timerReal;
   }
 
-  press(type: TypePointer, p: Point): void {
+  /** `immediate`: a finger drags like a mouse, with no long press (a resize
+   *  handle, which a finger cannot mean to scroll, S05 §19). */
+  press(type: TypePointer, p: Point, options: { immediate?: boolean } = {}): void {
     this.cancel();
-    this.#type = type;
+    this.#type = options.immediate && type === "touch" ? "mouse" : type;
     this.#depart = p;
     this.state = "waiting";
-    if (type === "touch") {
+    if (this.#type === "touch") {
       this.#timerId = this.#timers.start(() => {
         this.#timerId = null;
         if (this.state === "waiting") {
