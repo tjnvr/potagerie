@@ -35,3 +35,11 @@ On a phone or a touch screen, after the long press, the bed follows the finger w
 ## Questions
 
 ## Log
+
+- 2026-11-22 · Checked with real touches (Chromium `Input.dispatchTouchEvent`, 360 × 800 and 1440 × 900): after the long press the bed already follows each move and lands under the finger, the page does not scroll and no `pointercancel` comes. `touch-action: none` on the beds is ignored by Chromium (an SVG child): a swipe on a bed before the long press scrolls the page, which is what S01 and `ControllerDrag` want, and the `touchmove` stopped once armed is what keeps the page still. Two defects found: (1) a second finger put on the plan during a drag starts a new gesture and drops the one under way (the bed goes back, measured); (2) the context menu that a long press sends (Windows touch screens, Android) is not prevented, on the plan nor on the tray.
+- 2026-11-22 · Tests written: `front/e2e/touch.spec.ts` TCH-01..05 (phone 360 × 800 and touch screen 1440 × 900, density 2). Before the fix: TCH-02 and TCH-03 fail (menu not prevented, second finger), TCH-01, TCH-04, TCH-05 pass.
+
+### Decisions
+
+- Real touches through CDP, Chromium only, for the moves: synthetic pointer events would bypass `touch-action`, the scrolling and the pointer capture, which are what this task is about. WebKit only gets the tap (TCH-05), the only touch Playwright drives there.
+- Test ids use the prefix `TCH-` (free on `origin/main`), as T21 did with `PTR-`.
