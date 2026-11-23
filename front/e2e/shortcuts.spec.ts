@@ -324,7 +324,8 @@ for (const t of TOOLTIPS) {
       await expect(page.locator(`button[title="${t.undo}"]`)).toHaveCount(1);
       await expect(page.locator(`button[title="${t.redo}"]`)).toHaveCount(1);
       await page.locator("g.bed").first().click();
-      await expect(page.locator(`button[title="${t.remove}"]`)).toHaveCount(1);
+      // The panel's Delete and the one of the bar under the bed (T27).
+      await expect(page.locator(`button[title="${t.remove}"]`)).toHaveCount(2);
       await expect(page.locator(`button[title="${t.close}"]`)).toHaveCount(1);
     });
   });
