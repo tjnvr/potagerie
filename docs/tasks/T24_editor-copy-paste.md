@@ -1,6 +1,6 @@
 # T24 · Plan editor: duplicate, copy and paste a bed
 
-- Status: Running
+- Status: Done
 - Owner: agent
 - Depends on: T08
 - Refs: S01 F-PLN-6 (duplicate), F-PLN-1 (10 beds, names) · S03 placement · D01 E03
@@ -18,11 +18,11 @@ A bed can be duplicated with a button or the keyboard, and copied and pasted, la
 
 ## Acceptance
 
-- [ ] Rust: a command (or the existing create) places the copy on the first free spot by a rule written in S03 with §12 cases (next to the original, then scan; aisle kept; refused at 10 beds).
-- [ ] Front: Duplicate button in the bar and the panel; Cmd/Ctrl+C, V, D; the copy is selected; messages in en and fr.
-- [ ] e2e tests: duplicate by button and by shortcut, copy in one year and paste in another, paste refused at 10 beds, shortcut ignored in the name field.
-- [ ] Matrix rows, ids free on `origin/main`.
-- [ ] Full local gate green (`skills/spec-driven-delivery`, step 5).
+- [x] Rust: a command (or the existing create) places the copy on the first free spot by a rule written in S03 with §12 cases (next to the original, then scan; aisle kept; refused at 10 beds).
+- [x] Front: Duplicate button in the bar and the panel; Cmd/Ctrl+C, V, D; the copy is selected; messages in en and fr.
+- [x] e2e tests: duplicate by button and by shortcut, copy in one year and paste in another, paste refused at 10 beds, shortcut ignored in the name field.
+- [x] Matrix rows, ids free on `origin/main`.
+- [x] Full local gate green (`skills/spec-driven-delivery`, step 5).
 
 ## Scope
 
@@ -45,7 +45,9 @@ A bed can be duplicated with a button or the keyboard, and copied and pasted, la
 - The copied bed lives in the memory of the interface (`app.copiedBed`), not in the system clipboard: the system clipboard holds text, and a field keeps its own Cmd+C / Cmd+V. A message says the bed is copied, since a copy shows nothing else.
 - Cmd+C with no selection and Cmd+V with nothing copied are left to the system; Cmd+D is always taken in the editor (a browser bookmark otherwise). In a past year, a bed can be copied but nothing is pasted (no button there either).
 - The bar under the selected bed holds Duplicate only; Delete in the bar is T27 (S01 has it, not in this task), Rotate is after lot 1 (T07). It goes above the bed near the bottom of the plan, and hides while a bed is in hand.
-- S01 v1.11 writes down the behaviour Tim decided (copy, paste across years, shortcuts) in F-PLN-6, and moves duplicate out of "after lot 1"; S03 v0.21 the spot rule and case T21; S05 v0.24 the command, `no_free_spot` and the copied bed (section 20).
+- After T25 (one modifier per platform): C, V and D follow the same rule, Cmd on macOS and Ctrl elsewhere; the "copied" message names the paste key of the platform (⌘V or Ctrl+V), and Duplicate in the bar and the panel has a tooltip with its keys, like the buttons of T25.
+- S01 v1.12 writes down the behaviour Tim decided (copy, paste across years, shortcuts) in F-PLN-6, and moves duplicate out of "after lot 1"; S03 v0.21 the spot rule and case T21; S05 v0.25 the command, `no_free_spot` and the copied bed (section 21). T25 took S01 v1.11 and S05 v0.24 first: these versions are built on top of them.
 
 ### Progress
-- 2026-11-22: tests written (S03 T21, placement extremes, IPC `a_pasted_bed_lands_next_to_the_original_and_is_undone`, unit `shortcuts`, `cmToPixels`, e2e UC-38 to UC-41), code passing. Extra paths: `src-tauri/capabilities/main.json` (permission of the new command), `front/src/lib/shell/Icon.svelte` (copy icon of D01), `docs/design/*/README.md` and `README.md` (spec links). Follow-up created: T27 (Delete in the bar).
+- 2026-11-22: tests written (S03 T21, placement extremes, IPC `a_pasted_bed_lands_next_to_the_original_and_is_undone`, unit `shortcuts`, `cmToPixels`, e2e UC-38 to UC-41, renumbered UC-43 to UC-46 at the rebase), code passing. Extra paths: `src-tauri/capabilities/main.json` (permission of the new command), `front/src/lib/shell/Icon.svelte` (copy icon of D01), `docs/design/*/README.md` and `README.md` (spec links). Follow-up created: T27 (Delete in the bar).
+- 2026-11-23: rebased on T25 (keyboard shortcuts), which had taken S01 v1.11, S05 v0.24 and UC-37 to UC-42. Specs moved to S01 v1.12, S03 v0.21, S05 v0.25; e2e and matrix rows renumbered UC-43 to UC-46; the shortcuts merged into T25's platform-aware module (UC-44 now runs once on macOS and once on Windows, with the platform set in the page). Extra path: `site/index.html` (one line on the landing page, en and fr). Full local gate green: fmt, clippy, `cargo test --workspace`, `pnpm check`, `pnpm test` (261), `pnpm build`, `pnpm e2e` (407 passed, 13 skipped as on main). Version 0.14.0. NOT verified: no new screenshots after the rebase (the e2e suite drives headless WebKit only), no real Tauri window, no touch device, no installed build.
