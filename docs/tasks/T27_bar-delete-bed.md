@@ -1,6 +1,6 @@
 # T27 · Plan editor: Delete in the bar under the selected bed
 
-- Status: Ready
+- Status: Running
 - Owner: agent
 - Depends on: T24
 - Refs: S01 F-PLN-6 (rotate, duplicate, delete "from the bar that appears under the selected bed, or from the panel") · D01 E03 · S05 §20
