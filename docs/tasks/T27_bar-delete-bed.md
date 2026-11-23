@@ -33,6 +33,7 @@ The selected bed can be deleted from the bar under it, with the same confirmatio
 ## Log
 
 - 2026-11-23: S05 v0.26 (§20, the bar holds Duplicate then Delete); e2e UC-47 written (en, fr), failing; then Delete in the bar, passing. Extra paths: `docs/specs/` (S05 v0.26, links in S01 v1.12, S03 v0.21), `README.md` (link to S05).
+- 2026-11-23: local gate: fmt, clippy, cargo test, check, unit (261), build green; UC-47 and the delete / duplicate e2e passed in Chromium and WebKit. The full e2e could not finish locally: after the WebKit runs that hung (bound bar width, since removed), the machine stayed loaded (every page load timed out, even UC-01 on a fresh server) and the leftover processes could not be stopped from this session. Pushed `task/T27-bar-delete-bed` to run the full gate in CI instead.
 
 ### Decisions
 
