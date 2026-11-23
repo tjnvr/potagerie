@@ -43,6 +43,7 @@
     onplace = () => {},
     ondraw = () => {},
     onduplicate = () => {},
+    ondelete = () => {},
   }: {
     plot: PlotView;
     beds: BedView[];
@@ -60,6 +61,8 @@
     ondraw?: (geo: Geo) => void;
     /** « Duplicate » of the bar under the selected bed (F-PLN-6). */
     onduplicate?: (bed: BedView) => void;
+    /** « Delete » of the bar: the confirmation of the panel's button. */
+    ondelete?: (bed: BedView) => void;
   } = $props();
 
   // A click on the grass first clears the selection; only a click made with
@@ -170,6 +173,9 @@
   // when it would start below the plan, clear of the hit circles of the handles;
   // hidden while the bed is in hand.
   const BAR_PX = 44;
+  // Half its width with Duplicate and Delete, in the longest language, to keep it
+  // whole inside the plan. Not measured: a bound width makes WebKit loop.
+  const BAR_HALF_PX = 115;
   const bar = $derived.by(() => {
     if (!active || readOnly || geste) return null;
     const size = { width: widthPx, height: heightPx };
@@ -180,7 +186,7 @@
     const above = cmToPixels({ x: active.x, y: high }, size, box).y - 4 - BAR_PX;
     const below = bottom.y + 4;
     return {
-      left: Math.min(Math.max(bottom.x, 70), widthPx - 70),
+      left: Math.min(Math.max(bottom.x, BAR_HALF_PX), widthPx - BAR_HALF_PX),
       // Hanging under the plan, over its help line, hides less than covering beds.
       top: below <= heightPx || above < 0 ? below : above,
     };
@@ -496,6 +502,7 @@
   {@const chosen = active}
   <div class="bar" role="toolbar" aria-label={m.bed_actions({ name: chosen.name })} style:left="{bar.left}px" style:top="{bar.top}px">
     <button title={withKeys(m.bed_duplicate(), "duplicate")} onclick={() => onduplicate(chosen)}><Icon name="copy" size={16} />{m.bed_duplicate()}</button>
+    <button title={withKeys(m.delete(), "delete")} onclick={() => ondelete(chosen)}><Icon name="trash" size={16} />{m.delete()}</button>
   </div>
 {/if}
 </div>
@@ -509,6 +516,8 @@
     position: absolute;
     z-index: 2;
     display: flex;
+    /* Never wrapped, even close to the right edge. */
+    width: max-content;
     gap: 4px;
     padding: 4px;
     border-radius: 16px;

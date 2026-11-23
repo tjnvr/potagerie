@@ -318,6 +318,7 @@
         onplace={poserHere}
         ondraw={drawZone}
         onduplicate={duplicate}
+        ondelete={() => panel?.askDelete()}
       />
       {#if view.beds.length === 0}
         <p class="help">{m.plan_empty()}</p>

@@ -153,7 +153,7 @@ test("UC-21 plan: deleting a bed asks for confirmation, then removes it", async 
   const counter = page.locator(".counter").first();
   const before = await counter.textContent();
   await page.mouse.click(640, 340);
-  await page.getByRole("button", { name: "Delete", exact: true }).first().click();
+  await page.locator("aside").getByRole("button", { name: "Delete", exact: true }).click();
   await expect(page.getByText(/Delete .*\?/)).toBeVisible();
   await page.getByRole("button", { name: "Delete the bed" }).click();
   await expect(counter).not.toHaveText(before!);
@@ -165,7 +165,7 @@ test("UC-25 plan: deleting a bed that has plantings warns with their count", asy
   const counter = page.locator(".counter").first();
   const before = await counter.textContent();
   await page.mouse.click(640, 340);
-  await page.getByRole("button", { name: "Delete", exact: true }).first().click();
+  await page.locator("aside").getByRole("button", { name: "Delete", exact: true }).click();
   const warning = page.getByText(/Plantings deleted: \d+/);
   await expect(warning).toBeVisible();
   await page.getByRole("button", { name: "Cancel" }).click();
@@ -600,7 +600,7 @@ test("UC-36 plan: Undo and Redo of the header take back and redo the changes to 
   await page.getByRole("button", { name: /^Square/ }).click();
   await expect(counter).toContainText("9 / 10");
   await page.getByRole("button", { name: /^Leek square, / }).click();
-  await page.getByRole("button", { name: "Delete", exact: true }).first().click();
+  await page.locator("aside").getByRole("button", { name: "Delete", exact: true }).click();
   await page.getByRole("button", { name: "Delete the bed" }).click();
   await expect(counter).toContainText("8 / 10");
 
@@ -749,3 +749,74 @@ test("UC-46 plan: at 10 beds, nothing is pasted or duplicated and a message says
   // The original stays selected.
   await expect(page.getByRole("heading", { name: "Leek square", exact: true })).toBeVisible();
 });
+
+// Delete in the bar under the selected bed (S01 F-PLN-6, D01 E03, S05 §20, T27).
+for (const l of [
+  {
+    locale: "en-US",
+    bed: "Salad square",
+    actions: "Actions on Salad square",
+    duplicate: "Duplicate",
+    delete: "Delete",
+    title: "Delete Salad square?",
+    plantings: /Plantings deleted: 2\./,
+    confirm: "Delete the bed",
+    cancel: "Cancel",
+    undo: "Undo the last action",
+  },
+  {
+    locale: "fr-FR",
+    bed: "Carré salades",
+    actions: "Actions sur Carré salades",
+    duplicate: "Dupliquer",
+    delete: "Supprimer",
+    title: "Supprimer Carré salades ?",
+    plantings: /Séries supprimées : 2\./,
+    confirm: "Supprimer la planche",
+    cancel: "Annuler",
+    undo: "Annuler la dernière action",
+  },
+] as const) {
+  test.describe(l.locale, () => {
+    test.use({ locale: l.locale });
+
+    test(`UC-47 plan (${l.locale}): Delete in the bar asks the panel's confirmation, then removes the bed and its plantings`, async ({ page }) => {
+      await open(page);
+      await page.getByRole("button", { name: "Plan", exact: true }).click();
+      const counter = page.locator(".counter").first();
+      await expect(counter).toContainText("8 / 10");
+      const bed = page.getByRole("button", { name: new RegExp(`^${l.bed}, `) });
+      await bed.click();
+
+      // Delete comes after Duplicate, in the bar.
+      const bar = page.getByRole("toolbar", { name: l.actions });
+      await expect(bar.getByRole("button")).toHaveText([l.duplicate, l.delete]);
+      const askDelete = async () => {
+        await bar.getByRole("button", { name: l.delete, exact: true }).click();
+        const dialog = page.getByRole("dialog");
+        await expect(dialog.getByText(l.title)).toBeVisible();
+        await expect(dialog.getByText(l.plantings)).toBeVisible();
+        return dialog;
+      };
+
+      // Cancel keeps the bed, still selected.
+      await (await askDelete()).getByRole("button", { name: l.cancel, exact: true }).click();
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await expect(counter).toContainText("8 / 10");
+      await expect(bed).toHaveAttribute("aria-pressed", "true");
+
+      // Confirmed, the bed goes, with its plantings.
+      await (await askDelete()).getByRole("button", { name: l.confirm }).click();
+      await expect(counter).toContainText("7 / 10");
+      await expect(bed).toHaveCount(0);
+      await expect(bar).toHaveCount(0);
+
+      // Undo brings the bed back with its two plantings.
+      await page.getByRole("button", { name: l.undo }).click();
+      await expect(counter).toContainText("8 / 10");
+      await bed.click();
+      await askDelete();
+      await expect(page.getByRole("alert")).toHaveCount(0);
+    });
+  });
+}

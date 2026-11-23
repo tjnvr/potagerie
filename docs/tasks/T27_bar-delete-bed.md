@@ -31,3 +31,13 @@ The selected bed can be deleted from the bar under it, with the same confirmatio
 ## Questions
 
 ## Log
+
+- 2026-11-23: S05 v0.26 (§20, the bar holds Duplicate then Delete); e2e UC-47 written (en, fr), failing; then Delete in the bar, passing. Extra paths: `docs/specs/` (S05 v0.26, links in S01 v1.12, S03 v0.21), `README.md` (link to S05).
+
+### Decisions
+
+- The bar's Delete calls the panel's `askDelete`: one confirmation, one code path, as the Delete key (T25) already does.
+- No new message: the bar reuses `delete` ("Delete" / "Supprimer") with its key in the tooltip, like the panel's button.
+- The bar is kept inside the plan with a fixed half-width (115 px, the bar in French) instead of a measured one: binding its width made WebKit loop (all editor e2e timed out). `width: max-content` keeps it on one line near the right edge.
+- S01 and S03 keep their versions: only their link to S05 changes, not their content.
+- UC-21, UC-25 and UC-36 now click the panel's Delete explicitly (`aside`): with two Delete buttons on screen, `.first()` would have picked the bar's.
